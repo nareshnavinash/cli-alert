@@ -5,8 +5,10 @@
 class CliAlert < Formula
   desc "Terminal process completion notifier — OS-native notifications when commands finish"
   homepage "https://github.com/nareshnavinash/cli-alert"
-  url "https://github.com/nareshnavinash/cli-alert/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "PLACEHOLDER_SHA256"
+  # Stable release URL and sha256 are populated by the release workflow.
+  # Until a release tarball exists, use `brew install --HEAD` to install from git.
+  url "https://github.com/nareshnavinash/cli-alert/archive/refs/tags/v0.2.0.tar.gz"
+  sha256 ""
   license "MIT"
   head "https://github.com/nareshnavinash/cli-alert.git", branch: "main"
 

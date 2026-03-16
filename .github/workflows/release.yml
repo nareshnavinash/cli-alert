@@ -40,7 +40,7 @@ jobs:
           cp debian/control "${PKG_DIR}/DEBIAN/control"
           cp bin/cli-alert "${PKG_DIR}/usr/bin/"
           cp lib/*.sh lib/*.bash lib/*.zsh "${PKG_DIR}/usr/lib/cli-alert/"
-          cp hooks/claude-done.sh "${PKG_DIR}/usr/share/cli-alert/hooks/"
+          cp hooks/*-done.sh "${PKG_DIR}/usr/share/cli-alert/hooks/"
           cp VERSION "${PKG_DIR}/usr/share/cli-alert/"
           cp completions/cli-alert.bash "${PKG_DIR}/usr/share/bash-completion/completions/cli-alert"
           cp completions/cli-alert.zsh "${PKG_DIR}/usr/share/zsh/site-functions/_cli-alert"

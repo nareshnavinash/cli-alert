@@ -6,10 +6,10 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 
 [![CI](https://github.com/nareshnavinash/cli-alert/actions/workflows/ci.yml/badge.svg)](https://github.com/nareshnavinash/cli-alert/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](VERSION)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL%20%7C%20Windows-lightgrey.svg)](#platform-support)
 [![Shell](https://img.shields.io/badge/shell-bash%20%7C%20zsh-89e051.svg)](#installation)
-[![Tests](https://img.shields.io/badge/tests-291%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-329%20passing-brightgreen.svg)](#testing)
 
 <!-- TODO: Record with asciinema and embed here -->
 <!-- ![cli-alert demo](assets/demo.gif) -->
@@ -84,31 +84,31 @@ make install                     # installs to /usr/local
 make install PREFIX=~/.local     # installs to ~/.local
 ```
 
-### Homebrew (macOS/Linux)
+### Homebrew (macOS/Linux) — Coming Soon
+
+No Homebrew tap has been published yet. To install from the local formula using HEAD:
 
 ```bash
-brew install cli-alert
+brew install --HEAD ./Formula/cli-alert.rb
 ```
 
-### Debian/Ubuntu
+A `brew install cli-alert` command will be available once a tap repository and GitHub release are created.
+
+### Debian/Ubuntu — Coming Soon
+
+No `.deb` package has been published yet. The release workflow builds one automatically when a version tag is pushed. To build locally:
 
 ```bash
-dpkg -i cli-alert_0.1.0-1_all.deb
+make install PREFIX=/usr/local
 ```
 
-The `.deb` package recommends `libnotify-bin` and `pulseaudio-utils`, and suggests `espeak` for TTS.
+### Scoop (Windows) — Coming Soon
 
-### Scoop (Windows)
+The Scoop manifest is not yet published to any bucket. Install from source on Windows (Git Bash/MSYS2) using `make install` or `./install.sh`.
 
-```bash
-scoop install cli-alert
-```
+### Chocolatey (Windows) — Coming Soon
 
-### Chocolatey (Windows)
-
-```bash
-choco install cli-alert
-```
+The Chocolatey package is not yet published. Install from source on Windows (Git Bash/MSYS2) using `make install` or `./install.sh`.
 
 ### Manual Setup
 
@@ -438,7 +438,7 @@ Sending test to slack...
 | `cli-alert unmute` | Resume notifications |
 | `cli-alert toggle [layer [on\|off]]` | Toggle notification layers (sound, desktop, voice, channels) |
 | `cli-alert schedule [HH:MM-HH:MM\|off]` | Set or clear daily quiet hours |
-| `cli-alert test` | Run the full verification test suite (291 tests) |
+| `cli-alert test` | Run the full verification test suite (329 tests) |
 | `cli-alert version [--verbose]` | Show version (add `--verbose` for platform details) |
 | `cli-alert help` | Show usage help |
 
@@ -472,9 +472,9 @@ cli-alert/
 │   └── scoop.json             # Scoop manifest
 ├── install.sh                 # Interactive installer
 ├── uninstall.sh               # Uninstaller
-├── test.sh                    # Test suite (291 tests)
+├── test.sh                    # Test suite (329 tests)
 ├── Makefile                   # make install/uninstall/test
-└── VERSION                    # 0.1.0
+└── VERSION                    # 0.2.0
 ```
 
 ### Design Principles
@@ -604,7 +604,7 @@ Prints HTTP transport selection, POST targets (URLs redacted), and per-channel s
 
 ## Testing
 
-cli-alert includes a comprehensive test suite with 291 tests covering unit, integration, and end-to-end scenarios.
+cli-alert includes a comprehensive test suite with 329 tests covering unit, integration, and end-to-end scenarios.
 
 ```bash
 # Run from project root
@@ -695,7 +695,7 @@ This removes shell integration from `.zshrc` and `.bashrc`, and removes all AI C
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes
-4. Run the test suite: `bash test.sh` (all 291 tests must pass)
+4. Run the test suite: `bash test.sh` (all 329 tests must pass)
 5. Run ShellCheck: `shellcheck bin/cli-alert lib/*.sh hooks/*.sh`
 6. Commit and push
 7. Open a pull request

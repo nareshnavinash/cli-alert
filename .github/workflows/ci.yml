@@ -17,8 +17,12 @@ jobs:
       - name: Lint all scripts
         run: |
           shellcheck bin/cli-alert lib/cli-alert.sh lib/auto-notify.bash \
-            hooks/claude-done.sh install.sh uninstall.sh test.sh \
+            lib/external-notify.sh lib/state.sh lib/ai-hook-common.sh \
+            hooks/claude-done.sh hooks/codex-done.sh hooks/gemini-done.sh \
+            hooks/copilot-done.sh hooks/cursor-done.sh \
+            install.sh uninstall.sh test.sh \
             completions/cli-alert.bash
+          shellcheck -s bash completions/cli-alert.zsh
 
   test-macos:
     name: Test macOS (${{ matrix.shell }})

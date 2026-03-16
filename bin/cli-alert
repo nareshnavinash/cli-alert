@@ -36,7 +36,7 @@ _cli_alert_resolve_version() {
       return
     fi
   done
-  echo "0.1.0"
+  echo "0.2.0"
 }
 
 CLI_ALERT_VERSION="$(_cli_alert_resolve_version)"

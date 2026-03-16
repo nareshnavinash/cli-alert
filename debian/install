@@ -2,5 +2,14 @@ bin/cli-alert usr/bin
 lib/cli-alert.sh usr/lib/cli-alert
 lib/auto-notify.zsh usr/lib/cli-alert
 lib/auto-notify.bash usr/lib/cli-alert
+lib/external-notify.sh usr/lib/cli-alert
+lib/state.sh usr/lib/cli-alert
+lib/ai-hook-common.sh usr/lib/cli-alert
 hooks/claude-done.sh usr/share/cli-alert/hooks
+hooks/codex-done.sh usr/share/cli-alert/hooks
+hooks/gemini-done.sh usr/share/cli-alert/hooks
+hooks/copilot-done.sh usr/share/cli-alert/hooks
+hooks/cursor-done.sh usr/share/cli-alert/hooks
+completions/cli-alert.bash usr/share/bash-completion/completions
+completions/cli-alert.zsh usr/share/zsh/site-functions
 VERSION usr/share/cli-alert

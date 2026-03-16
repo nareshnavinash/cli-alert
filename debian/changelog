@@ -1,3 +1,13 @@
+cli-alert (0.2.0-1) unstable; urgency=low
+
+  * Multi-AI CLI hook support: Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor
+  * Per-AI toggle system (cli-alert toggle claude off, etc.)
+  * Shared hook library (lib/ai-hook-common.sh)
+  * Auto-detect and install all AI hooks (cli-alert setup ai-hooks)
+  * Uninstall now removes all AI CLI hooks
+
+ -- Naresh Sekar <nareshnavinash@gmail.com>  Mon, 16 Mar 2026 00:00:00 +0000
+
 cli-alert (0.1.0-1) unstable; urgency=low
 
   * Initial release
