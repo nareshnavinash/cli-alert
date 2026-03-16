@@ -3133,6 +3133,213 @@ test_help_mentions_codex() {
 }
 run_test "Help text mentions codex" test_help_mentions_codex
 
+# ── AI Hook Setup Append Safety ───────────────────────────────────────────────
+
+header "AI Hook Setup Append Safety"
+
+# Claude: preserves existing hooks in settings.json
+test_claude_setup_preserves_existing_hooks() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.claude"
+  cat > "$tmpdir/.claude/settings.json" << 'EOF'
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/other-tool-hook"
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.claude/settings.json")
+  # Both the original hook and cli-alert hook must be present
+  echo "$content" | grep -q "other-tool-hook" && \
+  echo "$content" | grep -q "claude-done.sh"
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Claude setup preserves existing hooks in settings.json" test_claude_setup_preserves_existing_hooks
+
+# Claude: idempotent (no duplicates on re-run)
+test_claude_setup_idempotent() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.claude"
+  echo '{}' > "$tmpdir/.claude/settings.json"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  local count
+  count=$(grep -c "claude-done.sh" "$tmpdir/.claude/settings.json")
+  rm -rf "$tmpdir"
+  [[ "$count" -eq 1 ]]
+}
+run_test "Claude setup is idempotent (no duplicates on re-run)" test_claude_setup_idempotent
+
+# Claude: pre-existing Stop array with entries — appends, not replaces
+test_claude_setup_appends_to_stop_array() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.claude"
+  cat > "$tmpdir/.claude/settings.json" << 'EOF'
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {"type": "command", "command": "/usr/bin/hook-a"}
+        ]
+      },
+      {
+        "hooks": [
+          {"type": "command", "command": "/usr/bin/hook-b"}
+        ]
+      }
+    ]
+  }
+}
+EOF
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.claude/settings.json")
+  # All three hooks must be present
+  echo "$content" | grep -q "hook-a" && \
+  echo "$content" | grep -q "hook-b" && \
+  echo "$content" | grep -q "claude-done.sh"
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Claude setup with pre-existing Stop array appends (not replaces)" test_claude_setup_appends_to_stop_array
+
+# Codex: preserves existing hooks in config.json
+test_codex_setup_preserves_existing_hooks() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.codex"
+  cat > "$tmpdir/.codex/config.json" << 'EOF'
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {"type": "command", "command": "/usr/bin/other-codex-hook"}
+        ]
+      }
+    ]
+  }
+}
+EOF
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup codex-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.codex/config.json")
+  echo "$content" | grep -q "other-codex-hook" && \
+  echo "$content" | grep -q "codex-done.sh"
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Codex setup preserves existing hooks in config.json" test_codex_setup_preserves_existing_hooks
+
+# Gemini: preserves existing hooks in settings.json
+test_gemini_setup_preserves_existing_hooks() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.gemini"
+  cat > "$tmpdir/.gemini/settings.json" << 'EOF'
+{
+  "hooks": [
+    {"type": "command", "command": "/usr/bin/other-gemini-hook", "event": "turn_end"}
+  ]
+}
+EOF
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup gemini-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.gemini/settings.json")
+  echo "$content" | grep -q "other-gemini-hook" && \
+  echo "$content" | grep -q "gemini-done.sh"
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Gemini setup preserves existing hooks in settings.json" test_gemini_setup_preserves_existing_hooks
+
+# Cursor: preserves existing hooks in hooks.json
+test_cursor_setup_preserves_existing_hooks() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.cursor"
+  cat > "$tmpdir/.cursor/hooks.json" << 'EOF'
+{
+  "stop": [
+    {"type": "command", "command": "/usr/bin/other-cursor-hook"}
+  ]
+}
+EOF
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup cursor-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.cursor/hooks.json")
+  echo "$content" | grep -q "other-cursor-hook" && \
+  echo "$content" | grep -q "cursor-done.sh"
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Cursor setup preserves existing hooks in hooks.json" test_cursor_setup_preserves_existing_hooks
+
+# Copilot: does not touch other hook files
+test_copilot_setup_preserves_other_hook_files() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.github/hooks"
+  echo '{"event": "sessionEnd", "command": "/usr/bin/other-copilot-hook"}' \
+    > "$tmpdir/.github/hooks/other-tool-session-end.json"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup copilot-hook &>/dev/null
+  # Other hook file must be unchanged
+  grep -q "other-copilot-hook" "$tmpdir/.github/hooks/other-tool-session-end.json" && \
+  # cli-alert's own hook file must exist
+  [[ -f "$tmpdir/.github/hooks/cli-alert-session-end.json" ]]
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Copilot setup does not touch other hook files" test_copilot_setup_preserves_other_hook_files
+
+# Setup preserves non-hook settings in JSON files
+test_setup_preserves_non_hook_settings() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.claude"
+  cat > "$tmpdir/.claude/settings.json" << 'EOF'
+{
+  "model": "opus",
+  "theme": "dark",
+  "hooks": {
+    "Stop": []
+  }
+}
+EOF
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.claude/settings.json")
+  echo "$content" | grep -q '"model"' && \
+  echo "$content" | grep -q '"theme"' && \
+  echo "$content" | grep -q "claude-done.sh"
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Setup preserves non-hook settings in JSON files" test_setup_preserves_non_hook_settings
+
 # ── AI Hook Toggle ────────────────────────────────────────────────────────────
 
 header "AI Hook Toggle"
