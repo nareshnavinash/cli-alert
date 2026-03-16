@@ -2,7 +2,7 @@
 
 Cross-platform terminal notification system for long-running commands. Get desktop notifications, sounds, and external alerts (Slack, Discord, Telegram, and more) when your builds, deploys, and tests finish.
 
-> Works with bash and zsh on macOS, Linux, WSL, and Windows. Notify via desktop popup, sound, voice, Slack, Discord, Telegram, Email, WhatsApp, or webhook. Integrates with Claude Code.
+> Works with bash and zsh on macOS, Linux, WSL, and Windows. Notify via desktop popup, sound, voice, Slack, Discord, Telegram, Email, WhatsApp, or webhook. Integrates with AI CLIs: Claude Code, Codex, Gemini, Copilot, Cursor, and Aider.
 
 [![CI](https://github.com/nareshnavinash/cli-alert/actions/workflows/ci.yml/badge.svg)](https://github.com/nareshnavinash/cli-alert/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -38,7 +38,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 - **Sound alerts** with customizable success/failure sounds (system sounds or custom file paths)
 - **Text-to-speech** announcements (optional)
 - **External notifications** via Slack, Discord, Telegram, Email, WhatsApp, or generic webhooks
-- **Claude Code integration** via Stop hook — get notified when Claude finishes its turn
+- **AI CLI integration** — Claude Code, Codex CLI, Gemini CLI, Copilot CLI, Cursor (hook-based), plus Aider (wrapper)
 - **Smart focus detection** — suppresses notifications when you're already looking at the terminal
 - **Glob-based exclusions** — skip commands like `npm*`, `ssh`, `vim`, etc.
 - **Notification control** — mute, toggle layers (sound/desktop/voice/channels), schedule quiet hours
@@ -75,7 +75,7 @@ cd cli-alert
 ./install.sh
 ```
 
-The install script detects your platform, makes scripts executable, adds shell integration to your rc files, and sets up the Claude Code hook.
+The install script detects your platform, makes scripts executable, adds shell integration to your rc files, and sets up hooks for all detected AI CLIs.
 
 ### Make Install
 
@@ -119,7 +119,7 @@ eval "$(cli-alert init zsh)"    # for zsh
 eval "$(cli-alert init bash)"   # for bash
 ```
 
-Or auto-configure everything (rc files + Claude Code hook):
+Or auto-configure everything (rc files + AI CLI hooks):
 
 ```bash
 cli-alert setup
@@ -159,15 +159,36 @@ vim file.txt      # excluded by default -> no notification
 
 Auto-notify uses `preexec`/`precmd` hooks in zsh and `DEBUG` trap + `PROMPT_COMMAND` in bash.
 
-### Claude Code Integration
+### AI CLI Integration
 
-cli-alert can notify you when Claude Code finishes its turn:
+cli-alert can notify you when AI coding assistants finish their turn. It supports Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor via native hook systems, plus Aider via the `alert` wrapper.
 
 ```bash
-cli-alert setup claude-hook
+# Install hooks for all detected AI CLIs
+cli-alert setup ai-hooks
+
+# Or install individually
+cli-alert setup claude-hook     # Claude Code (~/.claude/settings.json)
+cli-alert setup codex-hook      # Codex CLI (~/.codex/config.json)
+cli-alert setup gemini-hook     # Gemini CLI (~/.gemini/settings.json)
+cli-alert setup copilot-hook    # Copilot CLI (~/.github/hooks/)
+cli-alert setup cursor-hook     # Cursor (~/.cursor/hooks.json)
 ```
 
-This registers a Stop hook in `~/.claude/settings.json`. The hook script (`hooks/claude-done.sh`) reads the JSON event from stdin, extracts the `stop_reason`, and triggers a notification.
+Each hook script reads a JSON event from stdin, extracts the relevant metadata, and triggers a notification. You can toggle notifications per AI CLI:
+
+```bash
+cli-alert toggle claude off     # disable Claude notifications
+cli-alert toggle codex on       # re-enable Codex notifications
+```
+
+#### Aider
+
+Aider does not support native hooks. Use the `alert` wrapper instead:
+
+```bash
+alert aider "fix the login bug"
+```
 
 ### Exclusion Patterns
 
@@ -210,7 +231,7 @@ cli-alert schedule 22:00-08:00
 cli-alert schedule off          # clear schedule
 ```
 
-Supported layers: `desktop`, `sound`, `voice`, `slack`, `discord`, `telegram`, `email`, `whatsapp`, `webhook`, `external` (group toggle).
+Supported layers: `desktop`, `sound`, `voice`, `slack`, `discord`, `telegram`, `email`, `whatsapp`, `webhook`, `external` (group toggle), `claude`, `codex`, `gemini`, `copilot`, `cursor` (AI CLIs).
 
 Quiet hours can also be set via environment variable:
 
@@ -406,8 +427,8 @@ Sending test to slack...
 | Command | Description |
 |---|---|
 | `cli-alert init [bash\|zsh]` | Output shell init code (use with `eval`) |
-| `cli-alert setup [all\|claude-hook]` | Auto-configure rc files and/or Claude Code hook |
-| `cli-alert uninstall` | Remove all shell integration and Claude Code hook |
+| `cli-alert setup [all\|ai-hooks\|<ai>-hook]` | Auto-configure rc files and/or AI CLI hooks |
+| `cli-alert uninstall` | Remove all shell integration and AI CLI hooks |
 | `cli-alert status` | Show diagnostic info — platform, tools, config, integration |
 | `cli-alert test-notify` | Send a test desktop notification |
 | `cli-alert sounds` | List available system sounds for your platform |
@@ -433,9 +454,14 @@ cli-alert/
 │   ├── auto-notify.zsh        # Zsh preexec/precmd auto-notify hooks
 │   ├── auto-notify.bash       # Bash DEBUG trap auto-notify hooks
 │   ├── external-notify.sh     # External channels (Slack, Discord, etc.)
-│   └── state.sh               # Mute, toggle, and schedule state management
+│   ├── state.sh               # Mute, toggle, and schedule state management
+│   └── ai-hook-common.sh      # Shared library for AI CLI hooks
 ├── hooks/
-│   └── claude-done.sh         # Claude Code Stop hook
+│   ├── claude-done.sh         # Claude Code Stop hook
+│   ├── codex-done.sh          # Codex CLI Stop hook
+│   ├── gemini-done.sh         # Gemini CLI command hook
+│   ├── copilot-done.sh        # Copilot CLI sessionEnd hook
+│   └── cursor-done.sh         # Cursor stop hook
 ├── completions/
 │   ├── cli-alert.bash         # Bash completion
 │   └── cli-alert.zsh          # Zsh completion
@@ -563,11 +589,13 @@ Prints HTTP transport selection, POST targets (URLs redacted), and per-channel s
 - Check for HTTP errors: test output shows the HTTP status code on failure
 - Verify rate limiting isn't blocking: default is 10 seconds between notifications per channel
 
-**Claude Code hook not firing:**
-- Run `cli-alert status` to check hook installation
-- Re-install: `cli-alert setup claude-hook`
-- Verify `~/.claude/settings.json` contains the Stop hook entry
-- Requires `python3` for installation (hook itself uses it for JSON parsing)
+**AI CLI hooks not firing:**
+- Run `cli-alert status` to check hook installation for all AI CLIs
+- Re-install a specific hook: `cli-alert setup claude-hook` (or `codex-hook`, `gemini-hook`, etc.)
+- Re-install all: `cli-alert setup ai-hooks`
+- Verify the AI CLI's settings file contains the hook entry
+- Requires `python3` for installation (hooks use it for JSON parsing)
+- Check per-AI toggle: `cli-alert toggle` shows if a hook is toggled off
 
 **Focus detection suppressing notifications:**
 - Disable: `export CLI_ALERT_FOCUS_DETECT=false`
@@ -601,6 +629,11 @@ cli-alert test
 | Notification delivery | 1 | Desktop notification send |
 | Sound playback | 1 | Sound file existence |
 | Claude Code hook | 2 | Script executable, JSON processing |
+| AI Hook Common Library | 8 | Source guard, JSON extraction, functions |
+| AI Hook Scripts | 12 | Codex, Gemini, Copilot, Cursor: executable, JSON, empty stdin |
+| AI Hook Setup CLI | 8 | Setup subcommands, help text |
+| AI Hook Toggle | 6 | Per-AI toggle on/off, state persistence |
+| AI Hook Status | 4 | Status output includes AI section |
 | CLI commands | 8 | status, test-notify, sounds, exclude, version |
 | Dynamic title | 1 | alert() title generation |
 | Warning function | 2 | Existence, deduplication |
@@ -643,7 +676,7 @@ cli-alert uninstall
 make uninstall
 ```
 
-This removes shell integration from `.zshrc` and `.bashrc`, and removes the Claude Code Stop hook from `~/.claude/settings.json`.
+This removes shell integration from `.zshrc` and `.bashrc`, and removes all AI CLI hooks (Claude, Codex, Gemini, Copilot, Cursor).
 
 ## Alternatives
 
@@ -653,7 +686,7 @@ This removes shell integration from `.zshrc` and `.bashrc`, and removes the Clau
 | macOS + Linux + WSL + Windows | Yes | No | Yes | No |
 | External channels (6) | Yes | No | Partial | No |
 | Zero dependencies | Yes | Yes | No (Go) | Yes |
-| Claude Code integration | Yes | No | No | No |
+| AI CLI integration (5 tools) | Yes | No | No | No |
 | Sound + TTS | Yes | No | Partial | No |
 | Mute / schedule / toggle | Yes | No | No | No |
 

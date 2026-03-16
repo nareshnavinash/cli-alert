@@ -19,7 +19,7 @@ _cli_alert_completions() {
       return 0
       ;;
     setup)
-      COMPREPLY=( $(compgen -W "all claude-hook" -- "$cur") )
+      COMPREPLY=( $(compgen -W "all ai-hooks claude-hook codex-hook gemini-hook copilot-hook cursor-hook" -- "$cur") )
       return 0
       ;;
     exclude)
@@ -45,7 +45,7 @@ _cli_alert_completions() {
       fi
       ;;
     toggle)
-      COMPREPLY=( $(compgen -W "sound desktop voice slack discord telegram email whatsapp webhook external on off" -- "$cur") )
+      COMPREPLY=( $(compgen -W "sound desktop voice slack discord telegram email whatsapp webhook external claude codex gemini copilot cursor on off" -- "$cur") )
       return 0
       ;;
     schedule)

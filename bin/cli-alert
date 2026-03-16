@@ -65,6 +65,17 @@ _cli_alert_resolve_lib() {
 
 CLI_ALERT_LIB="$(_cli_alert_resolve_lib)"
 
+# ── AI CLI Registry ──────────────────────────────────────────────────────────
+# Parallel arrays (bash 3.2 compatible — no associative arrays)
+# Index: 0=claude 1=codex 2=gemini 3=copilot 4=cursor 5=aider
+
+_CLI_ALERT_AI_NAMES=("claude" "codex" "gemini" "copilot" "cursor" "aider")
+_CLI_ALERT_AI_LABELS=("Claude Code" "Codex CLI" "Gemini CLI" "Copilot CLI" "Cursor" "Aider")
+_CLI_ALERT_AI_HOOKS=("claude-done.sh" "codex-done.sh" "gemini-done.sh" "copilot-done.sh" "cursor-done.sh" "")
+_CLI_ALERT_AI_CMDS=("claude" "codex" "gemini" "gh" "cursor" "aider")
+_CLI_ALERT_AI_SETTINGS=("$HOME/.claude/settings.json" "$HOME/.codex/config.json" "$HOME/.gemini/settings.json" "" "$HOME/.cursor/hooks.json" "")
+_CLI_ALERT_AI_CONFIGDIRS=("$HOME/.claude" "$HOME/.codex" "$HOME/.gemini" "$HOME/.github" "$HOME/.cursor" "")
+
 # ── Commands ─────────────────────────────────────────────────────────────────
 
 cmd_init() {
@@ -125,15 +136,30 @@ cmd_setup() {
     claude-hook)
       _setup_claude_hook
       ;;
+    codex-hook)
+      _setup_codex_hook
+      ;;
+    gemini-hook)
+      _setup_gemini_hook
+      ;;
+    copilot-hook)
+      _setup_copilot_hook
+      ;;
+    cursor-hook)
+      _setup_cursor_hook
+      ;;
+    ai-hooks)
+      _setup_ai_hooks
+      ;;
     ""|all)
       _setup_shell_init
-      _setup_claude_hook
+      _setup_ai_hooks
       echo ""
       printf '\033[1;32m[cli-alert]\033[0m Setup complete!\n'
       printf '\033[1;34m[cli-alert]\033[0m Restart your shell or run: exec %s\n' "$(basename "$SHELL")"
       ;;
     *)
-      echo >&2 "Usage: cli-alert setup [all|claude-hook]"
+      echo >&2 "Usage: cli-alert setup [all|ai-hooks|claude-hook|codex-hook|gemini-hook|copilot-hook|cursor-hook]"
       exit 1
       ;;
   esac
@@ -228,6 +254,230 @@ PYEOF
   fi
 }
 
+_setup_codex_hook() {
+  local hook_cmd
+  hook_cmd="$(cd "$(dirname "$0")/.." && pwd)/hooks/codex-done.sh"
+  local codex_settings="$HOME/.codex/config.json"
+
+  if [[ ! -f "$hook_cmd" ]]; then
+    echo >&2 "cli-alert: hook script not found at $hook_cmd"
+    return 1
+  fi
+
+  if ! command -v python3 &>/dev/null; then
+    printf '\033[1;33m[cli-alert]\033[0m python3 not found — skipping Codex CLI hook\n'
+    printf '\033[1;33m[cli-alert]\033[0m Manually add to %s\n' "$codex_settings"
+    return 0
+  fi
+
+  if [[ ! -f "$codex_settings" ]]; then
+    mkdir -p "$(dirname "$codex_settings")"
+    echo '{}' > "$codex_settings"
+  fi
+
+  local result
+  result=$(python3 - "$codex_settings" "$hook_cmd" << 'PYEOF'
+import sys, json
+
+settings_path = sys.argv[1]
+hook_cmd = sys.argv[2]
+
+with open(settings_path, 'r') as f:
+    settings = json.load(f)
+
+hooks = settings.setdefault("hooks", {})
+stop_hooks = hooks.setdefault("Stop", [])
+
+for entry in stop_hooks:
+    for h in entry.get("hooks", []):
+        if h.get("command", "") == hook_cmd:
+            print("ALREADY_INSTALLED")
+            sys.exit(0)
+
+hook_entry = {"hooks": [{"type": "command", "command": hook_cmd}]}
+stop_hooks.append(hook_entry)
+
+with open(settings_path, 'w') as f:
+    json.dump(settings, f, indent=2)
+print("INSTALLED")
+PYEOF
+  )
+
+  if [[ "$result" == "ALREADY_INSTALLED" ]]; then
+    printf '\033[1;34m[cli-alert]\033[0m Codex CLI hook already installed\n'
+  else
+    printf '\033[1;32m[cli-alert]\033[0m Added Codex CLI Stop hook\n'
+  fi
+}
+
+_setup_gemini_hook() {
+  local hook_cmd
+  hook_cmd="$(cd "$(dirname "$0")/.." && pwd)/hooks/gemini-done.sh"
+  local gemini_settings="$HOME/.gemini/settings.json"
+
+  if [[ ! -f "$hook_cmd" ]]; then
+    echo >&2 "cli-alert: hook script not found at $hook_cmd"
+    return 1
+  fi
+
+  if ! command -v python3 &>/dev/null; then
+    printf '\033[1;33m[cli-alert]\033[0m python3 not found — skipping Gemini CLI hook\n'
+    printf '\033[1;33m[cli-alert]\033[0m Manually add to %s\n' "$gemini_settings"
+    return 0
+  fi
+
+  if [[ ! -f "$gemini_settings" ]]; then
+    mkdir -p "$(dirname "$gemini_settings")"
+    echo '{}' > "$gemini_settings"
+  fi
+
+  local result
+  result=$(python3 - "$gemini_settings" "$hook_cmd" << 'PYEOF'
+import sys, json
+
+settings_path = sys.argv[1]
+hook_cmd = sys.argv[2]
+
+with open(settings_path, 'r') as f:
+    settings = json.load(f)
+
+hooks = settings.setdefault("hooks", [])
+
+# Check for duplicate
+for entry in hooks:
+    if entry.get("command", "") == hook_cmd:
+        print("ALREADY_INSTALLED")
+        sys.exit(0)
+
+hook_entry = {"type": "command", "command": hook_cmd, "event": "turn_end"}
+hooks.append(hook_entry)
+
+with open(settings_path, 'w') as f:
+    json.dump(settings, f, indent=2)
+print("INSTALLED")
+PYEOF
+  )
+
+  if [[ "$result" == "ALREADY_INSTALLED" ]]; then
+    printf '\033[1;34m[cli-alert]\033[0m Gemini CLI hook already installed\n'
+  else
+    printf '\033[1;32m[cli-alert]\033[0m Added Gemini CLI hook\n'
+  fi
+}
+
+_setup_copilot_hook() {
+  local hook_cmd
+  hook_cmd="$(cd "$(dirname "$0")/.." && pwd)/hooks/copilot-done.sh"
+  local hooks_dir="$HOME/.github/hooks"
+  local hook_file="${hooks_dir}/cli-alert-session-end.json"
+
+  if [[ ! -f "$hook_cmd" ]]; then
+    echo >&2 "cli-alert: hook script not found at $hook_cmd"
+    return 1
+  fi
+
+  mkdir -p "$hooks_dir"
+
+  if [[ -f "$hook_file" ]] && grep -q "$hook_cmd" "$hook_file" 2>/dev/null; then
+    printf '\033[1;34m[cli-alert]\033[0m Copilot CLI hook already installed\n'
+    return 0
+  fi
+
+  cat > "$hook_file" << JSONEOF
+{
+  "event": "sessionEnd",
+  "command": "$hook_cmd"
+}
+JSONEOF
+
+  printf '\033[1;32m[cli-alert]\033[0m Added Copilot CLI sessionEnd hook\n'
+}
+
+_setup_cursor_hook() {
+  local hook_cmd
+  hook_cmd="$(cd "$(dirname "$0")/.." && pwd)/hooks/cursor-done.sh"
+  local cursor_hooks="$HOME/.cursor/hooks.json"
+
+  if [[ ! -f "$hook_cmd" ]]; then
+    echo >&2 "cli-alert: hook script not found at $hook_cmd"
+    return 1
+  fi
+
+  if ! command -v python3 &>/dev/null; then
+    printf '\033[1;33m[cli-alert]\033[0m python3 not found — skipping Cursor hook\n'
+    printf '\033[1;33m[cli-alert]\033[0m Manually add to %s\n' "$cursor_hooks"
+    return 0
+  fi
+
+  if [[ ! -f "$cursor_hooks" ]]; then
+    mkdir -p "$(dirname "$cursor_hooks")"
+    echo '{}' > "$cursor_hooks"
+  fi
+
+  local result
+  result=$(python3 - "$cursor_hooks" "$hook_cmd" << 'PYEOF'
+import sys, json
+
+hooks_path = sys.argv[1]
+hook_cmd = sys.argv[2]
+
+with open(hooks_path, 'r') as f:
+    config = json.load(f)
+
+stop_hooks = config.setdefault("stop", [])
+
+for entry in stop_hooks:
+    if entry.get("command", "") == hook_cmd:
+        print("ALREADY_INSTALLED")
+        sys.exit(0)
+
+hook_entry = {"type": "command", "command": hook_cmd}
+stop_hooks.append(hook_entry)
+
+with open(hooks_path, 'w') as f:
+    json.dump(config, f, indent=2)
+print("INSTALLED")
+PYEOF
+  )
+
+  if [[ "$result" == "ALREADY_INSTALLED" ]]; then
+    printf '\033[1;34m[cli-alert]\033[0m Cursor hook already installed\n'
+  else
+    printf '\033[1;32m[cli-alert]\033[0m Added Cursor stop hook\n'
+  fi
+}
+
+_setup_ai_hooks() {
+  local i installed=0 skipped=0
+
+  for i in "${!_CLI_ALERT_AI_NAMES[@]}"; do
+    local name="${_CLI_ALERT_AI_NAMES[$i]}"
+    local label="${_CLI_ALERT_AI_LABELS[$i]}"
+    local hook="${_CLI_ALERT_AI_HOOKS[$i]}"
+    local cmd="${_CLI_ALERT_AI_CMDS[$i]}"
+    local config_dir="${_CLI_ALERT_AI_CONFIGDIRS[$i]}"
+
+    # Skip Aider (no hooks)
+    if [[ -z "$hook" ]]; then
+      if command -v "$cmd" &>/dev/null; then
+        printf '\033[1;34m[cli-alert]\033[0m %s detected — no native hooks, use: alert aider <prompt>\n' "$label"
+      fi
+      continue
+    fi
+
+    # Check if the AI CLI is installed (command exists or config dir exists)
+    if command -v "$cmd" &>/dev/null || [[ -n "$config_dir" && -d "$config_dir" ]]; then
+      "_setup_${name}_hook" && installed=$((installed + 1)) || true
+    else
+      skipped=$((skipped + 1))
+    fi
+  done
+
+  if [[ $installed -gt 0 || $skipped -gt 0 ]]; then
+    printf '\033[1;34m[cli-alert]\033[0m AI hooks: %d installed, %d skipped (not detected)\n' "$installed" "$skipped"
+  fi
+}
+
 cmd_test() {
   local test_script
   test_script="$(cd "$(dirname "$0")/.." && pwd)/test.sh"
@@ -273,47 +523,86 @@ cmd_uninstall() {
   _remove_from_rc "$HOME/.zshrc"
   _remove_from_rc "$HOME/.bashrc"
 
-  # Remove Claude hook
-  local claude_settings="$HOME/.claude/settings.json"
-  local hook_cmd
-  hook_cmd="$(cd "$(dirname "$0")/.." && pwd)/hooks/claude-done.sh"
+  local base_dir
+  base_dir="$(cd "$(dirname "$0")/.." && pwd)"
 
-  if [[ -f "$claude_settings" ]] && command -v python3 &>/dev/null; then
-    python3 - "$claude_settings" "$hook_cmd" << 'PYEOF'
+  # Remove Claude hook from ~/.claude/settings.json
+  _uninstall_json_hook() {
+    local settings_file="$1" hook_cmd="$2" label="$3" hook_key="${4:-Stop}"
+
+    [[ -f "$settings_file" ]] || return 0
+    command -v python3 &>/dev/null || return 0
+
+    python3 - "$settings_file" "$hook_cmd" "$hook_key" << 'PYEOF'
 import sys, json
 
 settings_path = sys.argv[1]
 hook_cmd = sys.argv[2]
+hook_key = sys.argv[3]
 
 with open(settings_path, 'r') as f:
     settings = json.load(f)
 
 hooks = settings.get("hooks", {})
-stop_hooks = hooks.get("Stop", [])
 
-new_stop = []
-removed = False
-for entry in stop_hooks:
-    entry_hooks = entry.get("hooks", [])
-    filtered = [h for h in entry_hooks if h.get("command", "") != hook_cmd]
-    if len(filtered) < len(entry_hooks):
+if isinstance(hooks, dict):
+    stop_hooks = hooks.get(hook_key, [])
+    new_stop = []
+    removed = False
+    for entry in stop_hooks:
+        if isinstance(entry, dict) and "hooks" in entry:
+            entry_hooks = entry.get("hooks", [])
+            filtered = [h for h in entry_hooks if h.get("command", "") != hook_cmd]
+            if len(filtered) < len(entry_hooks):
+                removed = True
+            if filtered:
+                entry["hooks"] = filtered
+                new_stop.append(entry)
+        elif isinstance(entry, dict) and entry.get("command", "") == hook_cmd:
+            removed = True
+        else:
+            new_stop.append(entry)
+    if removed:
+        if new_stop:
+            hooks[hook_key] = new_stop
+        else:
+            hooks.pop(hook_key, None)
+        if not hooks:
+            settings.pop("hooks", None)
+        with open(settings_path, 'w') as f:
+            json.dump(settings, f, indent=2)
+elif isinstance(hooks, list):
+    new_hooks = [h for h in hooks if h.get("command", "") != hook_cmd]
+    if len(new_hooks) < len(hooks):
         removed = True
-    if filtered:
-        entry["hooks"] = filtered
-        new_stop.append(entry)
-
-if removed:
-    if new_stop:
-        hooks["Stop"] = new_stop
-    else:
-        hooks.pop("Stop", None)
-    if not hooks:
-        settings.pop("hooks", None)
-    with open(settings_path, 'w') as f:
-        json.dump(settings, f, indent=2)
+        if new_hooks:
+            settings["hooks"] = new_hooks
+        else:
+            settings.pop("hooks", None)
+        with open(settings_path, 'w') as f:
+            json.dump(settings, f, indent=2)
 PYEOF
-    printf '\033[1;32m[cli-alert]\033[0m Removed Claude Code hook\n'
+    printf '\033[1;32m[cli-alert]\033[0m Removed %s hook\n' "$label"
+  }
+
+  # Remove Claude Code hook
+  _uninstall_json_hook "$HOME/.claude/settings.json" "${base_dir}/hooks/claude-done.sh" "Claude Code" "Stop"
+
+  # Remove Codex CLI hook
+  _uninstall_json_hook "$HOME/.codex/config.json" "${base_dir}/hooks/codex-done.sh" "Codex CLI" "Stop"
+
+  # Remove Gemini CLI hook
+  _uninstall_json_hook "$HOME/.gemini/settings.json" "${base_dir}/hooks/gemini-done.sh" "Gemini CLI" "hooks"
+
+  # Remove Copilot CLI hook
+  local copilot_hook_file="$HOME/.github/hooks/cli-alert-session-end.json"
+  if [[ -f "$copilot_hook_file" ]]; then
+    rm -f "$copilot_hook_file"
+    printf '\033[1;32m[cli-alert]\033[0m Removed Copilot CLI hook\n'
   fi
+
+  # Remove Cursor hook
+  _uninstall_json_hook "$HOME/.cursor/hooks.json" "${base_dir}/hooks/cursor-done.sh" "Cursor" "stop"
 
   echo ""
   printf '\033[1;32m[cli-alert]\033[0m Uninstalled! Restart your shell to apply.\n'
@@ -438,21 +727,67 @@ cmd_status() {
     fi
     echo ""
 
-    # Claude Code hook
-    echo "Claude Code hook:"
-    local hook_cmd
-    hook_cmd="$(cd "$(dirname "$0")/.." && pwd)/hooks/claude-done.sh"
-    local claude_settings="$HOME/.claude/settings.json"
-    if [[ -f "$hook_cmd" ]]; then
-      printf '  Hook file:      %s exists\n' "$check_mark"
-    else
-      printf '  Hook file:      %s not found\n' "$cross_mark"
-    fi
-    if [[ -f "$claude_settings" ]] && grep -q "claude-done" "$claude_settings" 2>/dev/null; then
-      printf '  settings.json:  %s installed\n' "$check_mark"
-    else
-      printf '  settings.json:  %s not installed\n' "$cross_mark"
-    fi
+    # AI CLI hooks
+    echo "AI CLI hooks:"
+    local base_dir
+    base_dir="$(cd "$(dirname "$0")/.." && pwd)"
+    local ai_i
+    for ai_i in "${!_CLI_ALERT_AI_NAMES[@]}"; do
+      local ai_name="${_CLI_ALERT_AI_NAMES[$ai_i]}"
+      local ai_label="${_CLI_ALERT_AI_LABELS[$ai_i]}"
+      local ai_hook="${_CLI_ALERT_AI_HOOKS[$ai_i]}"
+      local ai_cmd="${_CLI_ALERT_AI_CMDS[$ai_i]}"
+      local ai_settings="${_CLI_ALERT_AI_SETTINGS[$ai_i]}"
+      local ai_config_dir="${_CLI_ALERT_AI_CONFIGDIRS[$ai_i]}"
+
+      # Aider: no hooks
+      if [[ -z "$ai_hook" ]]; then
+        if command -v "$ai_cmd" &>/dev/null; then
+          printf '  %-14s %s detected (use: alert aider <prompt>)\n' "${ai_label}:" "$check_mark"
+        else
+          printf '  %-14s %s not detected\n' "${ai_label}:" "$cross_mark"
+        fi
+        continue
+      fi
+
+      # Check if AI CLI is present
+      if ! command -v "$ai_cmd" &>/dev/null && [[ -z "$ai_config_dir" || ! -d "$ai_config_dir" ]]; then
+        printf '  %-14s %s not detected\n' "${ai_label}:" "$cross_mark"
+        continue
+      fi
+
+      # Check hook installation
+      local hook_file="${base_dir}/hooks/${ai_hook}"
+      local hook_installed=false
+
+      # Copilot uses a file-based approach
+      if [[ "$ai_name" == "copilot" ]]; then
+        local copilot_hook="$HOME/.github/hooks/cli-alert-session-end.json"
+        if [[ -f "$copilot_hook" ]] && grep -q "copilot-done" "$copilot_hook" 2>/dev/null; then
+          hook_installed=true
+        fi
+      elif [[ -n "$ai_settings" && -f "$ai_settings" ]]; then
+        local hook_basename
+        hook_basename=$(basename "$hook_file")
+        if grep -q "${hook_basename%.sh}" "$ai_settings" 2>/dev/null; then
+          hook_installed=true
+        fi
+      fi
+
+      # Check toggle state
+      local ai_toggle_val
+      ai_toggle_val="$(_cli_alert_state_read "$ai_name" 2>/dev/null)" || ai_toggle_val=""
+
+      if $hook_installed; then
+        if [[ "$ai_toggle_val" == "off" ]]; then
+          printf '  %-14s %s installed (toggled off)\n' "${ai_label}:" "$check_mark"
+        else
+          printf '  %-14s %s installed\n' "${ai_label}:" "$check_mark"
+        fi
+      else
+        printf '  %-14s %s not installed (run: cli-alert setup %s-hook)\n' "${ai_label}:" "$cross_mark" "$ai_name"
+      fi
+    done
     echo ""
 
     # External notifications
@@ -963,7 +1298,7 @@ cmd_toggle() {
   _load_state_module
   local layer="${1:-}" explicit="${2:-}"
 
-  local -a valid_layers=(sound desktop voice slack discord telegram email whatsapp webhook)
+  local -a valid_layers=(sound desktop voice slack discord telegram email whatsapp webhook claude codex gemini copilot cursor)
 
   if [[ -z "$layer" ]]; then
     # Show all toggle states
@@ -992,6 +1327,33 @@ cmd_toggle() {
         printf '  %-12s off  (toggled off)\n' "${l}:"
       else
         printf '  %-12s on   (configured)\n' "${l}:"
+      fi
+    done
+
+    # AI CLI hooks
+    echo ""
+    echo "AI CLI hooks:"
+    local ai_i
+    for ai_i in "${!_CLI_ALERT_AI_NAMES[@]}"; do
+      local ai_name="${_CLI_ALERT_AI_NAMES[$ai_i]}"
+      local ai_hook="${_CLI_ALERT_AI_HOOKS[$ai_i]}"
+      local ai_cmd="${_CLI_ALERT_AI_CMDS[$ai_i]}"
+      local ai_config_dir="${_CLI_ALERT_AI_CONFIGDIRS[$ai_i]}"
+
+      # Skip Aider (no hooks, no toggle)
+      [[ -z "$ai_hook" ]] && continue
+
+      # Check if detected
+      if ! command -v "$ai_cmd" &>/dev/null && [[ -z "$ai_config_dir" || ! -d "$ai_config_dir" ]]; then
+        printf '  %-12s -    (not detected)\n' "${ai_name}:"
+        continue
+      fi
+
+      val="$(_cli_alert_state_read "$ai_name" 2>/dev/null)" || val=""
+      if [[ "$val" == "off" ]]; then
+        printf '  %-12s off  (toggled off)\n' "${ai_name}:"
+      else
+        printf '  %-12s on\n' "${ai_name}:"
       fi
     done
     return 0
@@ -1115,8 +1477,8 @@ cli-alert — Terminal process completion notifier
 
 Usage:
   cli-alert init [bash|zsh]     Output shell init code (use with eval)
-  cli-alert setup [all|claude-hook]  Configure shell rc files + Claude hook
-  cli-alert uninstall           Remove shell integration + Claude hook
+  cli-alert setup [all|ai-hooks|<ai>-hook]  Configure shell + AI CLI hooks
+  cli-alert uninstall           Remove shell integration + all AI hooks
   cli-alert status              Show diagnostic info and verify setup
   cli-alert test-notify         Send a test notification
   cli-alert sounds              List available system sounds
@@ -1144,6 +1506,18 @@ After init, you get:
   alert-bg [PID|%jobspec]       Monitor background job and notify on completion
   (auto-notify)                 Commands >30s auto-notify on completion
 
+AI CLI hooks:
+  cli-alert setup ai-hooks         Install hooks for all detected AI CLIs
+  cli-alert setup claude-hook      Install Claude Code Stop hook
+  cli-alert setup codex-hook       Install Codex CLI hook
+  cli-alert setup gemini-hook      Install Gemini CLI hook
+  cli-alert setup copilot-hook     Install Copilot CLI hook
+  cli-alert setup cursor-hook      Install Cursor hook
+  cli-alert toggle claude off      Disable notifications from Claude
+  cli-alert toggle codex off       Disable notifications from Codex
+
+  Aider: no native hooks — use: alert aider <prompt>
+
 Config file:
   Create with: cli-alert config init > ~/.config/cli-alert/config
 
@@ -1170,12 +1544,14 @@ Notification control:
   cli-alert toggle sound off    Disable sound, keep desktop popups
   cli-alert toggle slack off    Disable Slack channel
   cli-alert toggle external off Disable all external channels
+  cli-alert toggle claude off   Disable Claude Code notifications
   cli-alert schedule 22:00-08:00  Set quiet hours (crosses midnight OK)
   cli-alert schedule off        Clear quiet hours
   CLI_ALERT_QUIET_HOURS=22:00-08:00  Env var fallback for quiet hours
 
   Layers: desktop, sound, voice, slack, discord, telegram, email,
-          whatsapp, webhook, external (group)
+          whatsapp, webhook, external (group),
+          claude, codex, gemini, copilot, cursor (AI CLIs)
 
 External notifications (env vars):
   CLI_ALERT_SLACK_WEBHOOK=...   Slack incoming webhook URL

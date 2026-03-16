@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-03-16
+
+### Added
+
+- Multi-AI CLI hook support: Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor
+- Per-AI toggle system (`cli-alert toggle claude off`, `cli-alert toggle codex off`, etc.)
+- Auto-detect and install all AI hooks (`cli-alert setup ai-hooks`)
+- Shared hook library (`lib/ai-hook-common.sh`) with JSON extraction and toggle-aware notification
+- Individual setup commands: `cli-alert setup codex-hook`, `gemini-hook`, `copilot-hook`, `cursor-hook`
+- AI CLI hooks section in `cli-alert status` and `cli-alert toggle` output
+- Aider detection with wrapper guidance in status output
+- Uninstall now removes all AI CLI hooks (Claude, Codex, Gemini, Copilot, Cursor)
+- ~40 new tests covering AI hook library, hook scripts, setup CLI, toggle, and status
+
+### Changed
+
+- `cli-alert setup` (and `cli-alert setup all`) now installs hooks for all detected AI CLIs, not just Claude
+- Shell completions expanded with new setup and toggle options
+- Homebrew formula installs all hook scripts and shared library
+- Makefile installs new hook scripts and `ai-hook-common.sh`
+
 ## [0.1.0] - 2026-03-15
 
 ### Added
@@ -37,4 +58,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI: ShellCheck, macOS (bash + zsh), Linux, install round-trip
 - Comprehensive test suite (291 tests)
 
+[0.2.0]: https://github.com/nareshnavinash/cli-alert/releases/tag/v0.2.0
 [0.1.0]: https://github.com/nareshnavinash/cli-alert/releases/tag/v0.1.0

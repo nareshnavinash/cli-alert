@@ -32,7 +32,7 @@ info "Detected platform: $PLATFORM"
 # ── Make scripts executable ──────────────────────────────────────────────────
 
 chmod +x "${SCRIPT_DIR}/bin/cli-alert"
-chmod +x "${SCRIPT_DIR}/hooks/claude-done.sh"
+chmod +x "${SCRIPT_DIR}/hooks/"*-done.sh
 chmod +x "${SCRIPT_DIR}/test.sh"
 chmod +x "${SCRIPT_DIR}/uninstall.sh"
 ok "Made scripts executable"

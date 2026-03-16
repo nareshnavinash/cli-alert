@@ -21,7 +21,12 @@ install:
 	install -m 644 lib/auto-notify.zsh $(LIBDIR)/auto-notify.zsh
 	install -m 644 lib/auto-notify.bash $(LIBDIR)/auto-notify.bash
 	install -m 644 lib/state.sh $(LIBDIR)/state.sh
+	install -m 644 lib/ai-hook-common.sh $(LIBDIR)/ai-hook-common.sh
 	install -m 755 hooks/claude-done.sh $(HOOKDIR)/claude-done.sh
+	install -m 755 hooks/codex-done.sh $(HOOKDIR)/codex-done.sh
+	install -m 755 hooks/gemini-done.sh $(HOOKDIR)/gemini-done.sh
+	install -m 755 hooks/copilot-done.sh $(HOOKDIR)/copilot-done.sh
+	install -m 755 hooks/cursor-done.sh $(HOOKDIR)/cursor-done.sh
 	install -m 644 VERSION $(PREFIX)/share/cli-alert/VERSION
 	install -m 644 completions/cli-alert.bash $(BASH_COMPDIR)/cli-alert
 	install -m 644 completions/cli-alert.zsh $(ZSH_COMPDIR)/_cli-alert

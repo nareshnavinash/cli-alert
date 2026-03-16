@@ -2926,6 +2926,318 @@ TESTEOF
 }
 run_test "auto-notify.bash: chains with existing DEBUG trap" test_auto_notify_chains_existing_trap
 
+# ── AI Hook Common Library ────────────────────────────────────────────────────
+
+header "AI Hook Common Library"
+
+test_ai_hook_common_exists() {
+  [[ -f "${LIB_DIR}/ai-hook-common.sh" ]]
+}
+run_test "ai-hook-common.sh exists" test_ai_hook_common_exists
+
+test_ai_hook_common_source_guard() {
+  (
+    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    source "${LIB_DIR}/ai-hook-common.sh"
+    [[ -n "${_CLI_ALERT_HOOK_COMMON_LOADED:-}" ]]
+  )
+}
+run_test "ai-hook-common.sh sets source guard" test_ai_hook_common_source_guard
+
+test_ai_hook_common_double_source() {
+  (
+    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    source "${LIB_DIR}/ai-hook-common.sh"
+    source "${LIB_DIR}/ai-hook-common.sh"
+    [[ "${_CLI_ALERT_HOOK_COMMON_LOADED}" == "1" ]]
+  )
+}
+run_test "ai-hook-common.sh double-source is safe" test_ai_hook_common_double_source
+
+test_ai_hook_common_functions() {
+  (
+    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    source "${LIB_DIR}/ai-hook-common.sh"
+    declare -f _cli_alert_hook_resolve_lib &>/dev/null &&
+    declare -f _cli_alert_hook_read_json_field &>/dev/null &&
+    declare -f _cli_alert_hook_notify &>/dev/null
+  )
+}
+run_test "ai-hook-common.sh exports expected functions" test_ai_hook_common_functions
+
+test_ai_hook_json_valid() {
+  (
+    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    source "${LIB_DIR}/ai-hook-common.sh"
+    local result
+    result=$(_cli_alert_hook_read_json_field '{"stop_reason":"end_turn"}' "stop_reason")
+    [[ "$result" == "end_turn" ]]
+  )
+}
+run_test "JSON extraction: valid field" test_ai_hook_json_valid
+
+test_ai_hook_json_missing_field() {
+  (
+    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    source "${LIB_DIR}/ai-hook-common.sh"
+    local result
+    result=$(_cli_alert_hook_read_json_field '{"other":"value"}' "stop_reason")
+    [[ -z "$result" ]]
+  )
+}
+run_test "JSON extraction: missing field returns empty" test_ai_hook_json_missing_field
+
+test_ai_hook_json_malformed() {
+  (
+    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    source "${LIB_DIR}/ai-hook-common.sh"
+    local result
+    result=$(_cli_alert_hook_read_json_field '{{bad json}}' "stop_reason")
+    [[ -z "$result" ]]
+  )
+}
+run_test "JSON extraction: malformed JSON returns empty" test_ai_hook_json_malformed
+
+test_ai_hook_json_empty_input() {
+  (
+    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    source "${LIB_DIR}/ai-hook-common.sh"
+    local result
+    result=$(_cli_alert_hook_read_json_field '' "stop_reason")
+    [[ -z "$result" ]]
+  )
+}
+run_test "JSON extraction: empty input returns empty" test_ai_hook_json_empty_input
+
+# ── AI Hook Scripts ───────────────────────────────────────────────────────────
+
+header "AI Hook Scripts"
+
+test_codex_hook_executable() {
+  [[ -x "${SCRIPT_DIR}/hooks/codex-done.sh" ]]
+}
+run_test "codex-done.sh is executable" test_codex_hook_executable
+
+test_codex_hook_runs() {
+  echo '{"stop_reason": "end_turn"}' | "${SCRIPT_DIR}/hooks/codex-done.sh" 2>/dev/null
+}
+run_test "codex-done.sh processes JSON event" test_codex_hook_runs
+
+test_codex_hook_empty_stdin() {
+  echo "" | "${SCRIPT_DIR}/hooks/codex-done.sh" 2>/dev/null
+  [[ $? -eq 0 ]]
+}
+run_test "codex-done.sh: empty stdin does not crash" test_codex_hook_empty_stdin
+
+test_gemini_hook_executable() {
+  [[ -x "${SCRIPT_DIR}/hooks/gemini-done.sh" ]]
+}
+run_test "gemini-done.sh is executable" test_gemini_hook_executable
+
+test_gemini_hook_runs() {
+  echo '{"type": "turn_end"}' | "${SCRIPT_DIR}/hooks/gemini-done.sh" 2>/dev/null
+}
+run_test "gemini-done.sh processes JSON event" test_gemini_hook_runs
+
+test_gemini_hook_empty_stdin() {
+  echo "" | "${SCRIPT_DIR}/hooks/gemini-done.sh" 2>/dev/null
+  [[ $? -eq 0 ]]
+}
+run_test "gemini-done.sh: empty stdin does not crash" test_gemini_hook_empty_stdin
+
+test_copilot_hook_executable() {
+  [[ -x "${SCRIPT_DIR}/hooks/copilot-done.sh" ]]
+}
+run_test "copilot-done.sh is executable" test_copilot_hook_executable
+
+test_copilot_hook_runs() {
+  echo '{"reason": "complete"}' | "${SCRIPT_DIR}/hooks/copilot-done.sh" 2>/dev/null
+}
+run_test "copilot-done.sh processes JSON event" test_copilot_hook_runs
+
+test_copilot_hook_empty_stdin() {
+  echo "" | "${SCRIPT_DIR}/hooks/copilot-done.sh" 2>/dev/null
+  [[ $? -eq 0 ]]
+}
+run_test "copilot-done.sh: empty stdin does not crash" test_copilot_hook_empty_stdin
+
+test_cursor_hook_executable() {
+  [[ -x "${SCRIPT_DIR}/hooks/cursor-done.sh" ]]
+}
+run_test "cursor-done.sh is executable" test_cursor_hook_executable
+
+test_cursor_hook_runs() {
+  echo '{"stop_reason": "end_turn"}' | "${SCRIPT_DIR}/hooks/cursor-done.sh" 2>/dev/null
+}
+run_test "cursor-done.sh processes JSON event" test_cursor_hook_runs
+
+test_cursor_hook_empty_stdin() {
+  echo "" | "${SCRIPT_DIR}/hooks/cursor-done.sh" 2>/dev/null
+  [[ $? -eq 0 ]]
+}
+run_test "cursor-done.sh: empty stdin does not crash" test_cursor_hook_empty_stdin
+
+# ── AI Hook Setup CLI ─────────────────────────────────────────────────────────
+
+header "AI Hook Setup CLI"
+
+test_setup_accepts_ai_hooks() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" setup ai-hooks 2>&1) || true
+  [[ $? -eq 0 ]] || [[ -n "$out" ]]
+}
+run_test "cmd_setup accepts 'ai-hooks' subcommand" test_setup_accepts_ai_hooks
+
+test_setup_accepts_codex_hook() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" setup codex-hook 2>&1) || true
+  [[ $? -eq 0 ]] || [[ -n "$out" ]]
+}
+run_test "cmd_setup accepts 'codex-hook' subcommand" test_setup_accepts_codex_hook
+
+test_setup_accepts_gemini_hook() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" setup gemini-hook 2>&1) || true
+  [[ $? -eq 0 ]] || [[ -n "$out" ]]
+}
+run_test "cmd_setup accepts 'gemini-hook' subcommand" test_setup_accepts_gemini_hook
+
+test_setup_accepts_copilot_hook() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" setup copilot-hook 2>&1) || true
+  [[ $? -eq 0 ]] || [[ -n "$out" ]]
+}
+run_test "cmd_setup accepts 'copilot-hook' subcommand" test_setup_accepts_copilot_hook
+
+test_setup_accepts_cursor_hook() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" setup cursor-hook 2>&1) || true
+  [[ $? -eq 0 ]] || [[ -n "$out" ]]
+}
+run_test "cmd_setup accepts 'cursor-hook' subcommand" test_setup_accepts_cursor_hook
+
+test_setup_rejects_invalid() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" setup invalid-thing 2>&1) || true
+  echo "$out" | grep -qi "usage"
+}
+run_test "cmd_setup rejects invalid subcommand" test_setup_rejects_invalid
+
+test_help_mentions_ai_hooks() {
+  "${SCRIPT_DIR}/bin/cli-alert" help 2>/dev/null | grep -q "ai-hooks"
+}
+run_test "Help text mentions ai-hooks" test_help_mentions_ai_hooks
+
+test_help_mentions_codex() {
+  "${SCRIPT_DIR}/bin/cli-alert" help 2>/dev/null | grep -q "codex"
+}
+run_test "Help text mentions codex" test_help_mentions_codex
+
+# ── AI Hook Toggle ────────────────────────────────────────────────────────────
+
+header "AI Hook Toggle"
+
+test_toggle_accepts_claude() {
+  (
+    export CLI_ALERT_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/cli-alert" toggle claude off 2>/dev/null
+    local result=$?
+    rm -rf "$CLI_ALERT_STATE_DIR"
+    [[ $result -eq 0 ]]
+  )
+}
+run_test "toggle accepts 'claude' layer" test_toggle_accepts_claude
+
+test_toggle_accepts_codex() {
+  (
+    export CLI_ALERT_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/cli-alert" toggle codex off 2>/dev/null
+    local result=$?
+    rm -rf "$CLI_ALERT_STATE_DIR"
+    [[ $result -eq 0 ]]
+  )
+}
+run_test "toggle accepts 'codex' layer" test_toggle_accepts_codex
+
+test_toggle_accepts_gemini() {
+  (
+    export CLI_ALERT_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/cli-alert" toggle gemini off 2>/dev/null
+    local result=$?
+    rm -rf "$CLI_ALERT_STATE_DIR"
+    [[ $result -eq 0 ]]
+  )
+}
+run_test "toggle accepts 'gemini' layer" test_toggle_accepts_gemini
+
+test_toggle_claude_persists() {
+  (
+    export CLI_ALERT_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/cli-alert" toggle claude off 2>/dev/null
+    local out
+    out=$("${SCRIPT_DIR}/bin/cli-alert" toggle 2>/dev/null)
+    rm -rf "$CLI_ALERT_STATE_DIR"
+    echo "$out" | grep -q "claude.*off"
+  )
+}
+run_test "toggle claude off persists in state" test_toggle_claude_persists
+
+test_toggle_claude_on() {
+  (
+    export CLI_ALERT_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/cli-alert" toggle claude off 2>/dev/null
+    "${SCRIPT_DIR}/bin/cli-alert" toggle claude on 2>/dev/null
+    local out
+    out=$("${SCRIPT_DIR}/bin/cli-alert" toggle 2>/dev/null)
+    rm -rf "$CLI_ALERT_STATE_DIR"
+    echo "$out" | grep "claude" | grep -q "on"
+  )
+}
+run_test "toggle claude on restores notifications" test_toggle_claude_on
+
+test_toggle_shows_ai_section() {
+  (
+    export CLI_ALERT_STATE_DIR=$(mktemp -d)
+    local out
+    out=$("${SCRIPT_DIR}/bin/cli-alert" toggle 2>/dev/null)
+    rm -rf "$CLI_ALERT_STATE_DIR"
+    echo "$out" | grep -q "AI CLI hooks"
+  )
+}
+run_test "toggle display shows AI CLI hooks section" test_toggle_shows_ai_section
+
+# ── AI Hook Status ────────────────────────────────────────────────────────────
+
+header "AI Hook Status"
+
+test_status_shows_ai_section() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>/dev/null) || true
+  echo "$out" | grep -q "AI CLI hooks"
+}
+run_test "status shows AI CLI hooks section" test_status_shows_ai_section
+
+test_status_shows_claude() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>/dev/null) || true
+  echo "$out" | grep -q "Claude Code"
+}
+run_test "status shows Claude Code entry" test_status_shows_claude
+
+test_status_shows_aider_or_not_detected() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>/dev/null) || true
+  echo "$out" | grep -q "Aider"
+}
+run_test "status shows Aider entry" test_status_shows_aider_or_not_detected
+
+test_status_shows_codex_entry() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>/dev/null) || true
+  echo "$out" | grep -q "Codex CLI"
+}
+run_test "status shows Codex CLI entry" test_status_shows_codex_entry
+
 # ── Config ───────────────────────────────────────────────────────────────────
 
 header "Current Config"

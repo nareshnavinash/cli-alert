@@ -12,8 +12,9 @@ class CliAlert < Formula
 
   def install
     bin.install "bin/cli-alert"
-    (lib/"cli-alert").install "lib/cli-alert.sh", "lib/auto-notify.zsh", "lib/auto-notify.bash"
-    (share/"cli-alert/hooks").install "hooks/claude-done.sh"
+    (lib/"cli-alert").install "lib/cli-alert.sh", "lib/auto-notify.zsh", "lib/auto-notify.bash",
+                              "lib/state.sh", "lib/external-notify.sh", "lib/ai-hook-common.sh"
+    (share/"cli-alert/hooks").install Dir["hooks/*-done.sh"]
     (share/"cli-alert").install "VERSION"
     bash_completion.install "completions/cli-alert.bash" => "cli-alert"
     zsh_completion.install "completions/cli-alert.zsh" => "_cli-alert"
@@ -30,8 +31,9 @@ class CliAlert < Formula
 
         cli-alert setup
 
-      Optional: install Claude Code notification hook:
+      Optional: install AI CLI notification hooks:
 
+        cli-alert setup ai-hooks
         cli-alert setup claude-hook
     EOS
   end

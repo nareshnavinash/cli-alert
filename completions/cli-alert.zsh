@@ -5,8 +5,8 @@ _cli-alert() {
   local -a commands
   commands=(
     'init:Output shell init code (use with eval)'
-    'setup:Configure shell rc files and Claude hook'
-    'uninstall:Remove shell integration and Claude hook'
+    'setup:Configure shell rc files and AI CLI hooks'
+    'uninstall:Remove shell integration and AI CLI hooks'
     'status:Show diagnostic info and verify setup'
     'test-notify:Send a test notification'
     'sounds:List available system sounds'
@@ -37,7 +37,7 @@ _cli-alert() {
           _describe -t shells 'shell' '(bash zsh)'
           ;;
         setup)
-          _describe -t actions 'action' '(all claude-hook)'
+          _describe -t actions 'action' '(all ai-hooks claude-hook codex-hook gemini-hook copilot-hook cursor-hook)'
           ;;
         exclude)
           _describe -t actions 'action' '(list add remove)'
@@ -57,7 +57,7 @@ _cli-alert() {
           ;;
         toggle)
           if (( CURRENT == 2 )); then
-            _describe -t layers 'layer' '(sound desktop voice slack discord telegram email whatsapp webhook external)'
+            _describe -t layers 'layer' '(sound desktop voice slack discord telegram email whatsapp webhook external claude codex gemini copilot cursor)'
           elif (( CURRENT == 3 )); then
             _describe -t states 'state' '(on off)'
           fi
