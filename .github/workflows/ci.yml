@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+      - name: Lint all scripts
+        run: |
+          shellcheck bin/cli-alert lib/cli-alert.sh lib/auto-notify.bash \
+            hooks/claude-done.sh install.sh uninstall.sh test.sh \
+            completions/cli-alert.bash
+
+  test-macos:
+    name: Test macOS (${{ matrix.shell }})
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        shell: [bash, zsh]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tests
+        run: ${{ matrix.shell }} test.sh
+
+  test-linux:
+    name: Test Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libnotify
+        run: sudo apt-get install -y libnotify-bin
+      - name: Run tests
+        run: bash test.sh
+
+  test-install:
+    name: Test make install round-trip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install
+        run: make install PREFIX=/tmp/cli-alert-test
+      - name: Verify version
+        run: /tmp/cli-alert-test/bin/cli-alert version | grep -q "cli-alert"
+      - name: Verify completions installed
+        run: |
+          test -f /tmp/cli-alert-test/share/bash-completion/completions/cli-alert
+          test -f /tmp/cli-alert-test/share/zsh/site-functions/_cli-alert
+      - name: Uninstall
+        run: make uninstall PREFIX=/tmp/cli-alert-test
+      - name: Verify removal
+        run: "! test -f /tmp/cli-alert-test/bin/cli-alert"

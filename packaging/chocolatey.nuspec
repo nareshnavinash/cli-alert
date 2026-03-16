@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>cli-alert</id>
+    <version>0.1.0</version>
+    <title>cli-alert</title>
+    <authors>Naresh Sekar</authors>
+    <projectUrl>https://github.com/nareshnavinash/cli-alert</projectUrl>
+    <licenseUrl>https://github.com/nareshnavinash/cli-alert/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Terminal process completion notifier. Sends OS-native desktop notifications and sounds when long-running terminal commands complete. Cross-platform: macOS, Linux, WSL, Windows (Git Bash).</description>
+    <tags>cli notification terminal bash zsh productivity alert sound desktop-notification slack discord telegram webhook cross-platform wsl automation devtools</tags>
+  </metadata>
+</package>

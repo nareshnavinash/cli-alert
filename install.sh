@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# install.sh — Quick installer (downloads or runs from source)
+# For package manager users, use brew/apt/scoop instead.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+info()  { printf '\033[1;34m[cli-alert]\033[0m %s\n' "$1"; }
+ok()    { printf '\033[1;32m[cli-alert]\033[0m %s\n' "$1"; }
+warn()  { printf '\033[1;33m[cli-alert]\033[0m %s\n' "$1"; }
+
+# ── Detect platform ─────────────────────────────────────────────────────────
+# Keep in sync with lib/cli-alert.sh:_cli_alert_detect_platform
+
+detect_platform() {
+  case "$(uname -s)" in
+    Darwin) echo "darwin" ;;
+    Linux)
+      if grep -qiE '(microsoft|wsl)' /proc/version 2>/dev/null; then
+        echo "wsl"
+      else
+        echo "linux"
+      fi ;;
+    MINGW*|MSYS*|CYGWIN*) echo "windows" ;;
+    *) echo "unknown" ;;
+  esac
+}
+
+PLATFORM=$(detect_platform)
+info "Detected platform: $PLATFORM"
+
+# ── Make scripts executable ──────────────────────────────────────────────────
+
+chmod +x "${SCRIPT_DIR}/bin/cli-alert"
+chmod +x "${SCRIPT_DIR}/hooks/claude-done.sh"
+chmod +x "${SCRIPT_DIR}/test.sh"
+chmod +x "${SCRIPT_DIR}/uninstall.sh"
+ok "Made scripts executable"
+
+# ── Add bin to PATH if not already there ─────────────────────────────────────
+
+BIN_DIR="${SCRIPT_DIR}/bin"
+if ! echo "$PATH" | tr ':' '\n' | grep -qxF "$BIN_DIR"; then
+  info "Adding ${BIN_DIR} to PATH..."
+  export PATH="${BIN_DIR}:${PATH}"
+fi
+
+# ── Run setup ────────────────────────────────────────────────────────────────
+
+"${BIN_DIR}/cli-alert" setup
+
+# ── Check for notification tools ─────────────────────────────────────────────
+
+case "$PLATFORM" in
+  darwin)
+    if command -v terminal-notifier &>/dev/null; then
+      ok "macOS: terminal-notifier available (preferred)"
+    else
+      warn "macOS: terminal-notifier not found (recommended for proper notification icon)"
+      warn "  Install with: brew install terminal-notifier"
+      info "  Falling back to osascript (notifications will show Script Editor icon)"
+    fi
+    ok "macOS: osascript and afplay available (built-in)"
+    ;;
+  linux)
+    if command -v notify-send &>/dev/null; then
+      ok "Linux: notify-send available"
+    else
+      warn "Linux: notify-send not found"
+      warn "  Install with: sudo apt install libnotify-bin"
+      warn "  Or: sudo dnf install libnotify"
+    fi
+    ;;
+  wsl)
+    if command -v powershell.exe &>/dev/null; then
+      ok "WSL: powershell.exe available"
+    elif command -v wsl-notify-send &>/dev/null; then
+      ok "WSL: wsl-notify-send available"
+    else
+      warn "WSL: no notification tool found"
+      warn "  Install wsl-notify-send or BurntToast PowerShell module"
+    fi
+    ;;
+esac
+
+echo ""
+ok "Installation complete!"
+info "Restart your shell or run: exec $(basename "$SHELL")"
+info "Test with: alert sleep 2"

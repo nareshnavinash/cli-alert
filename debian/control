@@ -1,0 +1,18 @@
+Source: cli-alert
+Section: utils
+Priority: optional
+Maintainer: Naresh Sekar <nareshnavinash@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.0
+Homepage: https://github.com/nareshnavinash/cli-alert
+
+Package: cli-alert
+Architecture: all
+Depends: bash (>= 4.0)
+Recommends: libnotify-bin, pulseaudio-utils
+Suggests: espeak
+Description: Terminal process completion notifier
+ Sends OS-native desktop notifications and sounds when long-running
+ terminal commands complete. Supports manual wrapping (alert <cmd>),
+ automatic detection of commands exceeding a threshold, and Claude
+ Code integration hooks. Cross-platform: macOS, Linux, WSL.

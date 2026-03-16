@@ -1,0 +1,18 @@
+{
+  "version": "0.1.0",
+  "description": "Terminal process completion notifier — OS-native notifications when commands finish",
+  "homepage": "https://github.com/nareshnavinash/cli-alert",
+  "license": "MIT",
+  "url": "https://github.com/nareshnavinash/cli-alert/archive/refs/tags/v0.1.0.tar.gz",
+  "hash": "PLACEHOLDER_SHA256",
+  "extract_dir": "cli-alert-0.1.0",
+  "bin": "bin/cli-alert",
+  "post_install": [
+    "Write-Host 'cli-alert installed!' -ForegroundColor Green",
+    "Write-Host 'Add to your shell profile: eval \"$(cli-alert init bash)\"' -ForegroundColor Cyan"
+  ],
+  "checkver": "github",
+  "autoupdate": {
+    "url": "https://github.com/nareshnavinash/cli-alert/archive/refs/tags/v$version.tar.gz"
+  }
+}

@@ -1,0 +1,6 @@
+bin/cli-alert usr/bin
+lib/cli-alert.sh usr/lib/cli-alert
+lib/auto-notify.zsh usr/lib/cli-alert
+lib/auto-notify.bash usr/lib/cli-alert
+hooks/claude-done.sh usr/share/cli-alert/hooks
+VERSION usr/share/cli-alert

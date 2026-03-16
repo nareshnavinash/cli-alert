@@ -1,0 +1,9 @@
+cli-alert (0.1.0-1) unstable; urgency=low
+
+  * Initial release
+  * Cross-platform notifications (macOS, Linux, WSL)
+  * alert wrapper command
+  * Auto-notify for Bash and Zsh
+  * Claude Code Stop hook
+
+ -- Naresh Sekar <nareshnavinash@gmail.com>  Sun, 15 Mar 2026 00:00:00 +0000
