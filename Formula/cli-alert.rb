@@ -7,7 +7,7 @@ class CliAlert < Formula
   homepage "https://github.com/nareshnavinash/cli-alert"
   # Stable release URL and sha256 are populated by the release workflow.
   # Until a release tarball exists, use `brew install --HEAD` to install from git.
-  url "https://github.com/nareshnavinash/cli-alert/archive/refs/tags/v0.2.0.tar.gz"
+  url "https://github.com/nareshnavinash/cli-alert/archive/refs/tags/v0.3.0.tar.gz"
   sha256 ""
   license "MIT"
   head "https://github.com/nareshnavinash/cli-alert.git", branch: "main"
@@ -16,7 +16,7 @@ class CliAlert < Formula
     bin.install "bin/cli-alert"
     (lib/"cli-alert").install "lib/cli-alert.sh", "lib/auto-notify.zsh", "lib/auto-notify.bash",
                               "lib/state.sh", "lib/external-notify.sh", "lib/ai-hook-common.sh"
-    (share/"cli-alert/hooks").install Dir["hooks/*-done.sh"]
+    (share/"cli-alert/hooks").install Dir["hooks/*.sh"]
     (share/"cli-alert").install "VERSION"
     bash_completion.install "completions/cli-alert.bash" => "cli-alert"
     zsh_completion.install "completions/cli-alert.zsh" => "_cli-alert"

@@ -325,7 +325,16 @@ _cli_alert_slack_blocks_payload() {
       status_text="Task complete\\n(${safe_reason})"
     fi
     fields="{\"type\":\"mrkdwn\",\"text\":\"*Status*\\n${status_text}\"}"
-    fields+=",{\"type\":\"mrkdwn\",\"text\":\"*Source*\\n🤖 AI Hook\"}"
+    local ai_source="AI Hook"
+    if [[ -n "${_CLI_ALERT_META_AI_NAME:-}" ]]; then
+      ai_source="$(_cli_alert_json_escape "${_CLI_ALERT_META_AI_NAME}")"
+    fi
+    fields+=",{\"type\":\"mrkdwn\",\"text\":\"*Source*\\n🤖 ${ai_source}\"}"
+    if [[ -n "${USER:-}" ]]; then
+      local safe_user
+      safe_user="$(_cli_alert_json_escape "$USER")"
+      fields+=",{\"type\":\"mrkdwn\",\"text\":\"*User*\\n${safe_user}\"}"
+    fi
   else
     # Shell command variant
     if [[ -n "${_CLI_ALERT_META_CMD:-}" ]]; then
@@ -347,6 +356,11 @@ _cli_alert_slack_blocks_payload() {
       local safe_proj
       safe_proj="$(_cli_alert_json_escape "${_CLI_ALERT_META_PROJECT}")"
       fields+=",{\"type\":\"mrkdwn\",\"text\":\"*Project*\\n${safe_proj}\"}"
+    fi
+    if [[ -n "${USER:-}" ]]; then
+      local safe_user
+      safe_user="$(_cli_alert_json_escape "$USER")"
+      fields+=",{\"type\":\"mrkdwn\",\"text\":\"*User*\\n${safe_user}\"}"
     fi
   fi
 
@@ -373,6 +387,14 @@ _cli_alert_slack_blocks_payload() {
     safe_branch="$(_cli_alert_json_escape "${_CLI_ALERT_META_GIT_BRANCH}")"
     [[ -n "$context_parts" ]] && context_parts+=" | "
     context_parts+="🌿 ${safe_branch}"
+  fi
+  local timestamp
+  timestamp="$(date '+%b %d, %I:%M %p' 2>/dev/null || true)"
+  if [[ -n "$timestamp" ]]; then
+    local safe_ts
+    safe_ts="$(_cli_alert_json_escape "$timestamp")"
+    [[ -n "$context_parts" ]] && context_parts+=" | "
+    context_parts+="🕐 ${safe_ts}"
   fi
 
   # Assemble blocks
@@ -402,7 +424,9 @@ _cli_alert_slack_blocks_payload() {
     safe_channel="$(_cli_alert_json_escape "$CLI_ALERT_SLACK_CHANNEL")"
     payload+=",\"channel\":\"${safe_channel}\""
   fi
-  payload+=",\"attachments\":[{\"color\":\"${color}\",\"title\":\"${safe_fallback_title}\",\"text\":\"${safe_fallback_message}\",\"blocks\":[${blocks}]}]}"
+  payload+=",\"text\":\"${safe_fallback_title} - ${safe_fallback_message}\""
+  payload+=",\"blocks\":[${blocks}]"
+  payload+=",\"attachments\":[{\"color\":\"${color}\"}]}"
 
   printf '%s' "$payload"
 }

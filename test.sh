@@ -14,6 +14,28 @@ else
   exit 1
 fi
 
+# ── Suppress real notifications during tests ─────────────────────────────────
+# Save and unset all notification-triggering env vars before any tests run.
+# This prevents real Slack messages, sounds, and TTS from firing.
+_SAVED_CLI_ALERT_SLACK_WEBHOOK="${CLI_ALERT_SLACK_WEBHOOK:-}"
+_SAVED_CLI_ALERT_DISCORD_WEBHOOK="${CLI_ALERT_DISCORD_WEBHOOK:-}"
+_SAVED_CLI_ALERT_TELEGRAM_TOKEN="${CLI_ALERT_TELEGRAM_TOKEN:-}"
+_SAVED_CLI_ALERT_TELEGRAM_CHAT_ID="${CLI_ALERT_TELEGRAM_CHAT_ID:-}"
+_SAVED_CLI_ALERT_EMAIL_TO="${CLI_ALERT_EMAIL_TO:-}"
+_SAVED_CLI_ALERT_WHATSAPP_TOKEN="${CLI_ALERT_WHATSAPP_TOKEN:-}"
+_SAVED_CLI_ALERT_WEBHOOK_URL="${CLI_ALERT_WEBHOOK_URL:-}"
+_SAVED_CLI_ALERT_SOUND_SUCCESS="${CLI_ALERT_SOUND_SUCCESS:-}"
+_SAVED_CLI_ALERT_SOUND_FAILURE="${CLI_ALERT_SOUND_FAILURE:-}"
+_SAVED_CLI_ALERT_VOICE="${CLI_ALERT_VOICE:-}"
+
+unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_DISCORD_WEBHOOK
+unset CLI_ALERT_TELEGRAM_TOKEN CLI_ALERT_TELEGRAM_CHAT_ID
+unset CLI_ALERT_EMAIL_TO CLI_ALERT_WHATSAPP_TOKEN CLI_ALERT_WEBHOOK_URL
+export CLI_ALERT_SOUND_SUCCESS=""
+export CLI_ALERT_SOUND_FAILURE=""
+unset CLI_ALERT_VOICE
+unset _CLI_ALERT_EXTERNAL_LOADED
+
 pass() { printf '\033[1;32m  ✓ PASS\033[0m %s\n' "$1"; }
 fail() { printf '\033[1;31m  ✗ FAIL\033[0m %s\n' "$1"; }
 info() { printf '\033[1;34m  ℹ INFO\033[0m %s\n' "$1"; }
@@ -350,6 +372,81 @@ run_test "Hook script is executable" test_hook_executable
 info "Sending test hook event..."
 run_test "Hook processes JSON event" test_hook_runs
 
+# ── Claude Code Notification Hook ────────────────────────────────────────────
+
+header "Claude Code Notification Hook"
+
+test_claude_notify_executable() {
+  [[ -x "${SCRIPT_DIR}/hooks/claude-notify.sh" ]]
+}
+test_claude_notify_runs() {
+  echo '{"title":"test","message":"hello"}' | "${SCRIPT_DIR}/hooks/claude-notify.sh" 2>/dev/null
+}
+
+run_test "claude-notify.sh is executable" test_claude_notify_executable
+info "Sending test notification event..."
+run_test "claude-notify.sh processes JSON event" test_claude_notify_runs
+
+# ── Codex CLI Notification Hook ──────────────────────────────────────────────
+
+header "Codex CLI Notification Hook"
+
+test_codex_notify_executable() {
+  [[ -x "${SCRIPT_DIR}/hooks/codex-notify.sh" ]]
+}
+test_codex_notify_runs() {
+  echo '{"title":"test","message":"hello"}' | "${SCRIPT_DIR}/hooks/codex-notify.sh" 2>/dev/null
+}
+
+run_test "codex-notify.sh is executable" test_codex_notify_executable
+info "Sending test notification event..."
+run_test "codex-notify.sh processes JSON event" test_codex_notify_runs
+
+# ── Gemini CLI Notification Hook ─────────────────────────────────────────────
+
+header "Gemini CLI Notification Hook"
+
+test_gemini_notify_executable() {
+  [[ -x "${SCRIPT_DIR}/hooks/gemini-notify.sh" ]]
+}
+test_gemini_notify_runs() {
+  echo '{"title":"test","message":"hello"}' | "${SCRIPT_DIR}/hooks/gemini-notify.sh" 2>/dev/null
+}
+
+run_test "gemini-notify.sh is executable" test_gemini_notify_executable
+info "Sending test notification event..."
+run_test "gemini-notify.sh processes JSON event" test_gemini_notify_runs
+
+# ── Copilot CLI Notification Hook ────────────────────────────────────────────
+
+header "Copilot CLI Notification Hook"
+
+test_copilot_notify_executable() {
+  [[ -x "${SCRIPT_DIR}/hooks/copilot-notify.sh" ]]
+}
+test_copilot_notify_runs() {
+  echo '{"title":"test","message":"hello"}' | "${SCRIPT_DIR}/hooks/copilot-notify.sh" 2>/dev/null
+}
+
+run_test "copilot-notify.sh is executable" test_copilot_notify_executable
+info "Sending test notification event..."
+run_test "copilot-notify.sh processes JSON event" test_copilot_notify_runs
+
+# ── Cursor Notification Hook ─────────────────────────────────────────────────
+
+header "Cursor Notification Hook"
+
+test_cursor_notify_executable() {
+  [[ -x "${SCRIPT_DIR}/hooks/cursor-notify.sh" ]]
+}
+test_cursor_notify_runs() {
+  echo '{"title":"test","message":"hello"}' | "${SCRIPT_DIR}/hooks/cursor-notify.sh" 2>/dev/null
+}
+
+run_test "cursor-notify.sh is executable" test_cursor_notify_executable
+info "Sending test notification event..."
+run_test "cursor-notify.sh processes JSON event" test_cursor_notify_runs
+
 # ── Available Tools ──────────────────────────────────────────────────────────
 
 header "Available Tools"
@@ -580,7 +677,7 @@ test_slack_payload() {
   # Load transport detection again
   _cli_alert_detect_http_transport
   # Verify payload contains expected JSON fields
-  [[ "$captured_payload" == *'"title":"Test Title"'* ]] && [[ "$captured_payload" == *'"text":"Test message"'* ]]
+  [[ "$captured_payload" == *'"text":"Test Title - Test message"'* ]] && [[ "$captured_payload" == *'"type":"header"'* ]]
 }
 run_test "Slack payload has correct structure" test_slack_payload
 
@@ -2885,6 +2982,34 @@ test_hook_valid_json_stop_reason() {
 }
 run_test "Hook: valid JSON with stop_reason works" test_hook_valid_json_stop_reason
 
+# ── Notification Hook Error Paths ────────────────────────────────────────────
+
+header "Notification Hook Error Paths"
+
+test_notify_hook_empty_stdin() {
+  echo "" | "${SCRIPT_DIR}/hooks/claude-notify.sh" 2>/dev/null
+  [[ $? -eq 0 ]]
+}
+run_test "Notify hook: empty stdin does not crash" test_notify_hook_empty_stdin
+
+test_notify_hook_malformed_json() {
+  echo '{{bad json}}' | "${SCRIPT_DIR}/hooks/claude-notify.sh" 2>/dev/null
+  [[ $? -eq 0 ]]
+}
+run_test "Notify hook: malformed JSON does not crash" test_notify_hook_malformed_json
+
+test_notify_hook_title_only() {
+  echo '{"title":"waiting for input"}' | "${SCRIPT_DIR}/hooks/claude-notify.sh" 2>/dev/null
+  [[ $? -eq 0 ]]
+}
+run_test "Notify hook: title-only JSON works" test_notify_hook_title_only
+
+test_notify_hook_message_only() {
+  echo '{"message":"context window full"}' | "${SCRIPT_DIR}/hooks/claude-notify.sh" 2>/dev/null
+  [[ $? -eq 0 ]]
+}
+run_test "Notify hook: message-only JSON works" test_notify_hook_message_only
+
 # ── DEBUG Trap Chaining ───────────────────────────────────────────────────────
 
 header "DEBUG Trap Chaining"
@@ -3340,6 +3465,152 @@ EOF
 }
 run_test "Setup preserves non-hook settings in JSON files" test_setup_preserves_non_hook_settings
 
+# ── Notification Hook Setup ──────────────────────────────────────────────────
+
+header "Notification Hook Setup"
+
+# Claude: setup registers both Stop and Notification hooks
+test_claude_setup_registers_both_hooks() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.claude"
+  echo '{}' > "$tmpdir/.claude/settings.json"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.claude/settings.json")
+  echo "$content" | grep -q "claude-done.sh" && \
+  echo "$content" | grep -q "claude-notify.sh" && \
+  echo "$content" | grep -q '"Stop"' && \
+  echo "$content" | grep -q '"Notification"'
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Claude setup registers both Stop and Notification hooks" test_claude_setup_registers_both_hooks
+
+# Claude: Notification hook registration is idempotent
+test_claude_notify_setup_idempotent() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.claude"
+  echo '{}' > "$tmpdir/.claude/settings.json"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  local count
+  count=$(grep -c "claude-notify.sh" "$tmpdir/.claude/settings.json")
+  rm -rf "$tmpdir"
+  [[ "$count" -eq 1 ]]
+}
+run_test "Claude Notification hook setup is idempotent" test_claude_notify_setup_idempotent
+
+# Codex: setup registers both Stop and Notification hooks
+test_codex_setup_registers_both_hooks() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.codex"
+  echo '{}' > "$tmpdir/.codex/config.json"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup codex-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.codex/config.json")
+  echo "$content" | grep -q "codex-done.sh" && \
+  echo "$content" | grep -q "codex-notify.sh" && \
+  echo "$content" | grep -q '"Notification"'
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Codex setup registers both Stop and Notification hooks" test_codex_setup_registers_both_hooks
+
+# Gemini: setup registers both turn_end and notification hooks
+test_gemini_setup_registers_both_hooks() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.gemini"
+  echo '{}' > "$tmpdir/.gemini/settings.json"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup gemini-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.gemini/settings.json")
+  echo "$content" | grep -q "gemini-done.sh" && \
+  echo "$content" | grep -q "gemini-notify.sh" && \
+  echo "$content" | grep -q '"notification"'
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Gemini setup registers both turn_end and notification hooks" test_gemini_setup_registers_both_hooks
+
+# Copilot: setup creates both hook files
+test_copilot_setup_creates_both_hook_files() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.github/hooks"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup copilot-hook &>/dev/null
+  [[ -f "$tmpdir/.github/hooks/cli-alert-session-end.json" ]] && \
+  [[ -f "$tmpdir/.github/hooks/cli-alert-notification.json" ]] && \
+  grep -q "copilot-notify.sh" "$tmpdir/.github/hooks/cli-alert-notification.json"
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Copilot setup creates both sessionEnd and notification hook files" test_copilot_setup_creates_both_hook_files
+
+# Cursor: setup registers both stop and notification hooks
+test_cursor_setup_registers_both_hooks() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.cursor"
+  echo '{}' > "$tmpdir/.cursor/hooks.json"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup cursor-hook &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.cursor/hooks.json")
+  echo "$content" | grep -q "cursor-done.sh" && \
+  echo "$content" | grep -q "cursor-notify.sh" && \
+  echo "$content" | grep -q '"notification"'
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Cursor setup registers both stop and notification hooks" test_cursor_setup_registers_both_hooks
+
+# Claude: uninstall removes both hooks
+test_claude_uninstall_removes_both_hooks() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.claude"
+  echo '{}' > "$tmpdir/.claude/settings.json"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  # Verify both hooks exist before uninstall
+  grep -q "claude-done.sh" "$tmpdir/.claude/settings.json" && \
+  grep -q "claude-notify.sh" "$tmpdir/.claude/settings.json" || { rm -rf "$tmpdir"; return 1; }
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" uninstall &>/dev/null
+  local content
+  content=$(cat "$tmpdir/.claude/settings.json")
+  # Neither hook should remain
+  ! echo "$content" | grep -q "claude-done.sh" && \
+  ! echo "$content" | grep -q "claude-notify.sh"
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Claude uninstall removes both Stop and Notification hooks" test_claude_uninstall_removes_both_hooks
+
+# Copilot: uninstall removes both hook files
+test_copilot_uninstall_removes_both_hook_files() {
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  mkdir -p "$tmpdir/.github/hooks"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup copilot-hook &>/dev/null
+  [[ -f "$tmpdir/.github/hooks/cli-alert-session-end.json" ]] && \
+  [[ -f "$tmpdir/.github/hooks/cli-alert-notification.json" ]] || { rm -rf "$tmpdir"; return 1; }
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" uninstall &>/dev/null
+  ! [[ -f "$tmpdir/.github/hooks/cli-alert-session-end.json" ]] && \
+  ! [[ -f "$tmpdir/.github/hooks/cli-alert-notification.json" ]]
+  local rc=$?
+  rm -rf "$tmpdir"
+  return $rc
+}
+run_test "Copilot uninstall removes both hook files" test_copilot_uninstall_removes_both_hook_files
+
 # ── AI Hook Toggle ────────────────────────────────────────────────────────────
 
 header "AI Hook Toggle"
@@ -3588,9 +3859,28 @@ test_slack_blocks_ai_hook_variant() {
   _cli_alert_detect_http_transport
   [[ "$captured_payload" == *'*Status*'* ]] && \
   [[ "$captured_payload" == *'end_turn'* ]] && \
-  [[ "$captured_payload" == *'AI Hook'* ]]
+  [[ "$captured_payload" == *'Claude Code'* ]]
 }
 run_test "Block Kit: AI hook variant shows status/source/stop_reason" test_slack_blocks_ai_hook_variant
+
+test_slack_blocks_notification_hook_variant() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_SOURCE="ai-hook"
+  export _CLI_ALERT_META_AI_NAME="Claude Code"
+  export _CLI_ALERT_META_STOP_REASON="Waiting for input"
+  _cli_alert_external_slack "Claude Code" "Waiting for input: Please review the plan" 0
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_SOURCE _CLI_ALERT_META_AI_NAME _CLI_ALERT_META_STOP_REASON
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  [[ "$captured_payload" == *'Waiting for input'* ]] && \
+  [[ "$captured_payload" == *'Claude Code'* ]]
+}
+run_test "Block Kit: Notification hook payload shows notification title" test_slack_blocks_notification_hook_variant
 
 test_slack_blocks_failure_emoji() {
   local captured_payload=""
@@ -3609,6 +3899,68 @@ test_slack_blocks_failure_emoji() {
   [[ "$captured_payload" == *'❌'* ]] && [[ "$captured_payload" == *'#dc3545'* ]]
 }
 run_test "Block Kit: failure shows red emoji and color" test_slack_blocks_failure_emoji
+
+test_slack_blocks_top_level_structure() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_CMD="make build"
+  export _CLI_ALERT_META_DURATION="5s"
+  export _CLI_ALERT_META_SOURCE="shell"
+  _cli_alert_external_slack "Test Title" "Test message" 0
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  # Blocks at top level, not inside attachments
+  [[ "$captured_payload" == *'"blocks":['* ]] && \
+  [[ "$captured_payload" == *'"text":"Test Title - Test message"'* ]] && \
+  # Attachments should only have color, no title/text/blocks
+  [[ "$captured_payload" != *'"attachments":[{"color":"#36a64f","title"'* ]]
+}
+run_test "Block Kit: blocks at top level, not inside attachments" test_slack_blocks_top_level_structure
+
+test_slack_blocks_user_field() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_CMD="make build"
+  export _CLI_ALERT_META_DURATION="5s"
+  export _CLI_ALERT_META_SOURCE="shell"
+  local saved_user="$USER"
+  export USER="testuser"
+  _cli_alert_external_slack "Test Title" "Test message" 0
+  export USER="$saved_user"
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  [[ "$captured_payload" == *'*User*'* ]] && \
+  [[ "$captured_payload" == *'testuser'* ]]
+}
+run_test "Block Kit: User field appears in shell payload" test_slack_blocks_user_field
+
+test_slack_blocks_timestamp_in_context() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_CMD="make build"
+  export _CLI_ALERT_META_DURATION="5s"
+  export _CLI_ALERT_META_SOURCE="shell"
+  _cli_alert_external_slack "Test Title" "Test message" 0
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  [[ "$captured_payload" == *'🕐'* ]]
+}
+run_test "Block Kit: Timestamp appears in context footer" test_slack_blocks_timestamp_in_context
 
 test_metadata_collect_exists() {
   declare -f _cli_alert_collect_metadata &>/dev/null
@@ -3631,6 +3983,11 @@ run_test "Metadata cleanup clears all meta vars" test_metadata_clear_works
 # ── Config ───────────────────────────────────────────────────────────────────
 
 header "Current Config"
+
+# Restore user's config for display
+CLI_ALERT_SOUND_SUCCESS="${_SAVED_CLI_ALERT_SOUND_SUCCESS:-Glass}"
+CLI_ALERT_SOUND_FAILURE="${_SAVED_CLI_ALERT_SOUND_FAILURE:-Sosumi}"
+CLI_ALERT_VOICE="${_SAVED_CLI_ALERT_VOICE:-}"
 
 info "CLI_ALERT_ENABLED=$CLI_ALERT_ENABLED"
 info "CLI_ALERT_SOUND_SUCCESS=$CLI_ALERT_SOUND_SUCCESS"
