@@ -471,6 +471,12 @@ _cli_alert_notify() {
   _cli_alert_log_history "$title" "$message" "$exit_code"
 
   # External notifications (fire regardless of focus, non-blocking)
+  # Lazy-load external module if a channel was configured after shell init
+  if ! declare -f _cli_alert_notify_external &>/dev/null; then
+    if [[ -n "${CLI_ALERT_SLACK_WEBHOOK:-}${CLI_ALERT_DISCORD_WEBHOOK:-}${CLI_ALERT_TELEGRAM_TOKEN:-}${CLI_ALERT_EMAIL_TO:-}${CLI_ALERT_WHATSAPP_TOKEN:-}${CLI_ALERT_WEBHOOK_URL:-}" ]]; then
+      _cli_alert_load_external
+    fi
+  fi
   if declare -f _cli_alert_notify_external &>/dev/null; then
     _cli_alert_notify_external "$title" "$message" "$exit_code"
   fi

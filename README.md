@@ -9,7 +9,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 [![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](VERSION)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL%20%7C%20Windows-lightgrey.svg)](#platform-support)
 [![Shell](https://img.shields.io/badge/shell-bash%20%7C%20zsh-89e051.svg)](#installation)
-[![Tests](https://img.shields.io/badge/tests-329%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-337%20passing-brightgreen.svg)](#testing)
 
 <!-- TODO: Record with asciinema and embed here -->
 <!-- ![cli-alert demo](assets/demo.gif) -->
@@ -430,7 +430,7 @@ Sending test to slack...
 | `cli-alert setup [all\|ai-hooks\|<ai>-hook]` | Auto-configure rc files and/or AI CLI hooks |
 | `cli-alert uninstall` | Remove all shell integration and AI CLI hooks |
 | `cli-alert status` | Show diagnostic info — platform, tools, config, integration |
-| `cli-alert test-notify` | Send a test desktop notification |
+| `cli-alert test-notify` | Send a test notification (desktop + all configured external channels) |
 | `cli-alert sounds` | List available system sounds for your platform |
 | `cli-alert exclude [list\|add\|remove]` | Manage auto-notify exclusion list |
 | `cli-alert webhook [status\|test <channel>]` | Manage and test external notification channels |
@@ -438,7 +438,7 @@ Sending test to slack...
 | `cli-alert unmute` | Resume notifications |
 | `cli-alert toggle [layer [on\|off]]` | Toggle notification layers (sound, desktop, voice, channels) |
 | `cli-alert schedule [HH:MM-HH:MM\|off]` | Set or clear daily quiet hours |
-| `cli-alert test` | Run the full verification test suite (329 tests) |
+| `cli-alert test` | Run the full verification test suite (337 tests) |
 | `cli-alert version [--verbose]` | Show version (add `--verbose` for platform details) |
 | `cli-alert help` | Show usage help |
 
@@ -472,7 +472,7 @@ cli-alert/
 │   └── scoop.json             # Scoop manifest
 ├── install.sh                 # Interactive installer
 ├── uninstall.sh               # Uninstaller
-├── test.sh                    # Test suite (329 tests)
+├── test.sh                    # Test suite (337 tests)
 ├── Makefile                   # make install/uninstall/test
 └── VERSION                    # 0.2.0
 ```
@@ -480,7 +480,7 @@ cli-alert/
 ### Design Principles
 
 - **Multi-path resolution** — Works both from source (`./lib/`) and installed (`/usr/lib/cli-alert/`, `/usr/local/lib/cli-alert/`)
-- **Lazy loading** — External notification module only loaded if at least one channel env var is set
+- **Lazy loading** — External notification module loaded at init if a channel env var is set, or on-demand at notification time if configured later
 - **Double-source guards** — All lib files check guard variables to prevent re-initialization
 - **Marker-based uninstall** — RC file cleanup uses `# >>> cli-alert >>>` / `# <<< cli-alert <<<` markers
 - **Timeout safety** — Background sound/TTS processes have watchdog timers to prevent hangs
@@ -588,6 +588,7 @@ Prints HTTP transport selection, POST targets (URLs redacted), and per-channel s
 - Ensure `curl` or `wget` is installed (required for HTTPS channels)
 - Check for HTTP errors: test output shows the HTTP status code on failure
 - Verify rate limiting isn't blocking: default is 10 seconds between notifications per channel
+- If you set the webhook env var after shell startup, restart your shell or run `source ~/.zshrc` (the external module lazy-loads at notification time, but a fresh shell ensures full init)
 
 **AI CLI hooks not firing:**
 - Run `cli-alert status` to check hook installation for all AI CLIs
@@ -604,7 +605,7 @@ Prints HTTP transport selection, POST targets (URLs redacted), and per-channel s
 
 ## Testing
 
-cli-alert includes a comprehensive test suite with 329 tests covering unit, integration, and end-to-end scenarios.
+cli-alert includes a comprehensive test suite with 337 tests covering unit, integration, and end-to-end scenarios.
 
 ```bash
 # Run from project root
@@ -632,6 +633,7 @@ cli-alert test
 | AI Hook Common Library | 8 | Source guard, JSON extraction, functions |
 | AI Hook Scripts | 12 | Codex, Gemini, Copilot, Cursor: executable, JSON, empty stdin |
 | AI Hook Setup CLI | 8 | Setup subcommands, help text |
+| AI Hook Setup Append Safety | 8 | Preserves existing hooks, idempotency, non-hook settings |
 | AI Hook Toggle | 6 | Per-AI toggle on/off, state persistence |
 | AI Hook Status | 4 | Status output includes AI section |
 | CLI commands | 8 | status, test-notify, sounds, exclude, version |
@@ -695,7 +697,7 @@ This removes shell integration from `.zshrc` and `.bashrc`, and removes all AI C
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes
-4. Run the test suite: `bash test.sh` (all 329 tests must pass)
+4. Run the test suite: `bash test.sh` (all 337 tests must pass)
 5. Run ShellCheck: `shellcheck bin/cli-alert lib/*.sh hooks/*.sh`
 6. Commit and push
 7. Open a pull request
