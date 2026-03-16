@@ -226,6 +226,36 @@ _cli_alert_redact_url() {
   fi
 }
 
+# ── Metadata collection ─────────────────────────────────────────────────────
+
+_cli_alert_collect_metadata() {
+  # Hostname
+  _CLI_ALERT_META_HOSTNAME="${HOSTNAME:-$(hostname 2>/dev/null || echo "unknown")}"
+
+  # Working directory
+  _CLI_ALERT_META_PWD="${PWD:-$(pwd 2>/dev/null || echo "")}"
+
+  # Project name: git root basename or PWD basename
+  local git_root
+  if git_root="$(git rev-parse --show-toplevel 2>/dev/null)" && [[ -n "$git_root" ]]; then
+    _CLI_ALERT_META_PROJECT="${git_root##*/}"
+  else
+    _CLI_ALERT_META_PROJECT="${_CLI_ALERT_META_PWD##*/}"
+  fi
+
+  # Git branch (optional, graceful skip)
+  _CLI_ALERT_META_GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
+}
+
+# ── Metadata cleanup ───────────────────────────────────────────────────────
+
+_cli_alert_clear_metadata() {
+  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
+  unset _CLI_ALERT_META_AI_NAME _CLI_ALERT_META_STOP_REASON
+  unset _CLI_ALERT_META_HOSTNAME _CLI_ALERT_META_PWD
+  unset _CLI_ALERT_META_PROJECT _CLI_ALERT_META_GIT_BRANCH
+}
+
 # ── Channel: Slack ──────────────────────────────────────────────────────────
 
 _cli_alert_external_slack() {
@@ -248,13 +278,18 @@ _cli_alert_external_slack() {
   local safe_username
   safe_username="$(_cli_alert_json_escape "$username")"
 
-  local payload="{\"username\":\"${safe_username}\""
-  if [[ -n "${CLI_ALERT_SLACK_CHANNEL:-}" ]]; then
-    local safe_channel
-    safe_channel="$(_cli_alert_json_escape "$CLI_ALERT_SLACK_CHANNEL")"
-    payload+=",\"channel\":\"${safe_channel}\""
+  local payload
+  if [[ "${CLI_ALERT_SLACK_BLOCKS:-true}" == "true" ]]; then
+    payload="$(_cli_alert_slack_blocks_payload "$title" "$message" "$exit_code" "$color" "$safe_username")"
+  else
+    payload="{\"username\":\"${safe_username}\""
+    if [[ -n "${CLI_ALERT_SLACK_CHANNEL:-}" ]]; then
+      local safe_channel
+      safe_channel="$(_cli_alert_json_escape "$CLI_ALERT_SLACK_CHANNEL")"
+      payload+=",\"channel\":\"${safe_channel}\""
+    fi
+    payload+=",\"attachments\":[{\"color\":\"${color}\",\"title\":\"${safe_title}\",\"text\":\"${safe_message}\"}]}"
   fi
-  payload+=",\"attachments\":[{\"color\":\"${color}\",\"title\":\"${safe_title}\",\"text\":\"${safe_message}\"}]}"
 
   if _cli_alert_http_post "$CLI_ALERT_SLACK_WEBHOOK" "$payload"; then
     _cli_alert_rate_limit_update "slack"
@@ -263,6 +298,113 @@ _cli_alert_external_slack() {
     _cli_alert_external_debug "slack notification FAILED (HTTP ${_CLI_ALERT_LAST_HTTP_STATUS:-unknown})"
     return 1
   fi
+}
+
+_cli_alert_slack_blocks_payload() {
+  local title="$1" message="$2" exit_code="$3" color="$4" safe_username="$5"
+
+  # Status emoji
+  local emoji
+  if [[ "$exit_code" -eq 0 ]]; then emoji="✅"; else emoji="❌"; fi
+
+  local safe_title
+  safe_title="$(_cli_alert_json_escape "${emoji} ${title}")"
+
+  # Collect environment metadata
+  _cli_alert_collect_metadata
+
+  # Build section fields (2-column grid)
+  local fields=""
+
+  if [[ "${_CLI_ALERT_META_SOURCE:-}" == "ai-hook" ]]; then
+    # AI hook variant
+    local status_text="Task complete"
+    if [[ -n "${_CLI_ALERT_META_STOP_REASON:-}" ]]; then
+      local safe_reason
+      safe_reason="$(_cli_alert_json_escape "${_CLI_ALERT_META_STOP_REASON}")"
+      status_text="Task complete\\n(${safe_reason})"
+    fi
+    fields="{\"type\":\"mrkdwn\",\"text\":\"*Status*\\n${status_text}\"}"
+    fields+=",{\"type\":\"mrkdwn\",\"text\":\"*Source*\\n🤖 AI Hook\"}"
+  else
+    # Shell command variant
+    if [[ -n "${_CLI_ALERT_META_CMD:-}" ]]; then
+      local safe_cmd
+      safe_cmd="$(_cli_alert_json_escape "${_CLI_ALERT_META_CMD}")"
+      fields="{\"type\":\"mrkdwn\",\"text\":\"*Command*\\n${safe_cmd}\"}"
+    fi
+    if [[ -n "${_CLI_ALERT_META_DURATION:-}" ]]; then
+      local safe_dur
+      safe_dur="$(_cli_alert_json_escape "${_CLI_ALERT_META_DURATION}")"
+      [[ -n "$fields" ]] && fields+=","
+      fields+="{\"type\":\"mrkdwn\",\"text\":\"*Duration*\\n${safe_dur}\"}"
+    fi
+    local safe_exit
+    safe_exit="$(_cli_alert_json_escape "$exit_code")"
+    [[ -n "$fields" ]] && fields+=","
+    fields+="{\"type\":\"mrkdwn\",\"text\":\"*Exit Code*\\n${safe_exit}\"}"
+    if [[ -n "${_CLI_ALERT_META_PROJECT:-}" ]]; then
+      local safe_proj
+      safe_proj="$(_cli_alert_json_escape "${_CLI_ALERT_META_PROJECT}")"
+      fields+=",{\"type\":\"mrkdwn\",\"text\":\"*Project*\\n${safe_proj}\"}"
+    fi
+  fi
+
+  # Build context line: hostname | directory | git branch
+  local context_parts=""
+  if [[ -n "${_CLI_ALERT_META_HOSTNAME:-}" ]]; then
+    local safe_host
+    safe_host="$(_cli_alert_json_escape "${_CLI_ALERT_META_HOSTNAME}")"
+    context_parts="💻 ${safe_host}"
+  fi
+  if [[ -n "${_CLI_ALERT_META_PWD:-}" ]]; then
+    # Shorten home dir to ~
+    local display_pwd="${_CLI_ALERT_META_PWD}"
+    if [[ -n "${HOME:-}" && "$display_pwd" == "${HOME}"* ]]; then
+      display_pwd="~${display_pwd#"${HOME}"}"
+    fi
+    local safe_pwd
+    safe_pwd="$(_cli_alert_json_escape "$display_pwd")"
+    [[ -n "$context_parts" ]] && context_parts+=" | "
+    context_parts+="📂 ${safe_pwd}"
+  fi
+  if [[ -n "${_CLI_ALERT_META_GIT_BRANCH:-}" ]]; then
+    local safe_branch
+    safe_branch="$(_cli_alert_json_escape "${_CLI_ALERT_META_GIT_BRANCH}")"
+    [[ -n "$context_parts" ]] && context_parts+=" | "
+    context_parts+="🌿 ${safe_branch}"
+  fi
+
+  # Assemble blocks
+  local blocks=""
+  # Header block
+  blocks="{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\"${safe_title}\",\"emoji\":true}}"
+  # Section with fields
+  if [[ -n "$fields" ]]; then
+    blocks+=",{\"type\":\"section\",\"fields\":[${fields}]}"
+  fi
+  # Context block
+  if [[ -n "$context_parts" ]]; then
+    local safe_context
+    safe_context="$(_cli_alert_json_escape "$context_parts")"
+    blocks+=",{\"type\":\"context\",\"elements\":[{\"type\":\"mrkdwn\",\"text\":\"${safe_context}\"}]}"
+  fi
+
+  # Wrap in attachments for colored sidebar, with legacy fallback fields
+  local safe_fallback_message
+  safe_fallback_message="$(_cli_alert_json_escape "$message")"
+  local safe_fallback_title
+  safe_fallback_title="$(_cli_alert_json_escape "$title")"
+
+  local payload="{\"username\":\"${safe_username}\""
+  if [[ -n "${CLI_ALERT_SLACK_CHANNEL:-}" ]]; then
+    local safe_channel
+    safe_channel="$(_cli_alert_json_escape "$CLI_ALERT_SLACK_CHANNEL")"
+    payload+=",\"channel\":\"${safe_channel}\""
+  fi
+  payload+=",\"attachments\":[{\"color\":\"${color}\",\"title\":\"${safe_fallback_title}\",\"text\":\"${safe_fallback_message}\",\"blocks\":[${blocks}]}]}"
+
+  printf '%s' "$payload"
 }
 
 # ── Channel: Discord ────────────────────────────────────────────────────────
@@ -459,14 +601,24 @@ _cli_alert_notify_external() {
   if [[ "$CLI_ALERT_EXTERNAL_DEBUG" == "true" ]]; then
     _err_dest="/dev/stderr"
   fi
-  (
-    set +e  # Don't let failures propagate in background
+
+  _cli_alert_dispatch_external_channels() {
+    set +e  # Don't let failures propagate
     [[ -n "${CLI_ALERT_SLACK_WEBHOOK:-}" ]]   && _cli_alert_channel_enabled "slack" 2>/dev/null    && _cli_alert_external_slack    "$title" "$message" "$exit_code"
     [[ -n "${CLI_ALERT_DISCORD_WEBHOOK:-}" ]] && _cli_alert_channel_enabled "discord" 2>/dev/null  && _cli_alert_external_discord  "$title" "$message" "$exit_code"
     [[ -n "${CLI_ALERT_TELEGRAM_TOKEN:-}" ]]  && _cli_alert_channel_enabled "telegram" 2>/dev/null && _cli_alert_external_telegram "$title" "$message" "$exit_code"
     [[ -n "${CLI_ALERT_EMAIL_TO:-}" ]]        && _cli_alert_channel_enabled "email" 2>/dev/null    && _cli_alert_external_email    "$title" "$message" "$exit_code"
     [[ -n "${CLI_ALERT_WHATSAPP_TOKEN:-}" ]]  && _cli_alert_channel_enabled "whatsapp" 2>/dev/null && _cli_alert_external_whatsapp "$title" "$message" "$exit_code"
     [[ -n "${CLI_ALERT_WEBHOOK_URL:-}" ]]     && _cli_alert_channel_enabled "webhook" 2>/dev/null  && _cli_alert_external_webhook  "$title" "$message" "$exit_code"
-  ) 2>>"$_err_dest" &
-  disown 2>/dev/null
+    true  # Ensure success return
+  }
+
+  # Run synchronously in hook context (background process may be killed by
+  # the parent AI CLI when the hook script exits), otherwise background.
+  if [[ "${_CLI_ALERT_HOOK_CONTEXT:-}" == "true" ]]; then
+    _cli_alert_dispatch_external_channels 2>>"$_err_dest"
+  else
+    ( _cli_alert_dispatch_external_channels ) 2>>"$_err_dest" &
+    disown 2>/dev/null
+  fi
 }

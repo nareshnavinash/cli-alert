@@ -693,7 +693,7 @@ cmd_status() {
     echo "Config:"
     echo "  CLI_ALERT_ENABLED=$CLI_ALERT_ENABLED"
     echo "  CLI_ALERT_AUTO=${CLI_ALERT_AUTO:-true}"
-    echo "  CLI_ALERT_THRESHOLD=${CLI_ALERT_THRESHOLD:-30}"
+    echo "  CLI_ALERT_THRESHOLD=${CLI_ALERT_THRESHOLD:-10}"
     echo "  CLI_ALERT_SOUND_SUCCESS=$CLI_ALERT_SOUND_SUCCESS"
     echo "  CLI_ALERT_SOUND_FAILURE=$CLI_ALERT_SOUND_FAILURE"
     echo "  CLI_ALERT_VOICE=${CLI_ALERT_VOICE:-<off>}"
@@ -1096,6 +1096,11 @@ cmd_webhook() {
         echo "Sending test to ${channel}..."
         _CLI_ALERT_SKIP_RATE_LIMIT=true
 
+        # Set metadata for enriched Slack Block Kit preview
+        export _CLI_ALERT_META_CMD="cli-alert webhook test ${channel}"
+        export _CLI_ALERT_META_DURATION="0s"
+        export _CLI_ALERT_META_SOURCE="shell"
+
         if "$send_fn" "cli-alert Test" "If you receive this, your ${channel} integration is working!" 0; then
           printf '\033[1;32m[cli-alert]\033[0m Test sent successfully!'
           [[ -n "${_CLI_ALERT_LAST_HTTP_STATUS:-}" && "${_CLI_ALERT_LAST_HTTP_STATUS:-}" != "unknown" ]] && printf ' (HTTP %s)' "$_CLI_ALERT_LAST_HTTP_STATUS"
@@ -1189,7 +1194,7 @@ cmd_config() {
 
 # Auto-notify for long commands
 : "${CLI_ALERT_AUTO:=true}"
-: "${CLI_ALERT_THRESHOLD:=30}"
+: "${CLI_ALERT_THRESHOLD:=10}"
 
 # Notification filter: all, failure, success
 : "${CLI_ALERT_NOTIFY_ON:=all}"
@@ -1524,7 +1529,7 @@ Config file:
 Config (env vars, set before eval):
   CLI_ALERT_ENABLED=true        Master on/off switch
   CLI_ALERT_AUTO=true           Auto-notify on/off
-  CLI_ALERT_THRESHOLD=30        Seconds before auto-notify triggers
+  CLI_ALERT_THRESHOLD=10        Seconds before auto-notify triggers
   CLI_ALERT_NOTIFY_ON=all       Notify filter: all, failure, success
   CLI_ALERT_SOUND_SUCCESS=Glass Success sound name or file path
   CLI_ALERT_SOUND_FAILURE=Sosumi Failure sound name or file path

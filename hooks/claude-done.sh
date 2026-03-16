@@ -53,6 +53,7 @@ fi
 message="Task complete"
 if [[ -n "$stop_reason" ]]; then
   message="Task complete (${stop_reason})"
+  export _CLI_ALERT_META_STOP_REASON="$stop_reason"
 fi
 
 # Send notification (toggle-aware if available)

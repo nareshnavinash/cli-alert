@@ -259,7 +259,7 @@ eval "$(cli-alert init zsh)"
 |---|---|---|
 | `CLI_ALERT_ENABLED` | `true` | Master on/off switch |
 | `CLI_ALERT_AUTO` | `true` | Auto-notify on/off |
-| `CLI_ALERT_THRESHOLD` | `30` | Seconds before auto-notify triggers |
+| `CLI_ALERT_THRESHOLD` | `10` | Seconds before auto-notify triggers |
 | `CLI_ALERT_DEBUG` | *(off)* | Set to `true` for debug output to stderr |
 
 ### Sound Settings
@@ -386,6 +386,33 @@ The webhook receives a JSON payload:
   "exit_code": 0
 }
 ```
+
+### Persisting Channel Configuration (Important for AI CLI Hooks)
+
+AI CLI hooks (Claude Code, Codex, Gemini, Copilot, Cursor) run as **separate processes** spawned by the AI tool — they do **not** inherit your shell's environment variables. If you only set a webhook via `export` in your terminal, `cli-alert webhook test slack` will work from that shell, but hooks triggered by AI CLIs will not have the variable.
+
+There are two ways to ensure hooks can access your channel configuration:
+
+**Option 1: Config file (recommended)**
+
+Add your webhook URLs to `~/.config/cli-alert/config`. Hooks read this file on every invocation, regardless of environment:
+
+```bash
+cli-alert config edit
+# Uncomment and fill in the relevant lines:
+# export CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
+```
+
+**Option 2: Shell profile**
+
+Add the `export` to your `.zshrc` or `.bashrc` **before** starting the AI CLI. The AI tool inherits the variable at launch and passes it to hooks:
+
+```bash
+# In .zshrc or .bashrc (BEFORE eval "$(cli-alert init zsh)")
+export CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
+```
+
+> **Why `export` alone doesn't work:** `export` sets a variable in the current shell and its future children. It cannot update already-running processes. If you export a webhook URL after starting Claude Code, Claude Code's process (and its hooks) won't see it. You'd need to restart the AI CLI for it to pick up the new variable.
 
 ### External Notification Settings
 
@@ -577,7 +604,7 @@ Prints HTTP transport selection, POST targets (URLs redacted), and per-channel s
 
 **Auto-notify not working:**
 - Ensure `CLI_ALERT_AUTO=true` (default)
-- Check threshold: `CLI_ALERT_THRESHOLD=30` means commands must run 30+ seconds
+- Check threshold: `CLI_ALERT_THRESHOLD=10` means commands must run 10+ seconds
 - Check exclusions: `cli-alert exclude list`
 - Ensure shell integration is loaded: `cli-alert status` shows rc file status
 
@@ -588,7 +615,12 @@ Prints HTTP transport selection, POST targets (URLs redacted), and per-channel s
 - Ensure `curl` or `wget` is installed (required for HTTPS channels)
 - Check for HTTP errors: test output shows the HTTP status code on failure
 - Verify rate limiting isn't blocking: default is 10 seconds between notifications per channel
-- If you set the webhook env var after shell startup, restart your shell or run `source ~/.zshrc` (the external module lazy-loads at notification time, but a fresh shell ensures full init)
+
+**External notifications work from shell but not from AI CLI hooks:**
+- AI hooks run as separate processes that don't inherit your shell's `export` variables
+- Persist your webhook URL in the config file: `cli-alert config edit` (uncomment the relevant line)
+- Or add the `export` to `.zshrc`/`.bashrc` and **restart the AI CLI** so it inherits the variable
+- See [Persisting Channel Configuration](#persisting-channel-configuration-important-for-ai-cli-hooks) for details
 
 **AI CLI hooks not firing:**
 - Run `cli-alert status` to check hook installation for all AI CLIs

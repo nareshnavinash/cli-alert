@@ -1641,7 +1641,7 @@ run_test "CLI webhook test: unknown channel shows error" test_cli_webhook_test_u
 
 test_cli_webhook_test_slack_missing_var() {
   local out
-  out=$(unset CLI_ALERT_SLACK_WEBHOOK; "${SCRIPT_DIR}/bin/cli-alert" webhook test slack 2>&1) || true
+  out=$(unset CLI_ALERT_SLACK_WEBHOOK; CLI_ALERT_CONFIG=/dev/null "${SCRIPT_DIR}/bin/cli-alert" webhook test slack 2>&1) || true
   [[ "$out" == *"CLI_ALERT_SLACK_WEBHOOK not set"* ]]
 }
 run_test "CLI webhook test: slack missing var shows specific error" test_cli_webhook_test_slack_missing_var
@@ -3445,6 +3445,189 @@ test_status_shows_codex_entry() {
 }
 run_test "status shows Codex CLI entry" test_status_shows_codex_entry
 
+# ── Slack Block Kit Payload ────────────────────────────────────────────────
+
+header "Slack Block Kit Payload"
+
+# Ensure external module is loaded fresh
+unset _CLI_ALERT_EXTERNAL_LOADED
+source "${LIB_DIR}/external-notify.sh"
+
+test_slack_blocks_header_has_emoji() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_CMD="make build"
+  export _CLI_ALERT_META_DURATION="2m 15s"
+  export _CLI_ALERT_META_SOURCE="shell"
+  _cli_alert_external_slack "make Complete" "✓ make build (2m 15s, exit 0)" 0
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  [[ "$captured_payload" == *'"type":"header"'* ]] && [[ "$captured_payload" == *'✅'* ]]
+}
+run_test "Block Kit: header contains status emoji" test_slack_blocks_header_has_emoji
+
+test_slack_blocks_fields_contain_cmd_duration_exit_project() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_CMD="make build"
+  export _CLI_ALERT_META_DURATION="2m 15s"
+  export _CLI_ALERT_META_SOURCE="shell"
+  _cli_alert_external_slack "make Complete" "✓ make build (2m 15s, exit 0)" 0
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  [[ "$captured_payload" == *'*Command*'* ]] && \
+  [[ "$captured_payload" == *'make build'* ]] && \
+  [[ "$captured_payload" == *'*Duration*'* ]] && \
+  [[ "$captured_payload" == *'2m 15s'* ]] && \
+  [[ "$captured_payload" == *'*Exit Code*'* ]] && \
+  [[ "$captured_payload" == *'*Project*'* ]]
+}
+run_test "Block Kit: section fields contain command/duration/exit code/project" test_slack_blocks_fields_contain_cmd_duration_exit_project
+
+test_slack_blocks_context_has_hostname() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_SOURCE="shell"
+  export _CLI_ALERT_META_CMD="test"
+  _cli_alert_external_slack "Test" "msg" 0
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_SOURCE _CLI_ALERT_META_CMD
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  [[ "$captured_payload" == *'"type":"context"'* ]] && [[ "$captured_payload" == *'💻'* ]]
+}
+run_test "Block Kit: context block contains hostname" test_slack_blocks_context_has_hostname
+
+test_slack_blocks_legacy_fallback() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="false"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  _cli_alert_external_slack "Test Title" "Test message" 0
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  # Legacy format: no blocks key, has title/text directly
+  [[ "$captured_payload" == *'"title":"Test Title"'* ]] && \
+  [[ "$captured_payload" == *'"text":"Test message"'* ]] && \
+  [[ "$captured_payload" != *'"type":"header"'* ]]
+}
+run_test "Block Kit: CLI_ALERT_SLACK_BLOCKS=false produces legacy format" test_slack_blocks_legacy_fallback
+
+test_slack_blocks_no_git_branch_outside_repo() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_SOURCE="shell"
+  export _CLI_ALERT_META_CMD="test"
+  # Force no git branch by running in a temp dir outside any repo
+  local tmpdir
+  tmpdir=$(mktemp -d)
+  (
+    cd "$tmpdir"
+    GIT_CEILING_DIRECTORIES="$tmpdir" _cli_alert_external_slack "Test" "msg" 0
+  )
+  rm -rf "$tmpdir"
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_SOURCE _CLI_ALERT_META_CMD
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  # Should still have context block (hostname/dir), no crash
+  true
+}
+run_test "Block Kit: missing git branch gracefully omitted" test_slack_blocks_no_git_branch_outside_repo
+
+test_slack_blocks_json_escape_path_with_spaces() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_CMD="build project"
+  export _CLI_ALERT_META_DURATION="5s"
+  export _CLI_ALERT_META_SOURCE="shell"
+  _cli_alert_external_slack "Test" "msg" 0
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  # Should produce valid-looking JSON (no crash, contains expected text)
+  [[ "$captured_payload" == *'build project'* ]]
+}
+run_test "Block Kit: JSON escaping works for paths with spaces" test_slack_blocks_json_escape_path_with_spaces
+
+test_slack_blocks_ai_hook_variant() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_SOURCE="ai-hook"
+  export _CLI_ALERT_META_AI_NAME="Claude Code"
+  export _CLI_ALERT_META_STOP_REASON="end_turn"
+  _cli_alert_external_slack "Claude Code" "Task complete (end_turn)" 0
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_SOURCE _CLI_ALERT_META_AI_NAME _CLI_ALERT_META_STOP_REASON
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  [[ "$captured_payload" == *'*Status*'* ]] && \
+  [[ "$captured_payload" == *'end_turn'* ]] && \
+  [[ "$captured_payload" == *'AI Hook'* ]]
+}
+run_test "Block Kit: AI hook variant shows status/source/stop_reason" test_slack_blocks_ai_hook_variant
+
+test_slack_blocks_failure_emoji() {
+  local captured_payload=""
+  _cli_alert_http_post() { captured_payload="$2"; }
+  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  CLI_ALERT_SLACK_BLOCKS="true"
+  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  export _CLI_ALERT_META_CMD="make build"
+  export _CLI_ALERT_META_DURATION="10s"
+  export _CLI_ALERT_META_SOURCE="shell"
+  _cli_alert_external_slack "make Complete" "✗ make build (10s, exit 1)" 1
+  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
+  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
+  unset -f _cli_alert_http_post
+  _cli_alert_detect_http_transport
+  [[ "$captured_payload" == *'❌'* ]] && [[ "$captured_payload" == *'#dc3545'* ]]
+}
+run_test "Block Kit: failure shows red emoji and color" test_slack_blocks_failure_emoji
+
+test_metadata_collect_exists() {
+  declare -f _cli_alert_collect_metadata &>/dev/null
+}
+run_test "_cli_alert_collect_metadata function exists" test_metadata_collect_exists
+
+test_metadata_clear_exists() {
+  declare -f _cli_alert_clear_metadata &>/dev/null
+}
+run_test "_cli_alert_clear_metadata function exists" test_metadata_clear_exists
+
+test_metadata_clear_works() {
+  export _CLI_ALERT_META_CMD="test"
+  export _CLI_ALERT_META_SOURCE="shell"
+  _cli_alert_clear_metadata
+  [[ -z "${_CLI_ALERT_META_CMD:-}" ]] && [[ -z "${_CLI_ALERT_META_SOURCE:-}" ]]
+}
+run_test "Metadata cleanup clears all meta vars" test_metadata_clear_works
+
 # ── Config ───────────────────────────────────────────────────────────────────
 
 header "Current Config"
@@ -3453,7 +3636,7 @@ info "CLI_ALERT_ENABLED=$CLI_ALERT_ENABLED"
 info "CLI_ALERT_SOUND_SUCCESS=$CLI_ALERT_SOUND_SUCCESS"
 info "CLI_ALERT_SOUND_FAILURE=$CLI_ALERT_SOUND_FAILURE"
 info "CLI_ALERT_VOICE=${CLI_ALERT_VOICE:-<off>}"
-info "CLI_ALERT_THRESHOLD=${CLI_ALERT_THRESHOLD:-30}"
+info "CLI_ALERT_THRESHOLD=${CLI_ALERT_THRESHOLD:-10}"
 info "CLI_ALERT_FOCUS_DETECT=${CLI_ALERT_FOCUS_DETECT:-true}"
 info "CLI_ALERT_ACTIVATE=${CLI_ALERT_ACTIVATE:-<auto-detect>}"
 

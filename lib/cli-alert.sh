@@ -495,6 +495,11 @@ _cli_alert_notify() {
     windows) _cli_alert_notify_windows "$title" "$message" "$exit_code" ;;
     *)       _cli_alert_fallback       "$title" "$message" ;;
   esac
+
+  # Clean up metadata to prevent stale vars leaking across notifications
+  if declare -f _cli_alert_clear_metadata &>/dev/null; then
+    _cli_alert_clear_metadata
+  fi
 }
 
 # ── `alert` wrapper command ──────────────────────────────────────────────────
@@ -544,6 +549,12 @@ alert() {
   status_icon="$(_cli_alert_status_icon "$exit_code")"
 
   local cmd_base="${1##*/}"
+
+  # Set metadata for enriched Slack messages
+  export _CLI_ALERT_META_CMD="$cmd_display"
+  export _CLI_ALERT_META_DURATION="$duration"
+  export _CLI_ALERT_META_SOURCE="shell"
+
   _cli_alert_notify \
     "${cmd_base} Complete" \
     "${status_icon} ${cmd_display} (${duration}, exit ${exit_code})"  \

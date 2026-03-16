@@ -23,6 +23,7 @@ fi
 message="Session complete"
 if [[ -n "$reason" ]]; then
   message="Session complete (${reason})"
+  export _CLI_ALERT_META_STOP_REASON="$reason"
 fi
 
 _cli_alert_hook_notify "Copilot CLI" "$message" 0

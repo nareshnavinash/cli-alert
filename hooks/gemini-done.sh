@@ -23,6 +23,7 @@ fi
 message="Task complete"
 if [[ -n "$event_type" ]]; then
   message="Task complete (${event_type})"
+  export _CLI_ALERT_META_STOP_REASON="$event_type"
 fi
 
 _cli_alert_hook_notify "Gemini CLI" "$message" 0

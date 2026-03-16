@@ -15,7 +15,7 @@ fi
 # ── Config ───────────────────────────────────────────────────────────────────
 
 CLI_ALERT_AUTO="${CLI_ALERT_AUTO:-true}"
-CLI_ALERT_THRESHOLD="${CLI_ALERT_THRESHOLD:-30}"
+CLI_ALERT_THRESHOLD="${CLI_ALERT_THRESHOLD:-10}"
 CLI_ALERT_EXCLUDE="${CLI_ALERT_EXCLUDE:-vim nvim vi nano less more man top htop ssh tmux screen fg bg alert-bg watch}"
 
 # ── State variables ──────────────────────────────────────────────────────────
@@ -76,6 +76,11 @@ _cli_alert_precmd() {
 
   local status_icon
   status_icon="$(_cli_alert_status_icon "$last_exit")"
+
+  # Set metadata for enriched Slack messages
+  export _CLI_ALERT_META_CMD="$cmd_name"
+  export _CLI_ALERT_META_DURATION="$duration"
+  export _CLI_ALERT_META_SOURCE="shell"
 
   _cli_alert_notify \
     "${cmd_name} Complete" \

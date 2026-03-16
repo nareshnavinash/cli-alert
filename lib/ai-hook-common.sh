@@ -64,5 +64,14 @@ _cli_alert_hook_notify() {
     fi
   fi
 
+  # Set metadata for enriched Slack messages
+  export _CLI_ALERT_META_SOURCE="ai-hook"
+  export _CLI_ALERT_META_AI_NAME="$ai_name"
+
+  # Run external notifications synchronously in hook context — the parent
+  # AI CLI may kill the process tree when the hook script exits, which would
+  # terminate background HTTP requests before they complete.
+  export _CLI_ALERT_HOOK_CONTEXT=true
+
   _cli_alert_notify "$ai_name" "$message" "$exit_code"
 }
