@@ -6,6 +6,22 @@
 [[ -n "${_SHELLDONE_LOADED:-}" ]] && return 0
 _SHELLDONE_LOADED=1
 
+# ── Backward compatibility: migrate CLI_ALERT_* → SHELLDONE_* ────────────────
+
+_shelldone_migrate_env() {
+  local old new migrated=0
+  while IFS= read -r old; do
+    new="SHELLDONE_${old#CLI_ALERT_}"
+    if [[ -z "${!new:-}" ]]; then
+      eval "export $new=\"${!old}\""
+      migrated=1
+      printf '\033[1;33m[shelldone]\033[0m migrated env var %s -> %s (update your config)\n' "$old" "$new" >&2
+    fi
+  done < <(compgen -v CLI_ALERT_ 2>/dev/null || true)
+  return 0
+}
+_shelldone_migrate_env
+
 # ── Config file (loaded before defaults, so env vars set before init override) ──
 
 _shelldone_load_config() {
