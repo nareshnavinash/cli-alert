@@ -4,9 +4,9 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>dev.cli-alert.icon</string>
+    <string>dev.shelldone.icon</string>
     <key>CFBundleName</key>
-    <string>cli-alert</string>
+    <string>shelldone</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundlePackageType</key>

@@ -7,8 +7,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/../lib/ai-hook-common.sh" 2>/dev/null || \
-  source "$(cd "$SCRIPT_DIR/../lib/cli-alert" && pwd)/ai-hook-common.sh"
-_cli_alert_hook_resolve_lib "$SCRIPT_DIR"
+  source "$(cd "$SCRIPT_DIR/../lib/shelldone" && pwd)/ai-hook-common.sh"
+_shelldone_hook_resolve_lib "$SCRIPT_DIR"
 
 # Read the hook event JSON from stdin
 input="$(cat)"
@@ -17,13 +17,13 @@ input="$(cat)"
 title=""
 message=""
 if [[ -n "$input" ]]; then
-  title=$(_cli_alert_hook_read_json_field "$input" "title")
-  message=$(_cli_alert_hook_read_json_field "$input" "message")
+  title=$(_shelldone_hook_read_json_field "$input" "title")
+  message=$(_shelldone_hook_read_json_field "$input" "message")
 fi
 
 # Set metadata for enriched Slack messages
 if [[ -n "$title" ]]; then
-  export _CLI_ALERT_META_STOP_REASON="$title"
+  export _SHELLDONE_META_STOP_REASON="$title"
 fi
 
 # Build notification message
@@ -34,4 +34,4 @@ elif [[ -n "$title" && -n "$message" ]]; then
   notify_msg="${title}: ${message}"
 fi
 
-_cli_alert_hook_notify "Codex CLI" "$notify_msg" 0
+_shelldone_hook_notify "Codex CLI" "$notify_msg" 0

@@ -1,12 +1,12 @@
-Source: cli-alert
+Source: shelldone
 Section: utils
 Priority: optional
 Maintainer: Naresh Sekar <nareshnavinash@gmail.com>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.0
-Homepage: https://github.com/nareshnavinash/cli-alert
+Homepage: https://github.com/nareshnavinash/shelldone
 
-Package: cli-alert
+Package: shelldone
 Architecture: all
 Depends: bash (>= 4.0)
 Recommends: libnotify-bin, pulseaudio-utils

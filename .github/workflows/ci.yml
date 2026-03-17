@@ -16,13 +16,13 @@ jobs:
         run: sudo apt-get install -y shellcheck
       - name: Lint all scripts
         run: |
-          shellcheck bin/cli-alert lib/cli-alert.sh lib/auto-notify.bash \
+          shellcheck bin/shelldone lib/shelldone.sh lib/auto-notify.bash \
             lib/external-notify.sh lib/state.sh lib/ai-hook-common.sh \
             hooks/claude-done.sh hooks/codex-done.sh hooks/gemini-done.sh \
             hooks/copilot-done.sh hooks/cursor-done.sh \
             install.sh uninstall.sh test.sh \
-            completions/cli-alert.bash
-          shellcheck -s bash completions/cli-alert.zsh
+            completions/shelldone.bash
+          shellcheck -s bash completions/shelldone.zsh
 
   test-macos:
     name: Test macOS (${{ matrix.shell }})
@@ -51,14 +51,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install
-        run: make install PREFIX=/tmp/cli-alert-test
+        run: make install PREFIX=/tmp/shelldone-test
       - name: Verify version
-        run: /tmp/cli-alert-test/bin/cli-alert version | grep -q "cli-alert"
+        run: /tmp/shelldone-test/bin/shelldone version | grep -q "shelldone"
       - name: Verify completions installed
         run: |
-          test -f /tmp/cli-alert-test/share/bash-completion/completions/cli-alert
-          test -f /tmp/cli-alert-test/share/zsh/site-functions/_cli-alert
+          test -f /tmp/shelldone-test/share/bash-completion/completions/shelldone
+          test -f /tmp/shelldone-test/share/zsh/site-functions/_shelldone
       - name: Uninstall
-        run: make uninstall PREFIX=/tmp/cli-alert-test
+        run: make uninstall PREFIX=/tmp/shelldone-test
       - name: Verify removal
-        run: "! test -f /tmp/cli-alert-test/bin/cli-alert"
+        run: "! test -f /tmp/shelldone-test/bin/shelldone"

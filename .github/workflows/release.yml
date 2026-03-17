@@ -29,31 +29,31 @@ jobs:
 
       - name: Build Debian package
         run: |
-          PKG_DIR="cli-alert_${{ steps.version.outputs.VERSION }}-1_all"
+          PKG_DIR="shelldone_${{ steps.version.outputs.VERSION }}-1_all"
           mkdir -p "${PKG_DIR}/DEBIAN"
           mkdir -p "${PKG_DIR}/usr/bin"
-          mkdir -p "${PKG_DIR}/usr/lib/cli-alert"
-          mkdir -p "${PKG_DIR}/usr/share/cli-alert/hooks"
+          mkdir -p "${PKG_DIR}/usr/lib/shelldone"
+          mkdir -p "${PKG_DIR}/usr/share/shelldone/hooks"
           mkdir -p "${PKG_DIR}/usr/share/bash-completion/completions"
           mkdir -p "${PKG_DIR}/usr/share/zsh/site-functions"
 
           cp debian/control "${PKG_DIR}/DEBIAN/control"
-          cp bin/cli-alert "${PKG_DIR}/usr/bin/"
-          cp lib/*.sh lib/*.bash lib/*.zsh "${PKG_DIR}/usr/lib/cli-alert/"
-          cp hooks/*-done.sh "${PKG_DIR}/usr/share/cli-alert/hooks/"
-          cp VERSION "${PKG_DIR}/usr/share/cli-alert/"
-          cp completions/cli-alert.bash "${PKG_DIR}/usr/share/bash-completion/completions/cli-alert"
-          cp completions/cli-alert.zsh "${PKG_DIR}/usr/share/zsh/site-functions/_cli-alert"
+          cp bin/shelldone "${PKG_DIR}/usr/bin/"
+          cp lib/*.sh lib/*.bash lib/*.zsh "${PKG_DIR}/usr/lib/shelldone/"
+          cp hooks/*-done.sh "${PKG_DIR}/usr/share/shelldone/hooks/"
+          cp VERSION "${PKG_DIR}/usr/share/shelldone/"
+          cp completions/shelldone.bash "${PKG_DIR}/usr/share/bash-completion/completions/shelldone"
+          cp completions/shelldone.zsh "${PKG_DIR}/usr/share/zsh/site-functions/_shelldone"
 
-          chmod 755 "${PKG_DIR}/usr/bin/cli-alert"
-          chmod 755 "${PKG_DIR}/usr/share/cli-alert/hooks/claude-done.sh"
+          chmod 755 "${PKG_DIR}/usr/bin/shelldone"
+          chmod 755 "${PKG_DIR}/usr/share/shelldone/hooks/claude-done.sh"
 
           dpkg-deb --build "${PKG_DIR}"
 
       - name: Compute SHA256
         id: sha
         run: |
-          sha256sum "cli-alert_${{ steps.version.outputs.VERSION }}-1_all.deb" > checksums.txt
+          sha256sum "shelldone_${{ steps.version.outputs.VERSION }}-1_all.deb" > checksums.txt
           echo "DEB_SHA256=$(cut -d' ' -f1 checksums.txt)" >> "$GITHUB_OUTPUT"
           cat checksums.txt
 
@@ -63,5 +63,5 @@ jobs:
           name: v${{ steps.version.outputs.VERSION }}
           body_path: /tmp/release-notes.md
           files: |
-            cli-alert_${{ steps.version.outputs.VERSION }}-1_all.deb
+            shelldone_${{ steps.version.outputs.VERSION }}-1_all.deb
             checksums.txt

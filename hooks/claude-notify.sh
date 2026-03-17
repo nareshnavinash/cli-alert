@@ -11,22 +11,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK_COMMON="${SCRIPT_DIR}/../lib/ai-hook-common.sh"
 if [[ -f "$HOOK_COMMON" ]]; then
   source "$HOOK_COMMON"
-  _cli_alert_hook_resolve_lib "$SCRIPT_DIR"
+  _shelldone_hook_resolve_lib "$SCRIPT_DIR"
 else
   # Fallback: try installed layout
-  HOOK_COMMON="$(cd "$SCRIPT_DIR/../lib/cli-alert" && pwd)/ai-hook-common.sh" 2>/dev/null || true
+  HOOK_COMMON="$(cd "$SCRIPT_DIR/../lib/shelldone" && pwd)/ai-hook-common.sh" 2>/dev/null || true
   if [[ -f "$HOOK_COMMON" ]]; then
     source "$HOOK_COMMON"
-    _cli_alert_hook_resolve_lib "$SCRIPT_DIR"
+    _shelldone_hook_resolve_lib "$SCRIPT_DIR"
   else
     # Legacy fallback: resolve lib directly
     BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-    if [[ -f "${BASE_DIR}/lib/cli-alert/cli-alert.sh" ]]; then
-      source "${BASE_DIR}/lib/cli-alert/cli-alert.sh"
-    elif [[ -f "${BASE_DIR}/lib/cli-alert.sh" ]]; then
-      source "${BASE_DIR}/lib/cli-alert.sh"
+    if [[ -f "${BASE_DIR}/lib/shelldone/shelldone.sh" ]]; then
+      source "${BASE_DIR}/lib/shelldone/shelldone.sh"
+    elif [[ -f "${BASE_DIR}/lib/shelldone.sh" ]]; then
+      source "${BASE_DIR}/lib/shelldone.sh"
     else
-      echo "cli-alert: cannot find lib" >&2
+      echo "shelldone: cannot find lib" >&2
       exit 1
     fi
   fi
@@ -38,9 +38,9 @@ input="$(cat)"
 # Extract notification fields
 title=""
 message=""
-if declare -f _cli_alert_hook_read_json_field &>/dev/null; then
-  title=$(_cli_alert_hook_read_json_field "$input" "title")
-  message=$(_cli_alert_hook_read_json_field "$input" "message")
+if declare -f _shelldone_hook_read_json_field &>/dev/null; then
+  title=$(_shelldone_hook_read_json_field "$input" "title")
+  message=$(_shelldone_hook_read_json_field "$input" "message")
 elif command -v python3 &>/dev/null; then
   title=$(python3 -c "
 import sys, json
@@ -62,7 +62,7 @@ fi
 
 # Set metadata for enriched Slack messages
 if [[ -n "$title" ]]; then
-  export _CLI_ALERT_META_STOP_REASON="$title"
+  export _SHELLDONE_META_STOP_REASON="$title"
 fi
 
 # Build notification message
@@ -74,8 +74,8 @@ elif [[ -n "$title" && -n "$message" ]]; then
 fi
 
 # Send notification (toggle-aware if available)
-if declare -f _cli_alert_hook_notify &>/dev/null; then
-  _cli_alert_hook_notify "Claude Code" "$notify_msg" 0
+if declare -f _shelldone_hook_notify &>/dev/null; then
+  _shelldone_hook_notify "Claude Code" "$notify_msg" 0
 else
-  _cli_alert_notify "Claude Code" "$notify_msg" 0
+  _shelldone_notify "Claude Code" "$notify_msg" 0
 fi

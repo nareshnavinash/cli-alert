@@ -1,46 +1,46 @@
-# Homebrew formula for cli-alert
-# To use from a tap: brew install <username>/tap/cli-alert
-# To test locally:   brew install --build-from-source ./Formula/cli-alert.rb
+# Homebrew formula for shelldone
+# To use from a tap: brew install <username>/tap/shelldone
+# To test locally:   brew install --build-from-source ./Formula/shelldone.rb
 
-class CliAlert < Formula
+class Shelldone < Formula
   desc "Terminal process completion notifier — OS-native notifications when commands finish"
-  homepage "https://github.com/nareshnavinash/cli-alert"
+  homepage "https://github.com/nareshnavinash/shelldone"
   # Stable release URL and sha256 are populated by the release workflow.
   # Until a release tarball exists, use `brew install --HEAD` to install from git.
-  url "https://github.com/nareshnavinash/cli-alert/archive/refs/tags/v0.3.0.tar.gz"
+  url "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v0.3.0.tar.gz"
   sha256 ""
   license "MIT"
-  head "https://github.com/nareshnavinash/cli-alert.git", branch: "main"
+  head "https://github.com/nareshnavinash/shelldone.git", branch: "main"
 
   def install
-    bin.install "bin/cli-alert"
-    (lib/"cli-alert").install "lib/cli-alert.sh", "lib/auto-notify.zsh", "lib/auto-notify.bash",
+    bin.install "bin/shelldone"
+    (lib/"shelldone").install "lib/shelldone.sh", "lib/auto-notify.zsh", "lib/auto-notify.bash",
                               "lib/state.sh", "lib/external-notify.sh", "lib/ai-hook-common.sh"
-    (share/"cli-alert/hooks").install Dir["hooks/*.sh"]
-    (share/"cli-alert").install "VERSION"
-    bash_completion.install "completions/cli-alert.bash" => "cli-alert"
-    zsh_completion.install "completions/cli-alert.zsh" => "_cli-alert"
+    (share/"shelldone/hooks").install Dir["hooks/*.sh"]
+    (share/"shelldone").install "VERSION"
+    bash_completion.install "completions/shelldone.bash" => "shelldone"
+    zsh_completion.install "completions/shelldone.zsh" => "_shelldone"
   end
 
   def caveats
     <<~EOS
       Add to your shell config (~/.zshrc or ~/.bashrc):
 
-        eval "$(cli-alert init zsh)"   # for zsh
-        eval "$(cli-alert init bash)"  # for bash
+        eval "$(shelldone init zsh)"   # for zsh
+        eval "$(shelldone init bash)"  # for bash
 
       Or run automatic setup:
 
-        cli-alert setup
+        shelldone setup
 
       Optional: install AI CLI notification hooks:
 
-        cli-alert setup ai-hooks
-        cli-alert setup claude-hook
+        shelldone setup ai-hooks
+        shelldone setup claude-hook
     EOS
   end
 
   test do
-    assert_match "cli-alert", shell_output("#{bin}/cli-alert version")
+    assert_match "shelldone", shell_output("#{bin}/shelldone version")
   end
 end

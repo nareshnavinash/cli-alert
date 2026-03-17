@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
-# cli-alert — Terminal process completion notifier
-# Usage: cli-alert <command> [args...]
+# shelldone — Terminal process completion notifier
+# Usage: shelldone <command> [args...]
 set -euo pipefail
 
 # ── Temp file cleanup ──────────────────────────────────────────────────────
-_CLI_ALERT_TMPFILES=()
-_cli_alert_cleanup() {
+_SHELLDONE_TMPFILES=()
+_shelldone_cleanup() {
   local f
-  for f in "${_CLI_ALERT_TMPFILES[@]+"${_CLI_ALERT_TMPFILES[@]}"}"; do
+  for f in "${_SHELLDONE_TMPFILES[@]+"${_SHELLDONE_TMPFILES[@]}"}"; do
     rm -f "$f" 2>/dev/null
   done
 }
-trap _cli_alert_cleanup EXIT
+trap _shelldone_cleanup EXIT
 
 # ── Marker constants ───────────────────────────────────────────────────────
-readonly _CLI_ALERT_MARKER_BEGIN="# >>> cli-alert >>>"
-readonly _CLI_ALERT_MARKER_END="# <<< cli-alert <<<"
+readonly _SHELLDONE_MARKER_BEGIN="# >>> shelldone >>>"
+readonly _SHELLDONE_MARKER_END="# <<< shelldone <<<"
 
 # ── VERSION lookup (multi-path) ───────────────────────────────────────────
-_cli_alert_resolve_version() {
+_shelldone_resolve_version() {
   local bin_path="$0"
   if command -v readlink &>/dev/null; then
     bin_path="$(readlink -f "$bin_path" 2>/dev/null || readlink "$bin_path" 2>/dev/null || echo "$bin_path")"
@@ -29,8 +29,8 @@ _cli_alert_resolve_version() {
   local candidate
   for candidate in \
     "${prefix}/VERSION" \
-    "${prefix}/share/cli-alert/VERSION" \
-    "/usr/share/cli-alert/VERSION"; do
+    "${prefix}/share/shelldone/VERSION" \
+    "/usr/share/shelldone/VERSION"; do
     if [[ -f "$candidate" ]]; then
       cat "$candidate"
       return
@@ -39,10 +39,10 @@ _cli_alert_resolve_version() {
   echo "0.3.0"
 }
 
-CLI_ALERT_VERSION="$(_cli_alert_resolve_version)"
+SHELLDONE_VERSION="$(_shelldone_resolve_version)"
 
 # Resolve the lib directory (works whether installed or run from source)
-_cli_alert_resolve_lib() {
+_shelldone_resolve_lib() {
   local bin_path="$0"
   # Follow symlinks (portable)
   if command -v readlink &>/dev/null; then
@@ -51,30 +51,30 @@ _cli_alert_resolve_lib() {
   local bin_dir
   bin_dir="$(cd "$(dirname "$bin_path")" && pwd)"
 
-  # Try: <prefix>/lib/cli-alert/ (package manager install)
-  if [[ -f "${bin_dir}/../lib/cli-alert/cli-alert.sh" ]]; then
-    echo "${bin_dir}/../lib/cli-alert"
+  # Try: <prefix>/lib/shelldone/ (package manager install)
+  if [[ -f "${bin_dir}/../lib/shelldone/shelldone.sh" ]]; then
+    echo "${bin_dir}/../lib/shelldone"
   # Try: <repo>/lib/ (running from source)
-  elif [[ -f "${bin_dir}/../lib/cli-alert.sh" ]]; then
+  elif [[ -f "${bin_dir}/../lib/shelldone.sh" ]]; then
     echo "${bin_dir}/../lib"
   else
-    echo >&2 "cli-alert: cannot find lib directory"
+    echo >&2 "shelldone: cannot find lib directory"
     exit 1
   fi
 }
 
-CLI_ALERT_LIB="$(_cli_alert_resolve_lib)"
+SHELLDONE_LIB="$(_shelldone_resolve_lib)"
 
 # ── AI CLI Registry ──────────────────────────────────────────────────────────
 # Parallel arrays (bash 3.2 compatible — no associative arrays)
 # Index: 0=claude 1=codex 2=gemini 3=copilot 4=cursor 5=aider
 
-_CLI_ALERT_AI_NAMES=("claude" "codex" "gemini" "copilot" "cursor" "aider")
-_CLI_ALERT_AI_LABELS=("Claude Code" "Codex CLI" "Gemini CLI" "Copilot CLI" "Cursor" "Aider")
-_CLI_ALERT_AI_HOOKS=("claude-done.sh" "codex-done.sh" "gemini-done.sh" "copilot-done.sh" "cursor-done.sh" "")
-_CLI_ALERT_AI_CMDS=("claude" "codex" "gemini" "gh" "cursor" "aider")
-_CLI_ALERT_AI_SETTINGS=("$HOME/.claude/settings.json" "$HOME/.codex/config.json" "$HOME/.gemini/settings.json" "" "$HOME/.cursor/hooks.json" "")
-_CLI_ALERT_AI_CONFIGDIRS=("$HOME/.claude" "$HOME/.codex" "$HOME/.gemini" "$HOME/.github" "$HOME/.cursor" "")
+_SHELLDONE_AI_NAMES=("claude" "codex" "gemini" "copilot" "cursor" "aider")
+_SHELLDONE_AI_LABELS=("Claude Code" "Codex CLI" "Gemini CLI" "Copilot CLI" "Cursor" "Aider")
+_SHELLDONE_AI_HOOKS=("claude-done.sh" "codex-done.sh" "gemini-done.sh" "copilot-done.sh" "cursor-done.sh" "")
+_SHELLDONE_AI_CMDS=("claude" "codex" "gemini" "gh" "cursor" "aider")
+_SHELLDONE_AI_SETTINGS=("$HOME/.claude/settings.json" "$HOME/.codex/config.json" "$HOME/.gemini/settings.json" "" "$HOME/.cursor/hooks.json" "")
+_SHELLDONE_AI_CONFIGDIRS=("$HOME/.claude" "$HOME/.codex" "$HOME/.gemini" "$HOME/.github" "$HOME/.cursor" "")
 
 # ── Commands ─────────────────────────────────────────────────────────────────
 
@@ -94,7 +94,7 @@ cmd_init() {
           *zsh)  shell="zsh" ;;
           *bash) shell="bash" ;;
           *)
-            echo >&2 "cli-alert: cannot detect shell. Usage: cli-alert init [bash|zsh]"
+            echo >&2 "shelldone: cannot detect shell. Usage: shelldone init [bash|zsh]"
             exit 1
             ;;
         esac
@@ -103,27 +103,27 @@ cmd_init() {
   fi
 
   local lib_path
-  lib_path="$(cd "$CLI_ALERT_LIB" && pwd)"
+  lib_path="$(cd "$SHELLDONE_LIB" && pwd)"
 
   case "$shell" in
     zsh)
       cat <<INITEOF
-# cli-alert shell integration
-export _CLI_ALERT_LIB="${lib_path}"
-source "${lib_path}/cli-alert.sh"
+# shelldone shell integration
+export _SHELLDONE_LIB="${lib_path}"
+source "${lib_path}/shelldone.sh"
 source "${lib_path}/auto-notify.zsh"
 INITEOF
       ;;
     bash)
       cat <<INITEOF
-# cli-alert shell integration
-export _CLI_ALERT_LIB="${lib_path}"
-source "${lib_path}/cli-alert.sh"
+# shelldone shell integration
+export _SHELLDONE_LIB="${lib_path}"
+source "${lib_path}/shelldone.sh"
 source "${lib_path}/auto-notify.bash"
 INITEOF
       ;;
     *)
-      echo >&2 "cli-alert: unsupported shell '$shell'. Supported: bash, zsh"
+      echo >&2 "shelldone: unsupported shell '$shell'. Supported: bash, zsh"
       exit 1
       ;;
   esac
@@ -155,11 +155,11 @@ cmd_setup() {
       _setup_shell_init
       _setup_ai_hooks
       echo ""
-      printf '\033[1;32m[cli-alert]\033[0m Setup complete!\n'
-      printf '\033[1;34m[cli-alert]\033[0m Restart your shell or run: exec %s\n' "$(basename "$SHELL")"
+      printf '\033[1;32m[shelldone]\033[0m Setup complete!\n'
+      printf '\033[1;34m[shelldone]\033[0m Restart your shell or run: exec %s\n' "$(basename "$SHELL")"
       ;;
     *)
-      echo >&2 "Usage: cli-alert setup [all|ai-hooks|claude-hook|codex-hook|gemini-hook|copilot-hook|cursor-hook]"
+      echo >&2 "Usage: shelldone setup [all|ai-hooks|claude-hook|codex-hook|gemini-hook|copilot-hook|cursor-hook]"
       exit 1
       ;;
   esac
@@ -167,26 +167,26 @@ cmd_setup() {
 
 _setup_shell_init() {
   local bin_path bin_dir
-  bin_path="$(cd "$(dirname "$0")" && pwd)/cli-alert"
+  bin_path="$(cd "$(dirname "$0")" && pwd)/shelldone"
   bin_dir="$(dirname "$bin_path")"
 
   _add_to_rc() {
     local rc_file="$1" shell_name="$2"
 
-    if grep -qF "$_CLI_ALERT_MARKER_BEGIN" "$rc_file" 2>/dev/null; then
-      printf '\033[1;34m[cli-alert]\033[0m Already in %s, skipping\n' "$(basename "$rc_file")"
+    if grep -qF "$_SHELLDONE_MARKER_BEGIN" "$rc_file" 2>/dev/null; then
+      printf '\033[1;34m[shelldone]\033[0m Already in %s, skipping\n' "$(basename "$rc_file")"
       return 0
     fi
 
     {
       echo ""
-      echo "$_CLI_ALERT_MARKER_BEGIN"
+      echo "$_SHELLDONE_MARKER_BEGIN"
       echo "export PATH=\"${bin_dir}:\$PATH\""
       echo "eval \"\$(${bin_path} init ${shell_name})\""
-      echo "$_CLI_ALERT_MARKER_END"
+      echo "$_SHELLDONE_MARKER_END"
     } >> "$rc_file"
 
-    printf '\033[1;32m[cli-alert]\033[0m Added to %s\n' "$rc_file"
+    printf '\033[1;32m[shelldone]\033[0m Added to %s\n' "$rc_file"
   }
 
   # Detect which rc files to modify
@@ -206,13 +206,13 @@ _setup_claude_hook() {
   local claude_settings="$HOME/.claude/settings.json"
 
   if [[ ! -f "$done_cmd" ]]; then
-    echo >&2 "cli-alert: hook script not found at $done_cmd"
+    echo >&2 "shelldone: hook script not found at $done_cmd"
     return 1
   fi
 
   if ! command -v python3 &>/dev/null; then
-    printf '\033[1;33m[cli-alert]\033[0m python3 not found — skipping Claude Code hook\n'
-    printf '\033[1;33m[cli-alert]\033[0m Manually add to %s\n' "$claude_settings"
+    printf '\033[1;33m[shelldone]\033[0m python3 not found — skipping Claude Code hook\n'
+    printf '\033[1;33m[shelldone]\033[0m Manually add to %s\n' "$claude_settings"
     return 0
   fi
 
@@ -263,13 +263,13 @@ PYEOF
   while IFS= read -r line; do
     case "$line" in
       ALREADY:Stop)
-        printf '\033[1;34m[cli-alert]\033[0m Claude Code Stop hook already installed\n' ;;
+        printf '\033[1;34m[shelldone]\033[0m Claude Code Stop hook already installed\n' ;;
       INSTALLED:Stop)
-        printf '\033[1;32m[cli-alert]\033[0m Added Claude Code Stop hook\n' ;;
+        printf '\033[1;32m[shelldone]\033[0m Added Claude Code Stop hook\n' ;;
       ALREADY:Notification)
-        printf '\033[1;34m[cli-alert]\033[0m Claude Code Notification hook already installed\n' ;;
+        printf '\033[1;34m[shelldone]\033[0m Claude Code Notification hook already installed\n' ;;
       INSTALLED:Notification)
-        printf '\033[1;32m[cli-alert]\033[0m Added Claude Code Notification hook\n' ;;
+        printf '\033[1;32m[shelldone]\033[0m Added Claude Code Notification hook\n' ;;
     esac
   done <<< "$result"
 }
@@ -282,13 +282,13 @@ _setup_codex_hook() {
   local codex_settings="$HOME/.codex/config.json"
 
   if [[ ! -f "$done_cmd" ]]; then
-    echo >&2 "cli-alert: hook script not found at $done_cmd"
+    echo >&2 "shelldone: hook script not found at $done_cmd"
     return 1
   fi
 
   if ! command -v python3 &>/dev/null; then
-    printf '\033[1;33m[cli-alert]\033[0m python3 not found — skipping Codex CLI hook\n'
-    printf '\033[1;33m[cli-alert]\033[0m Manually add to %s\n' "$codex_settings"
+    printf '\033[1;33m[shelldone]\033[0m python3 not found — skipping Codex CLI hook\n'
+    printf '\033[1;33m[shelldone]\033[0m Manually add to %s\n' "$codex_settings"
     return 0
   fi
 
@@ -339,13 +339,13 @@ PYEOF
   while IFS= read -r line; do
     case "$line" in
       ALREADY:Stop)
-        printf '\033[1;34m[cli-alert]\033[0m Codex CLI Stop hook already installed\n' ;;
+        printf '\033[1;34m[shelldone]\033[0m Codex CLI Stop hook already installed\n' ;;
       INSTALLED:Stop)
-        printf '\033[1;32m[cli-alert]\033[0m Added Codex CLI Stop hook\n' ;;
+        printf '\033[1;32m[shelldone]\033[0m Added Codex CLI Stop hook\n' ;;
       ALREADY:Notification)
-        printf '\033[1;34m[cli-alert]\033[0m Codex CLI Notification hook already installed\n' ;;
+        printf '\033[1;34m[shelldone]\033[0m Codex CLI Notification hook already installed\n' ;;
       INSTALLED:Notification)
-        printf '\033[1;32m[cli-alert]\033[0m Added Codex CLI Notification hook\n' ;;
+        printf '\033[1;32m[shelldone]\033[0m Added Codex CLI Notification hook\n' ;;
     esac
   done <<< "$result"
 }
@@ -358,13 +358,13 @@ _setup_gemini_hook() {
   local gemini_settings="$HOME/.gemini/settings.json"
 
   if [[ ! -f "$done_cmd" ]]; then
-    echo >&2 "cli-alert: hook script not found at $done_cmd"
+    echo >&2 "shelldone: hook script not found at $done_cmd"
     return 1
   fi
 
   if ! command -v python3 &>/dev/null; then
-    printf '\033[1;33m[cli-alert]\033[0m python3 not found — skipping Gemini CLI hook\n'
-    printf '\033[1;33m[cli-alert]\033[0m Manually add to %s\n' "$gemini_settings"
+    printf '\033[1;33m[shelldone]\033[0m python3 not found — skipping Gemini CLI hook\n'
+    printf '\033[1;33m[shelldone]\033[0m Manually add to %s\n' "$gemini_settings"
     return 0
   fi
 
@@ -411,13 +411,13 @@ PYEOF
   while IFS= read -r line; do
     case "$line" in
       ALREADY:turn_end)
-        printf '\033[1;34m[cli-alert]\033[0m Gemini CLI hook already installed\n' ;;
+        printf '\033[1;34m[shelldone]\033[0m Gemini CLI hook already installed\n' ;;
       INSTALLED:turn_end)
-        printf '\033[1;32m[cli-alert]\033[0m Added Gemini CLI hook\n' ;;
+        printf '\033[1;32m[shelldone]\033[0m Added Gemini CLI hook\n' ;;
       ALREADY:notification)
-        printf '\033[1;34m[cli-alert]\033[0m Gemini CLI Notification hook already installed\n' ;;
+        printf '\033[1;34m[shelldone]\033[0m Gemini CLI Notification hook already installed\n' ;;
       INSTALLED:notification)
-        printf '\033[1;32m[cli-alert]\033[0m Added Gemini CLI Notification hook\n' ;;
+        printf '\033[1;32m[shelldone]\033[0m Added Gemini CLI Notification hook\n' ;;
     esac
   done <<< "$result"
 }
@@ -428,11 +428,11 @@ _setup_copilot_hook() {
   local done_cmd="${base_dir}/hooks/copilot-done.sh"
   local notify_cmd="${base_dir}/hooks/copilot-notify.sh"
   local hooks_dir="$HOME/.github/hooks"
-  local done_file="${hooks_dir}/cli-alert-session-end.json"
-  local notify_file="${hooks_dir}/cli-alert-notification.json"
+  local done_file="${hooks_dir}/shelldone-session-end.json"
+  local notify_file="${hooks_dir}/shelldone-notification.json"
 
   if [[ ! -f "$done_cmd" ]]; then
-    echo >&2 "cli-alert: hook script not found at $done_cmd"
+    echo >&2 "shelldone: hook script not found at $done_cmd"
     return 1
   fi
 
@@ -440,7 +440,7 @@ _setup_copilot_hook() {
 
   # sessionEnd hook
   if [[ -f "$done_file" ]] && grep -q "$done_cmd" "$done_file" 2>/dev/null; then
-    printf '\033[1;34m[cli-alert]\033[0m Copilot CLI sessionEnd hook already installed\n'
+    printf '\033[1;34m[shelldone]\033[0m Copilot CLI sessionEnd hook already installed\n'
   else
     cat > "$done_file" << JSONEOF
 {
@@ -448,12 +448,12 @@ _setup_copilot_hook() {
   "command": "$done_cmd"
 }
 JSONEOF
-    printf '\033[1;32m[cli-alert]\033[0m Added Copilot CLI sessionEnd hook\n'
+    printf '\033[1;32m[shelldone]\033[0m Added Copilot CLI sessionEnd hook\n'
   fi
 
   # Notification hook
   if [[ -f "$notify_file" ]] && grep -q "$notify_cmd" "$notify_file" 2>/dev/null; then
-    printf '\033[1;34m[cli-alert]\033[0m Copilot CLI Notification hook already installed\n'
+    printf '\033[1;34m[shelldone]\033[0m Copilot CLI Notification hook already installed\n'
   else
     cat > "$notify_file" << JSONEOF
 {
@@ -461,7 +461,7 @@ JSONEOF
   "command": "$notify_cmd"
 }
 JSONEOF
-    printf '\033[1;32m[cli-alert]\033[0m Added Copilot CLI Notification hook\n'
+    printf '\033[1;32m[shelldone]\033[0m Added Copilot CLI Notification hook\n'
   fi
 }
 
@@ -473,13 +473,13 @@ _setup_cursor_hook() {
   local cursor_hooks="$HOME/.cursor/hooks.json"
 
   if [[ ! -f "$done_cmd" ]]; then
-    echo >&2 "cli-alert: hook script not found at $done_cmd"
+    echo >&2 "shelldone: hook script not found at $done_cmd"
     return 1
   fi
 
   if ! command -v python3 &>/dev/null; then
-    printf '\033[1;33m[cli-alert]\033[0m python3 not found — skipping Cursor hook\n'
-    printf '\033[1;33m[cli-alert]\033[0m Manually add to %s\n' "$cursor_hooks"
+    printf '\033[1;33m[shelldone]\033[0m python3 not found — skipping Cursor hook\n'
+    printf '\033[1;33m[shelldone]\033[0m Manually add to %s\n' "$cursor_hooks"
     return 0
   fi
 
@@ -526,13 +526,13 @@ PYEOF
   while IFS= read -r line; do
     case "$line" in
       ALREADY:stop)
-        printf '\033[1;34m[cli-alert]\033[0m Cursor stop hook already installed\n' ;;
+        printf '\033[1;34m[shelldone]\033[0m Cursor stop hook already installed\n' ;;
       INSTALLED:stop)
-        printf '\033[1;32m[cli-alert]\033[0m Added Cursor stop hook\n' ;;
+        printf '\033[1;32m[shelldone]\033[0m Added Cursor stop hook\n' ;;
       ALREADY:notification)
-        printf '\033[1;34m[cli-alert]\033[0m Cursor Notification hook already installed\n' ;;
+        printf '\033[1;34m[shelldone]\033[0m Cursor Notification hook already installed\n' ;;
       INSTALLED:notification)
-        printf '\033[1;32m[cli-alert]\033[0m Added Cursor Notification hook\n' ;;
+        printf '\033[1;32m[shelldone]\033[0m Added Cursor Notification hook\n' ;;
     esac
   done <<< "$result"
 }
@@ -540,17 +540,17 @@ PYEOF
 _setup_ai_hooks() {
   local i installed=0 skipped=0
 
-  for i in "${!_CLI_ALERT_AI_NAMES[@]}"; do
-    local name="${_CLI_ALERT_AI_NAMES[$i]}"
-    local label="${_CLI_ALERT_AI_LABELS[$i]}"
-    local hook="${_CLI_ALERT_AI_HOOKS[$i]}"
-    local cmd="${_CLI_ALERT_AI_CMDS[$i]}"
-    local config_dir="${_CLI_ALERT_AI_CONFIGDIRS[$i]}"
+  for i in "${!_SHELLDONE_AI_NAMES[@]}"; do
+    local name="${_SHELLDONE_AI_NAMES[$i]}"
+    local label="${_SHELLDONE_AI_LABELS[$i]}"
+    local hook="${_SHELLDONE_AI_HOOKS[$i]}"
+    local cmd="${_SHELLDONE_AI_CMDS[$i]}"
+    local config_dir="${_SHELLDONE_AI_CONFIGDIRS[$i]}"
 
     # Skip Aider (no hooks)
     if [[ -z "$hook" ]]; then
       if command -v "$cmd" &>/dev/null; then
-        printf '\033[1;34m[cli-alert]\033[0m %s detected — no native hooks, use: alert aider <prompt>\n' "$label"
+        printf '\033[1;34m[shelldone]\033[0m %s detected — no native hooks, use: alert aider <prompt>\n' "$label"
       fi
       continue
     fi
@@ -564,7 +564,7 @@ _setup_ai_hooks() {
   done
 
   if [[ $installed -gt 0 || $skipped -gt 0 ]]; then
-    printf '\033[1;34m[cli-alert]\033[0m AI hooks: %d installed, %d skipped (not detected)\n' "$installed" "$skipped"
+    printf '\033[1;34m[shelldone]\033[0m AI hooks: %d installed, %d skipped (not detected)\n' "$installed" "$skipped"
   fi
 }
 
@@ -574,7 +574,7 @@ cmd_test() {
   if [[ -x "$test_script" ]]; then
     exec "$test_script"
   else
-    echo >&2 "cli-alert: test script not found"
+    echo >&2 "shelldone: test script not found"
     exit 1
   fi
 }
@@ -585,20 +585,20 @@ cmd_uninstall() {
 
     [[ ! -f "$rc_file" ]] && return 0
 
-    if ! grep -qF "$_CLI_ALERT_MARKER_BEGIN" "$rc_file" 2>/dev/null; then
-      printf '\033[1;34m[cli-alert]\033[0m Not in %s, skipping\n' "$(basename "$rc_file")"
+    if ! grep -qF "$_SHELLDONE_MARKER_BEGIN" "$rc_file" 2>/dev/null; then
+      printf '\033[1;34m[shelldone]\033[0m Not in %s, skipping\n' "$(basename "$rc_file")"
       return 0
     fi
 
     local tmp_file
     tmp_file=$(mktemp)
-    _CLI_ALERT_TMPFILES+=("$tmp_file")
+    _SHELLDONE_TMPFILES+=("$tmp_file")
     local in_block=0
     while IFS= read -r line || [[ -n "$line" ]]; do
-      if [[ "$line" == "$_CLI_ALERT_MARKER_BEGIN" ]]; then
+      if [[ "$line" == "$_SHELLDONE_MARKER_BEGIN" ]]; then
         in_block=1; continue
       fi
-      if [[ "$line" == "$_CLI_ALERT_MARKER_END" ]]; then
+      if [[ "$line" == "$_SHELLDONE_MARKER_END" ]]; then
         in_block=0; continue
       fi
       if [[ $in_block -eq 0 ]]; then
@@ -607,7 +607,7 @@ cmd_uninstall() {
     done < "$rc_file"
 
     mv "$tmp_file" "$rc_file"
-    printf '\033[1;32m[cli-alert]\033[0m Removed from %s\n' "$rc_file"
+    printf '\033[1;32m[shelldone]\033[0m Removed from %s\n' "$rc_file"
   }
 
   _remove_from_rc "$HOME/.zshrc"
@@ -672,7 +672,7 @@ elif isinstance(hooks, list):
         with open(settings_path, 'w') as f:
             json.dump(settings, f, indent=2)
 PYEOF
-    printf '\033[1;32m[cli-alert]\033[0m Removed %s hook\n' "$label"
+    printf '\033[1;32m[shelldone]\033[0m Removed %s hook\n' "$label"
   }
 
   # Remove Claude Code hooks
@@ -688,15 +688,15 @@ PYEOF
   _uninstall_json_hook "$HOME/.gemini/settings.json" "${base_dir}/hooks/gemini-notify.sh" "Gemini CLI" "hooks"
 
   # Remove Copilot CLI hooks
-  local copilot_hook_file="$HOME/.github/hooks/cli-alert-session-end.json"
+  local copilot_hook_file="$HOME/.github/hooks/shelldone-session-end.json"
   if [[ -f "$copilot_hook_file" ]]; then
     rm -f "$copilot_hook_file"
-    printf '\033[1;32m[cli-alert]\033[0m Removed Copilot CLI hook\n'
+    printf '\033[1;32m[shelldone]\033[0m Removed Copilot CLI hook\n'
   fi
-  local copilot_notify_file="$HOME/.github/hooks/cli-alert-notification.json"
+  local copilot_notify_file="$HOME/.github/hooks/shelldone-notification.json"
   if [[ -f "$copilot_notify_file" ]]; then
     rm -f "$copilot_notify_file"
-    printf '\033[1;32m[cli-alert]\033[0m Removed Copilot CLI Notification hook\n'
+    printf '\033[1;32m[shelldone]\033[0m Removed Copilot CLI Notification hook\n'
   fi
 
   # Remove Cursor hooks
@@ -704,34 +704,34 @@ PYEOF
   _uninstall_json_hook "$HOME/.cursor/hooks.json" "${base_dir}/hooks/cursor-notify.sh" "Cursor" "notification"
 
   echo ""
-  printf '\033[1;32m[cli-alert]\033[0m Uninstalled! Restart your shell to apply.\n'
+  printf '\033[1;32m[shelldone]\033[0m Uninstalled! Restart your shell to apply.\n'
 }
 
 cmd_version() {
-  echo "cli-alert $CLI_ALERT_VERSION"
+  echo "shelldone $SHELLDONE_VERSION"
   if [[ "${1:-}" == "--verbose" || "${1:-}" == "-v" ]]; then
     (
-      unset _CLI_ALERT_LOADED
-      source "${CLI_ALERT_LIB}/cli-alert.sh"
-      echo "  platform: $_CLI_ALERT_PLATFORM"
+      unset _SHELLDONE_LOADED
+      source "${SHELLDONE_LIB}/shelldone.sh"
+      echo "  platform: $_SHELLDONE_PLATFORM"
     )
     echo "  shell:    $(basename "${SHELL:-unknown}")"
-    echo "  path:     $(cd "$(dirname "$0")" && pwd)/cli-alert"
+    echo "  path:     $(cd "$(dirname "$0")" && pwd)/shelldone"
   fi
 }
 
 cmd_status() {
   (
-    unset _CLI_ALERT_LOADED
-    source "${CLI_ALERT_LIB}/cli-alert.sh"
+    unset _SHELLDONE_LOADED
+    source "${SHELLDONE_LIB}/shelldone.sh"
 
-    echo "cli-alert $CLI_ALERT_VERSION"
+    echo "shelldone $SHELLDONE_VERSION"
 
     # Install path
     local bin_path
-    bin_path="$(cd "$(dirname "$0")" && pwd)/cli-alert"
+    bin_path="$(cd "$(dirname "$0")" && pwd)/shelldone"
     echo "  Install path:   $bin_path"
-    echo "  Platform:       $_CLI_ALERT_PLATFORM"
+    echo "  Platform:       $_SHELLDONE_PLATFORM"
     echo "  Shell:          $(basename "${SHELL:-unknown}")"
     echo ""
 
@@ -741,7 +741,7 @@ cmd_status() {
     for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
       local name
       name="$(basename "$rc")"
-      if [[ -f "$rc" ]] && grep -qF "cli-alert" "$rc" 2>/dev/null; then
+      if [[ -f "$rc" ]] && grep -qF "shelldone" "$rc" 2>/dev/null; then
         printf '  ~/%s:%*s%s installed\n' "$name" $((14 - ${#name})) "" "$check_mark"
       else
         printf '  ~/%s:%*s%s not found\n' "$name" $((14 - ${#name})) "" "$cross_mark"
@@ -751,7 +751,7 @@ cmd_status() {
 
     # Notification tools
     echo "Notification tools:"
-    case "$_CLI_ALERT_PLATFORM" in
+    case "$_SHELLDONE_PLATFORM" in
       darwin)
         for tool in terminal-notifier osascript afplay say; do
           local path
@@ -790,23 +790,23 @@ cmd_status() {
 
     # Config
     echo "Config:"
-    echo "  CLI_ALERT_ENABLED=$CLI_ALERT_ENABLED"
-    echo "  CLI_ALERT_AUTO=${CLI_ALERT_AUTO:-true}"
-    echo "  CLI_ALERT_THRESHOLD=${CLI_ALERT_THRESHOLD:-10}"
-    echo "  CLI_ALERT_SOUND_SUCCESS=$CLI_ALERT_SOUND_SUCCESS"
-    echo "  CLI_ALERT_SOUND_FAILURE=$CLI_ALERT_SOUND_FAILURE"
-    echo "  CLI_ALERT_VOICE=${CLI_ALERT_VOICE:-<off>}"
-    echo "  CLI_ALERT_DEBUG=${CLI_ALERT_DEBUG:-<off>}"
-    echo "  CLI_ALERT_SOUND_TIMEOUT=${CLI_ALERT_SOUND_TIMEOUT:-10}"
-    echo "  CLI_ALERT_FOCUS_DETECT=${CLI_ALERT_FOCUS_DETECT:-true}"
-    echo "  CLI_ALERT_NOTIFY_ON=${CLI_ALERT_NOTIFY_ON:-all}"
-    echo "  CLI_ALERT_ACTIVATE=${CLI_ALERT_ACTIVATE:-<auto-detect>}"
-    echo "  CLI_ALERT_EXCLUDE=${CLI_ALERT_EXCLUDE:-vim nvim vi nano ...}"
+    echo "  SHELLDONE_ENABLED=$SHELLDONE_ENABLED"
+    echo "  SHELLDONE_AUTO=${SHELLDONE_AUTO:-true}"
+    echo "  SHELLDONE_THRESHOLD=${SHELLDONE_THRESHOLD:-10}"
+    echo "  SHELLDONE_SOUND_SUCCESS=$SHELLDONE_SOUND_SUCCESS"
+    echo "  SHELLDONE_SOUND_FAILURE=$SHELLDONE_SOUND_FAILURE"
+    echo "  SHELLDONE_VOICE=${SHELLDONE_VOICE:-<off>}"
+    echo "  SHELLDONE_DEBUG=${SHELLDONE_DEBUG:-<off>}"
+    echo "  SHELLDONE_SOUND_TIMEOUT=${SHELLDONE_SOUND_TIMEOUT:-10}"
+    echo "  SHELLDONE_FOCUS_DETECT=${SHELLDONE_FOCUS_DETECT:-true}"
+    echo "  SHELLDONE_NOTIFY_ON=${SHELLDONE_NOTIFY_ON:-all}"
+    echo "  SHELLDONE_ACTIVATE=${SHELLDONE_ACTIVATE:-<auto-detect>}"
+    echo "  SHELLDONE_EXCLUDE=${SHELLDONE_EXCLUDE:-vim nvim vi nano ...}"
     echo ""
 
     # Config file
     echo "Config file:"
-    local config_file="${CLI_ALERT_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/cli-alert/config}"
+    local config_file="${SHELLDONE_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/shelldone/config}"
     if [[ -f "$config_file" ]]; then
       printf '  %s %s\n' "$check_mark" "$config_file"
     else
@@ -816,7 +816,7 @@ cmd_status() {
 
     # History
     echo "History:"
-    local log_file="${CLI_ALERT_HISTORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/cli-alert}/history.log"
+    local log_file="${SHELLDONE_HISTORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/shelldone}/history.log"
     if [[ -f "$log_file" ]]; then
       local count
       count=$(wc -l < "$log_file" | tr -d ' ')
@@ -831,13 +831,13 @@ cmd_status() {
     local base_dir
     base_dir="$(cd "$(dirname "$0")/.." && pwd)"
     local ai_i
-    for ai_i in "${!_CLI_ALERT_AI_NAMES[@]}"; do
-      local ai_name="${_CLI_ALERT_AI_NAMES[$ai_i]}"
-      local ai_label="${_CLI_ALERT_AI_LABELS[$ai_i]}"
-      local ai_hook="${_CLI_ALERT_AI_HOOKS[$ai_i]}"
-      local ai_cmd="${_CLI_ALERT_AI_CMDS[$ai_i]}"
-      local ai_settings="${_CLI_ALERT_AI_SETTINGS[$ai_i]}"
-      local ai_config_dir="${_CLI_ALERT_AI_CONFIGDIRS[$ai_i]}"
+    for ai_i in "${!_SHELLDONE_AI_NAMES[@]}"; do
+      local ai_name="${_SHELLDONE_AI_NAMES[$ai_i]}"
+      local ai_label="${_SHELLDONE_AI_LABELS[$ai_i]}"
+      local ai_hook="${_SHELLDONE_AI_HOOKS[$ai_i]}"
+      local ai_cmd="${_SHELLDONE_AI_CMDS[$ai_i]}"
+      local ai_settings="${_SHELLDONE_AI_SETTINGS[$ai_i]}"
+      local ai_config_dir="${_SHELLDONE_AI_CONFIGDIRS[$ai_i]}"
 
       # Aider: no hooks
       if [[ -z "$ai_hook" ]]; then
@@ -861,7 +861,7 @@ cmd_status() {
 
       # Copilot uses a file-based approach
       if [[ "$ai_name" == "copilot" ]]; then
-        local copilot_hook="$HOME/.github/hooks/cli-alert-session-end.json"
+        local copilot_hook="$HOME/.github/hooks/shelldone-session-end.json"
         if [[ -f "$copilot_hook" ]] && grep -q "copilot-done" "$copilot_hook" 2>/dev/null; then
           hook_installed=true
         fi
@@ -875,7 +875,7 @@ cmd_status() {
 
       # Check toggle state
       local ai_toggle_val
-      ai_toggle_val="$(_cli_alert_state_read "$ai_name" 2>/dev/null)" || ai_toggle_val=""
+      ai_toggle_val="$(_shelldone_state_read "$ai_name" 2>/dev/null)" || ai_toggle_val=""
 
       if $hook_installed; then
         if [[ "$ai_toggle_val" == "off" ]]; then
@@ -884,7 +884,7 @@ cmd_status() {
           printf '  %-14s %s installed\n' "${ai_label}:" "$check_mark"
         fi
       else
-        printf '  %-14s %s not installed (run: cli-alert setup %s-hook)\n' "${ai_label}:" "$cross_mark" "$ai_name"
+        printf '  %-14s %s not installed (run: shelldone setup %s-hook)\n' "${ai_label}:" "$cross_mark" "$ai_name"
       fi
     done
     echo ""
@@ -892,12 +892,12 @@ cmd_status() {
     # External notifications
     echo "External notifications:"
     local has_external=""
-    [[ -n "${CLI_ALERT_SLACK_WEBHOOK:-}" ]]   && has_external+="slack "
-    [[ -n "${CLI_ALERT_DISCORD_WEBHOOK:-}" ]] && has_external+="discord "
-    [[ -n "${CLI_ALERT_TELEGRAM_TOKEN:-}" ]]  && has_external+="telegram "
-    [[ -n "${CLI_ALERT_EMAIL_TO:-}" ]]        && has_external+="email "
-    [[ -n "${CLI_ALERT_WHATSAPP_TOKEN:-}" ]]  && has_external+="whatsapp "
-    [[ -n "${CLI_ALERT_WEBHOOK_URL:-}" ]]     && has_external+="webhook "
+    [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}" ]]   && has_external+="slack "
+    [[ -n "${SHELLDONE_DISCORD_WEBHOOK:-}" ]] && has_external+="discord "
+    [[ -n "${SHELLDONE_TELEGRAM_TOKEN:-}" ]]  && has_external+="telegram "
+    [[ -n "${SHELLDONE_EMAIL_TO:-}" ]]        && has_external+="email "
+    [[ -n "${SHELLDONE_WHATSAPP_TOKEN:-}" ]]  && has_external+="whatsapp "
+    [[ -n "${SHELLDONE_WEBHOOK_URL:-}" ]]     && has_external+="webhook "
     if [[ -n "$has_external" ]]; then
       printf '  Active channels: %s\n' "$has_external"
       local transport="none"
@@ -906,9 +906,9 @@ cmd_status() {
       else transport="/dev/tcp (HTTP only)"
       fi
       printf '  HTTP transport:  %s\n' "$transport"
-      printf '  Rate limit:      %ss\n' "${CLI_ALERT_RATE_LIMIT:-10}"
+      printf '  Rate limit:      %ss\n' "${SHELLDONE_RATE_LIMIT:-10}"
     else
-      printf '  %s no channels configured (run "cli-alert webhook status" for details)\n' "$cross_mark"
+      printf '  %s no channels configured (run "shelldone webhook status" for details)\n' "$cross_mark"
     fi
     echo ""
 
@@ -916,15 +916,15 @@ cmd_status() {
     echo "Notification control:"
 
     # Load state module
-    local _state_lib="${CLI_ALERT_LIB}/state.sh"
+    local _state_lib="${SHELLDONE_LIB}/state.sh"
     if [[ -f "$_state_lib" ]]; then
-      unset _CLI_ALERT_STATE_LOADED
+      unset _SHELLDONE_STATE_LOADED
       source "$_state_lib"
     fi
 
     # Mute status
     local mute_until
-    if mute_until="$(_cli_alert_state_read "mute_until" 2>/dev/null)"; then
+    if mute_until="$(_shelldone_state_read "mute_until" 2>/dev/null)"; then
       if [[ "$mute_until" == "0" ]]; then
         printf '  Mute:            muted indefinitely\n'
       else
@@ -952,7 +952,7 @@ cmd_status() {
     # Toggle states
     local layer val indicator
     for layer in desktop sound voice; do
-      val="$(_cli_alert_state_read "$layer" 2>/dev/null)" || val=""
+      val="$(_shelldone_state_read "$layer" 2>/dev/null)" || val=""
       if [[ "$val" == "off" ]]; then
         printf '  %-17s off  (toggled off)\n' "${layer}:"
       else
@@ -962,12 +962,12 @@ cmd_status() {
 
     # External channel toggles
     local -a ext_channels=("slack" "discord" "telegram" "email" "whatsapp" "webhook")
-    local -a ext_envvars=("CLI_ALERT_SLACK_WEBHOOK" "CLI_ALERT_DISCORD_WEBHOOK" "CLI_ALERT_TELEGRAM_TOKEN" "CLI_ALERT_EMAIL_TO" "CLI_ALERT_WHATSAPP_TOKEN" "CLI_ALERT_WEBHOOK_URL")
+    local -a ext_envvars=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
     local i
     for i in "${!ext_channels[@]}"; do
       layer="${ext_channels[$i]}"
       local envvar="${ext_envvars[$i]}"
-      val="$(_cli_alert_state_read "$layer" 2>/dev/null)" || val=""
+      val="$(_shelldone_state_read "$layer" 2>/dev/null)" || val=""
       if [[ -z "${!envvar:-}" ]]; then
         printf '  %-17s -    (not configured)\n' "${layer}:"
       elif [[ "$val" == "off" ]]; then
@@ -979,12 +979,12 @@ cmd_status() {
 
     # Schedule
     local quiet_start quiet_end
-    quiet_start="$(_cli_alert_state_read "quiet_start" 2>/dev/null)" || quiet_start=""
-    quiet_end="$(_cli_alert_state_read "quiet_end" 2>/dev/null)" || quiet_end=""
+    quiet_start="$(_shelldone_state_read "quiet_start" 2>/dev/null)" || quiet_start=""
+    quiet_end="$(_shelldone_state_read "quiet_end" 2>/dev/null)" || quiet_end=""
     if [[ -n "$quiet_start" && -n "$quiet_end" ]]; then
       printf '  Schedule:        %s-%s\n' "$quiet_start" "$quiet_end"
-    elif [[ -n "${CLI_ALERT_QUIET_HOURS:-}" ]]; then
-      printf '  Schedule:        %s (env)\n' "$CLI_ALERT_QUIET_HOURS"
+    elif [[ -n "${SHELLDONE_QUIET_HOURS:-}" ]]; then
+      printf '  Schedule:        %s (env)\n' "$SHELLDONE_QUIET_HOURS"
     else
       printf '  Schedule:        none\n'
     fi
@@ -993,33 +993,33 @@ cmd_status() {
 
 cmd_test_notify() {
   (
-    unset _CLI_ALERT_LOADED
-    source "${CLI_ALERT_LIB}/cli-alert.sh"
+    unset _SHELLDONE_LOADED
+    source "${SHELLDONE_LIB}/shelldone.sh"
     # Bypass focus detection — this is an explicit test
-    CLI_ALERT_FOCUS_DETECT=false
+    SHELLDONE_FOCUS_DETECT=false
     echo "Sending test notification..."
-    if _cli_alert_notify "cli-alert Test" "If you see this, notifications are working!" 0; then
-      printf '\033[1;32m[cli-alert]\033[0m Notification sent! Check your notification center.\n'
+    if _shelldone_notify "shelldone Test" "If you see this, notifications are working!" 0; then
+      printf '\033[1;32m[shelldone]\033[0m Notification sent! Check your notification center.\n'
     else
-      printf '\033[1;31m[cli-alert]\033[0m Notification may have failed. Run "cli-alert status" to diagnose.\n'
+      printf '\033[1;31m[shelldone]\033[0m Notification may have failed. Run "shelldone status" to diagnose.\n'
     fi
   )
 }
 
 cmd_sounds() {
   (
-    unset _CLI_ALERT_LOADED
-    source "${CLI_ALERT_LIB}/cli-alert.sh"
-    printf 'Available sounds for %s:\n\n' "$_CLI_ALERT_PLATFORM"
-    case "$_CLI_ALERT_PLATFORM" in
+    unset _SHELLDONE_LOADED
+    source "${SHELLDONE_LIB}/shelldone.sh"
+    printf 'Available sounds for %s:\n\n' "$_SHELLDONE_PLATFORM"
+    case "$_SHELLDONE_PLATFORM" in
       darwin)
         for f in /System/Library/Sounds/*.aiff; do
           [[ -f "$f" ]] || continue
           local name
           name="$(basename "$f" .aiff)"
           local marker=""
-          [[ "$name" == "$CLI_ALERT_SOUND_SUCCESS" ]] && marker=" (success)"
-          [[ "$name" == "$CLI_ALERT_SOUND_FAILURE" ]] && marker=" (failure)"
+          [[ "$name" == "$SHELLDONE_SOUND_SUCCESS" ]] && marker=" (success)"
+          [[ "$name" == "$SHELLDONE_SOUND_FAILURE" ]] && marker=" (failure)"
           printf '  %s%s\n' "$name" "$marker"
         done
         ;;
@@ -1029,8 +1029,8 @@ cmd_sounds() {
           local name
           name="$(basename "$f" .oga)"
           local marker=""
-          [[ "$name" == "$CLI_ALERT_SOUND_SUCCESS" ]] && marker=" (success)"
-          [[ "$name" == "$CLI_ALERT_SOUND_FAILURE" ]] && marker=" (failure)"
+          [[ "$name" == "$SHELLDONE_SOUND_SUCCESS" ]] && marker=" (success)"
+          [[ "$name" == "$SHELLDONE_SOUND_FAILURE" ]] && marker=" (failure)"
           printf '  %s%s\n' "$name" "$marker"
         done
         ;;
@@ -1041,8 +1041,8 @@ cmd_sounds() {
         echo "  No system sounds directory known for this platform."
         ;;
     esac
-    printf '\nCurrent: success=%s, failure=%s\n' "$CLI_ALERT_SOUND_SUCCESS" "$CLI_ALERT_SOUND_FAILURE"
-    printf 'Set via: export CLI_ALERT_SOUND_SUCCESS=Ping\n'
+    printf '\nCurrent: success=%s, failure=%s\n' "$SHELLDONE_SOUND_SUCCESS" "$SHELLDONE_SOUND_FAILURE"
+    printf 'Set via: export SHELLDONE_SOUND_SUCCESS=Ping\n'
     printf 'Tip: Use a file path for custom sounds (e.g., /path/to/sound.wav)\n'
   )
 }
@@ -1050,9 +1050,9 @@ cmd_sounds() {
 cmd_exclude() {
   local action="${1:-list}"
   (
-    unset _CLI_ALERT_LOADED
-    source "${CLI_ALERT_LIB}/cli-alert.sh"
-    local current="${CLI_ALERT_EXCLUDE:-vim nvim vi nano less more man top htop ssh tmux screen fg bg watch}"
+    unset _SHELLDONE_LOADED
+    source "${SHELLDONE_LIB}/shelldone.sh"
+    local current="${SHELLDONE_EXCLUDE:-vim nvim vi nano less more man top htop ssh tmux screen fg bg watch}"
 
     case "$action" in
       list)
@@ -1067,16 +1067,16 @@ cmd_exclude() {
       add)
         local pattern="${2:-}"
         if [[ -z "$pattern" ]]; then
-          echo >&2 "Usage: cli-alert exclude add <pattern>"
+          echo >&2 "Usage: shelldone exclude add <pattern>"
           exit 1
         fi
         printf 'Add to your shell config:\n\n'
-        printf '  export CLI_ALERT_EXCLUDE="%s %s"\n\n' "$current" "$pattern"
+        printf '  export SHELLDONE_EXCLUDE="%s %s"\n\n' "$current" "$pattern"
         ;;
       remove)
         local pattern="${2:-}"
         if [[ -z "$pattern" ]]; then
-          echo >&2 "Usage: cli-alert exclude remove <pattern>"
+          echo >&2 "Usage: shelldone exclude remove <pattern>"
           exit 1
         fi
         local new_list=""
@@ -1087,10 +1087,10 @@ cmd_exclude() {
           fi
         done
         printf 'Add to your shell config:\n\n'
-        printf '  export CLI_ALERT_EXCLUDE="%s"\n\n' "$new_list"
+        printf '  export SHELLDONE_EXCLUDE="%s"\n\n' "$new_list"
         ;;
       *)
-        echo >&2 "Usage: cli-alert exclude [list|add <pattern>|remove <pattern>]"
+        echo >&2 "Usage: shelldone exclude [list|add <pattern>|remove <pattern>]"
         exit 1
         ;;
     esac
@@ -1100,8 +1100,8 @@ cmd_exclude() {
 cmd_webhook() {
   local action="${1:-status}"
   (
-    unset _CLI_ALERT_LOADED
-    source "${CLI_ALERT_LIB}/cli-alert.sh"
+    unset _SHELLDONE_LOADED
+    source "${SHELLDONE_LIB}/shelldone.sh"
 
     case "$action" in
       status)
@@ -1117,103 +1117,103 @@ cmd_webhook() {
           transport="/dev/tcp (HTTP only, no HTTPS)"
         fi
         echo "  HTTP transport: $transport"
-        echo "  Rate limit:     ${CLI_ALERT_RATE_LIMIT:-10}s"
-        echo "  Timeout:        ${CLI_ALERT_WEBHOOK_TIMEOUT:-5}s"
+        echo "  Rate limit:     ${SHELLDONE_RATE_LIMIT:-10}s"
+        echo "  Timeout:        ${SHELLDONE_WEBHOOK_TIMEOUT:-5}s"
         echo ""
 
         # Channel status
         local check_mark="✓" cross_mark="-"
         echo "  Channels:"
-        if [[ -n "${CLI_ALERT_SLACK_WEBHOOK:-}" ]]; then
+        if [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}" ]]; then
           printf '    %-12s%s configured\n' "Slack:" "$check_mark"
         else
-          printf '    %-12s%s not configured (set CLI_ALERT_SLACK_WEBHOOK)\n' "Slack:" "$cross_mark"
+          printf '    %-12s%s not configured (set SHELLDONE_SLACK_WEBHOOK)\n' "Slack:" "$cross_mark"
         fi
-        if [[ -n "${CLI_ALERT_DISCORD_WEBHOOK:-}" ]]; then
+        if [[ -n "${SHELLDONE_DISCORD_WEBHOOK:-}" ]]; then
           printf '    %-12s%s configured\n' "Discord:" "$check_mark"
         else
-          printf '    %-12s%s not configured (set CLI_ALERT_DISCORD_WEBHOOK)\n' "Discord:" "$cross_mark"
+          printf '    %-12s%s not configured (set SHELLDONE_DISCORD_WEBHOOK)\n' "Discord:" "$cross_mark"
         fi
-        if [[ -n "${CLI_ALERT_TELEGRAM_TOKEN:-}" ]]; then
-          if [[ -n "${CLI_ALERT_TELEGRAM_CHAT_ID:-}" ]]; then
+        if [[ -n "${SHELLDONE_TELEGRAM_TOKEN:-}" ]]; then
+          if [[ -n "${SHELLDONE_TELEGRAM_CHAT_ID:-}" ]]; then
             printf '    %-12s%s configured\n' "Telegram:" "$check_mark"
           else
-            printf '    %-12s%s token set but missing CLI_ALERT_TELEGRAM_CHAT_ID\n' "Telegram:" "$cross_mark"
+            printf '    %-12s%s token set but missing SHELLDONE_TELEGRAM_CHAT_ID\n' "Telegram:" "$cross_mark"
           fi
         else
-          printf '    %-12s%s not configured (set CLI_ALERT_TELEGRAM_TOKEN)\n' "Telegram:" "$cross_mark"
+          printf '    %-12s%s not configured (set SHELLDONE_TELEGRAM_TOKEN)\n' "Telegram:" "$cross_mark"
         fi
-        if [[ -n "${CLI_ALERT_EMAIL_TO:-}" ]]; then
+        if [[ -n "${SHELLDONE_EMAIL_TO:-}" ]]; then
           local mailer="none"
           if command -v sendmail &>/dev/null; then mailer="sendmail"
           elif command -v mail &>/dev/null; then mailer="mail"
           fi
           printf '    %-12s%s configured (via %s)\n' "Email:" "$check_mark" "$mailer"
         else
-          printf '    %-12s%s not configured (set CLI_ALERT_EMAIL_TO)\n' "Email:" "$cross_mark"
+          printf '    %-12s%s not configured (set SHELLDONE_EMAIL_TO)\n' "Email:" "$cross_mark"
         fi
-        if [[ -n "${CLI_ALERT_WHATSAPP_TOKEN:-}" ]]; then
+        if [[ -n "${SHELLDONE_WHATSAPP_TOKEN:-}" ]]; then
           printf '    %-12s%s configured\n' "WhatsApp:" "$check_mark"
         else
-          printf '    %-12s%s not configured (set CLI_ALERT_WHATSAPP_TOKEN)\n' "WhatsApp:" "$cross_mark"
+          printf '    %-12s%s not configured (set SHELLDONE_WHATSAPP_TOKEN)\n' "WhatsApp:" "$cross_mark"
         fi
-        if [[ -n "${CLI_ALERT_WEBHOOK_URL:-}" ]]; then
+        if [[ -n "${SHELLDONE_WEBHOOK_URL:-}" ]]; then
           printf '    %-12s%s configured\n' "Webhook:" "$check_mark"
         else
-          printf '    %-12s%s not configured (set CLI_ALERT_WEBHOOK_URL)\n' "Webhook:" "$cross_mark"
+          printf '    %-12s%s not configured (set SHELLDONE_WEBHOOK_URL)\n' "Webhook:" "$cross_mark"
         fi
         ;;
       test)
         local channel="${2:-}"
         if [[ -z "$channel" ]]; then
-          echo >&2 "Usage: cli-alert webhook test <channel>"
+          echo >&2 "Usage: shelldone webhook test <channel>"
           echo >&2 "Channels: slack discord telegram email whatsapp webhook"
           exit 1
         fi
 
         # Load external module
-        _cli_alert_load_external
+        _shelldone_load_external
 
-        if ! declare -f _cli_alert_validate_channel &>/dev/null; then
-          echo >&2 "cli-alert: external notification module not loaded"
+        if ! declare -f _shelldone_validate_channel &>/dev/null; then
+          echo >&2 "shelldone: external notification module not loaded"
           exit 1
         fi
 
         # Validate ALL required vars upfront
         local validation_error
-        if ! validation_error=$(_cli_alert_validate_channel "$channel" 2>&1); then
-          printf '\033[1;31m[cli-alert]\033[0m %s: %s\n' "$channel" "$validation_error" >&2
+        if ! validation_error=$(_shelldone_validate_channel "$channel" 2>&1); then
+          printf '\033[1;31m[shelldone]\033[0m %s: %s\n' "$channel" "$validation_error" >&2
           exit 1
         fi
 
-        local send_fn="_cli_alert_external_${channel}"
+        local send_fn="_shelldone_external_${channel}"
         if ! declare -f "$send_fn" &>/dev/null; then
-          echo >&2 "cli-alert: unknown channel '$channel'"
+          echo >&2 "shelldone: unknown channel '$channel'"
           exit 1
         fi
 
         echo "Sending test to ${channel}..."
-        _CLI_ALERT_SKIP_RATE_LIMIT=true
+        _SHELLDONE_SKIP_RATE_LIMIT=true
 
         # Set metadata for enriched Slack Block Kit preview
-        export _CLI_ALERT_META_CMD="cli-alert webhook test ${channel}"
-        export _CLI_ALERT_META_DURATION="0s"
-        export _CLI_ALERT_META_SOURCE="shell"
+        export _SHELLDONE_META_CMD="shelldone webhook test ${channel}"
+        export _SHELLDONE_META_DURATION="0s"
+        export _SHELLDONE_META_SOURCE="shell"
 
-        if "$send_fn" "cli-alert Test" "If you receive this, your ${channel} integration is working!" 0; then
-          printf '\033[1;32m[cli-alert]\033[0m Test sent successfully!'
-          [[ -n "${_CLI_ALERT_LAST_HTTP_STATUS:-}" && "${_CLI_ALERT_LAST_HTTP_STATUS:-}" != "unknown" ]] && printf ' (HTTP %s)' "$_CLI_ALERT_LAST_HTTP_STATUS"
+        if "$send_fn" "shelldone Test" "If you receive this, your ${channel} integration is working!" 0; then
+          printf '\033[1;32m[shelldone]\033[0m Test sent successfully!'
+          [[ -n "${_SHELLDONE_LAST_HTTP_STATUS:-}" && "${_SHELLDONE_LAST_HTTP_STATUS:-}" != "unknown" ]] && printf ' (HTTP %s)' "$_SHELLDONE_LAST_HTTP_STATUS"
           printf '\n'
         else
-          printf '\033[1;31m[cli-alert]\033[0m Test FAILED.'
-          [[ -n "${_CLI_ALERT_LAST_HTTP_STATUS:-}" && "${_CLI_ALERT_LAST_HTTP_STATUS:-}" != "unknown" ]] && printf ' (HTTP %s)' "$_CLI_ALERT_LAST_HTTP_STATUS"
+          printf '\033[1;31m[shelldone]\033[0m Test FAILED.'
+          [[ -n "${_SHELLDONE_LAST_HTTP_STATUS:-}" && "${_SHELLDONE_LAST_HTTP_STATUS:-}" != "unknown" ]] && printf ' (HTTP %s)' "$_SHELLDONE_LAST_HTTP_STATUS"
           printf '\n'
-          printf '\033[1;33m[cli-alert]\033[0m Run with CLI_ALERT_EXTERNAL_DEBUG=true for details.\n'
+          printf '\033[1;33m[shelldone]\033[0m Run with SHELLDONE_EXTERNAL_DEBUG=true for details.\n'
           exit 1
         fi
         ;;
       *)
-        echo >&2 "Usage: cli-alert webhook [status|test <channel>]"
+        echo >&2 "Usage: shelldone webhook [status|test <channel>]"
         exit 1
         ;;
     esac
@@ -1222,7 +1222,7 @@ cmd_webhook() {
 
 cmd_history() {
   local action="${1:-show}"
-  local log_dir="${CLI_ALERT_HISTORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/cli-alert}"
+  local log_dir="${SHELLDONE_HISTORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/shelldone}"
   local log_file="${log_dir}/history.log"
 
   case "$action" in
@@ -1255,7 +1255,7 @@ cmd_history() {
       echo "$log_file"
       ;;
     *)
-      echo >&2 "Usage: cli-alert history [show [N]|--clear|--path]"
+      echo >&2 "Usage: shelldone history [show [N]|--clear|--path]"
       exit 1
       ;;
   esac
@@ -1263,8 +1263,8 @@ cmd_history() {
 
 cmd_config() {
   local action="${1:-show}"
-  local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/cli-alert"
-  local config_file="${CLI_ALERT_CONFIG:-${config_dir}/config}"
+  local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/shelldone"
+  local config_file="${SHELLDONE_CONFIG:-${config_dir}/config}"
 
   case "$action" in
     show|"")
@@ -1279,62 +1279,62 @@ cmd_config() {
         echo ""
         echo "To create a config file:"
         echo "  mkdir -p \"$config_dir\""
-        echo "  cli-alert config init > \"$config_file\""
+        echo "  shelldone config init > \"$config_file\""
       fi
       ;;
     init)
       cat <<'CONFIGEOF'
-# cli-alert configuration
-# Sourced on startup. Env vars set before "cli-alert init" override these.
+# shelldone configuration
+# Sourced on startup. Env vars set before "shelldone init" override these.
 # Use :="${VAR:=value}" so explicit env vars take precedence.
 
 # Master switch
-: "${CLI_ALERT_ENABLED:=true}"
+: "${SHELLDONE_ENABLED:=true}"
 
 # Auto-notify for long commands
-: "${CLI_ALERT_AUTO:=true}"
-: "${CLI_ALERT_THRESHOLD:=10}"
+: "${SHELLDONE_AUTO:=true}"
+: "${SHELLDONE_THRESHOLD:=10}"
 
 # Notification filter: all, failure, success
-: "${CLI_ALERT_NOTIFY_ON:=all}"
+: "${SHELLDONE_NOTIFY_ON:=all}"
 
 # Sound names or file paths
-# : "${CLI_ALERT_SOUND_SUCCESS:=Glass}"
-# : "${CLI_ALERT_SOUND_FAILURE:=Sosumi}"
+# : "${SHELLDONE_SOUND_SUCCESS:=Glass}"
+# : "${SHELLDONE_SOUND_FAILURE:=Sosumi}"
 
 # TTS announcements
-# : "${CLI_ALERT_VOICE:=true}"
+# : "${SHELLDONE_VOICE:=true}"
 
 # Focus detection
-: "${CLI_ALERT_FOCUS_DETECT:=true}"
+: "${SHELLDONE_FOCUS_DETECT:=true}"
 
 # Notification history
-: "${CLI_ALERT_HISTORY:=true}"
+: "${SHELLDONE_HISTORY:=true}"
 
 # Commands to exclude (space-separated, supports globs)
-# : "${CLI_ALERT_EXCLUDE:=vim nvim vi nano less more man top htop ssh tmux screen fg bg alert-bg watch}"
+# : "${SHELLDONE_EXCLUDE:=vim nvim vi nano less more man top htop ssh tmux screen fg bg alert-bg watch}"
 
 # macOS: app to switch to when clicking notification (auto-detected from $TERM_PROGRAM)
 # Requires terminal-notifier: brew install terminal-notifier
 # Common values: com.microsoft.VSCode, com.apple.Terminal, com.googlecode.iterm2
-# : "${CLI_ALERT_ACTIVATE:=}"
+# : "${SHELLDONE_ACTIVATE:=}"
 
 # Quiet hours (HH:MM-HH:MM, crosses midnight OK)
-# : "${CLI_ALERT_QUIET_HOURS:=22:00-08:00}"
+# : "${SHELLDONE_QUIET_HOURS:=22:00-08:00}"
 
 # External channels (uncomment and fill in):
-# export CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/services/..."
-# export CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/..."
-# export CLI_ALERT_TELEGRAM_TOKEN="..."
-# export CLI_ALERT_TELEGRAM_CHAT_ID="..."
-# export CLI_ALERT_EMAIL_TO="you@example.com"
-# export CLI_ALERT_WEBHOOK_URL="https://your-endpoint.com/hook"
+# export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/..."
+# export SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/..."
+# export SHELLDONE_TELEGRAM_TOKEN="..."
+# export SHELLDONE_TELEGRAM_CHAT_ID="..."
+# export SHELLDONE_EMAIL_TO="you@example.com"
+# export SHELLDONE_WEBHOOK_URL="https://your-endpoint.com/hook"
 CONFIGEOF
       ;;
     edit)
       if [[ ! -f "$config_file" ]]; then
         echo >&2 "Config file does not exist. Create it first:"
-        echo >&2 "  mkdir -p \"$config_dir\" && cli-alert config init > \"$config_file\""
+        echo >&2 "  mkdir -p \"$config_dir\" && shelldone config init > \"$config_file\""
         exit 1
       fi
       "${EDITOR:-${VISUAL:-vi}}" "$config_file"
@@ -1343,19 +1343,19 @@ CONFIGEOF
       echo "$config_file"
       ;;
     *)
-      echo >&2 "Usage: cli-alert config [show|init|edit|path]"
+      echo >&2 "Usage: shelldone config [show|init|edit|path]"
       exit 1
       ;;
   esac
 }
 
 _load_state_module() {
-  if [[ -z "${_CLI_ALERT_STATE_LOADED:-}" ]]; then
-    local _state_lib="${CLI_ALERT_LIB}/state.sh"
+  if [[ -z "${_SHELLDONE_STATE_LOADED:-}" ]]; then
+    local _state_lib="${SHELLDONE_LIB}/state.sh"
     if [[ -f "$_state_lib" ]]; then
       source "$_state_lib"
     else
-      echo >&2 "cli-alert: state module not found"
+      echo >&2 "shelldone: state module not found"
       exit 1
     fi
   fi
@@ -1367,17 +1367,17 @@ cmd_mute() {
 
   if [[ -z "$duration_str" ]]; then
     # Mute indefinitely
-    _cli_alert_state_write "mute_until" "0"
-    printf '\033[1;32m[cli-alert]\033[0m Muted indefinitely. Run "cli-alert unmute" to resume.\n'
+    _shelldone_state_write "mute_until" "0"
+    printf '\033[1;32m[shelldone]\033[0m Muted indefinitely. Run "shelldone unmute" to resume.\n'
   else
     local seconds
-    if ! seconds="$(_cli_alert_parse_duration "$duration_str")"; then
-      echo >&2 "Usage: cli-alert mute [duration]  (e.g., 30m, 2h, 1h30m)"
+    if ! seconds="$(_shelldone_parse_duration "$duration_str")"; then
+      echo >&2 "Usage: shelldone mute [duration]  (e.g., 30m, 2h, 1h30m)"
       exit 1
     fi
     local until_ts
     until_ts=$(( $(date +%s) + seconds ))
-    _cli_alert_state_write "mute_until" "$until_ts"
+    _shelldone_state_write "mute_until" "$until_ts"
 
     # Format expiry for display (portable: try GNU date -d, then BSD date -r)
     local expiry_str
@@ -1388,14 +1388,14 @@ cmd_mute() {
     else
       expiry_str="epoch ${until_ts}"
     fi
-    printf '\033[1;32m[cli-alert]\033[0m Muted for %s (until %s)\n' "$duration_str" "$expiry_str"
+    printf '\033[1;32m[shelldone]\033[0m Muted for %s (until %s)\n' "$duration_str" "$expiry_str"
   fi
 }
 
 cmd_unmute() {
   _load_state_module
-  _cli_alert_state_delete "mute_until"
-  printf '\033[1;32m[cli-alert]\033[0m Unmuted. Notifications resumed.\n'
+  _shelldone_state_delete "mute_until"
+  printf '\033[1;32m[shelldone]\033[0m Unmuted. Notifications resumed.\n'
 }
 
 cmd_toggle() {
@@ -1409,7 +1409,7 @@ cmd_toggle() {
     echo "Toggle states:"
     local l val
     for l in desktop sound voice; do
-      val="$(_cli_alert_state_read "$l" 2>/dev/null)" || val=""
+      val="$(_shelldone_state_read "$l" 2>/dev/null)" || val=""
       if [[ "$val" == "off" ]]; then
         printf '  %-12s off  (toggled off)\n' "${l}:"
       else
@@ -1419,12 +1419,12 @@ cmd_toggle() {
 
     # External channels with configured indicator
     local -a ext_channels=("slack" "discord" "telegram" "email" "whatsapp" "webhook")
-    local -a ext_envvars=("CLI_ALERT_SLACK_WEBHOOK" "CLI_ALERT_DISCORD_WEBHOOK" "CLI_ALERT_TELEGRAM_TOKEN" "CLI_ALERT_EMAIL_TO" "CLI_ALERT_WHATSAPP_TOKEN" "CLI_ALERT_WEBHOOK_URL")
+    local -a ext_envvars=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
     local i
     for i in "${!ext_channels[@]}"; do
       l="${ext_channels[$i]}"
       local envvar="${ext_envvars[$i]}"
-      val="$(_cli_alert_state_read "$l" 2>/dev/null)" || val=""
+      val="$(_shelldone_state_read "$l" 2>/dev/null)" || val=""
       if [[ -z "${!envvar:-}" ]]; then
         printf '  %-12s -    (not configured)\n' "${l}:"
       elif [[ "$val" == "off" ]]; then
@@ -1438,11 +1438,11 @@ cmd_toggle() {
     echo ""
     echo "AI CLI hooks:"
     local ai_i
-    for ai_i in "${!_CLI_ALERT_AI_NAMES[@]}"; do
-      local ai_name="${_CLI_ALERT_AI_NAMES[$ai_i]}"
-      local ai_hook="${_CLI_ALERT_AI_HOOKS[$ai_i]}"
-      local ai_cmd="${_CLI_ALERT_AI_CMDS[$ai_i]}"
-      local ai_config_dir="${_CLI_ALERT_AI_CONFIGDIRS[$ai_i]}"
+    for ai_i in "${!_SHELLDONE_AI_NAMES[@]}"; do
+      local ai_name="${_SHELLDONE_AI_NAMES[$ai_i]}"
+      local ai_hook="${_SHELLDONE_AI_HOOKS[$ai_i]}"
+      local ai_cmd="${_SHELLDONE_AI_CMDS[$ai_i]}"
+      local ai_config_dir="${_SHELLDONE_AI_CONFIGDIRS[$ai_i]}"
 
       # Skip Aider (no hooks, no toggle)
       [[ -z "$ai_hook" ]] && continue
@@ -1453,7 +1453,7 @@ cmd_toggle() {
         continue
       fi
 
-      val="$(_cli_alert_state_read "$ai_name" 2>/dev/null)" || val=""
+      val="$(_shelldone_state_read "$ai_name" 2>/dev/null)" || val=""
       if [[ "$val" == "off" ]]; then
         printf '  %-12s off  (toggled off)\n' "${ai_name}:"
       else
@@ -1470,19 +1470,19 @@ cmd_toggle() {
       # Flip: if any external is on, turn all off; otherwise all on
       local any_on=false
       for l in slack discord telegram email whatsapp webhook; do
-        val="$(_cli_alert_state_read "$l" 2>/dev/null)" || val=""
+        val="$(_shelldone_state_read "$l" 2>/dev/null)" || val=""
         [[ "$val" != "off" ]] && any_on=true && break
       done
       if $any_on; then target="off"; else target="on"; fi
     fi
     for l in slack discord telegram email whatsapp webhook; do
       if [[ "$target" == "on" ]]; then
-        _cli_alert_state_delete "$l"
+        _shelldone_state_delete "$l"
       else
-        _cli_alert_state_write "$l" "off"
+        _shelldone_state_write "$l" "off"
       fi
     done
-    printf '\033[1;32m[cli-alert]\033[0m All external channels: %s\n' "$target"
+    printf '\033[1;32m[shelldone]\033[0m All external channels: %s\n' "$target"
     return 0
   fi
 
@@ -1492,7 +1492,7 @@ cmd_toggle() {
     [[ "$l" == "$layer" ]] && found=true && break
   done
   if ! $found; then
-    echo >&2 "cli-alert: unknown layer '$layer'"
+    echo >&2 "shelldone: unknown layer '$layer'"
     echo >&2 "Valid layers: ${valid_layers[*]} external"
     exit 1
   fi
@@ -1501,28 +1501,28 @@ cmd_toggle() {
     # Explicit on/off
     case "$explicit" in
       on)
-        _cli_alert_state_delete "$layer"
-        printf '\033[1;32m[cli-alert]\033[0m %s: on\n' "$layer"
+        _shelldone_state_delete "$layer"
+        printf '\033[1;32m[shelldone]\033[0m %s: on\n' "$layer"
         ;;
       off)
-        _cli_alert_state_write "$layer" "off"
-        printf '\033[1;32m[cli-alert]\033[0m %s: off\n' "$layer"
+        _shelldone_state_write "$layer" "off"
+        printf '\033[1;32m[shelldone]\033[0m %s: off\n' "$layer"
         ;;
       *)
-        echo >&2 "Usage: cli-alert toggle <layer> [on|off]"
+        echo >&2 "Usage: shelldone toggle <layer> [on|off]"
         exit 1
         ;;
     esac
   else
     # Flip current state
     local current
-    current="$(_cli_alert_state_read "$layer" 2>/dev/null)" || current=""
+    current="$(_shelldone_state_read "$layer" 2>/dev/null)" || current=""
     if [[ "$current" == "off" ]]; then
-      _cli_alert_state_delete "$layer"
-      printf '\033[1;32m[cli-alert]\033[0m %s: on\n' "$layer"
+      _shelldone_state_delete "$layer"
+      printf '\033[1;32m[shelldone]\033[0m %s: on\n' "$layer"
     else
-      _cli_alert_state_write "$layer" "off"
-      printf '\033[1;32m[cli-alert]\033[0m %s: off\n' "$layer"
+      _shelldone_state_write "$layer" "off"
+      printf '\033[1;32m[shelldone]\033[0m %s: off\n' "$layer"
     fi
   fi
 }
@@ -1534,12 +1534,12 @@ cmd_schedule() {
   if [[ -z "$input" ]]; then
     # Show current schedule
     local quiet_start quiet_end
-    quiet_start="$(_cli_alert_state_read "quiet_start" 2>/dev/null)" || quiet_start=""
-    quiet_end="$(_cli_alert_state_read "quiet_end" 2>/dev/null)" || quiet_end=""
+    quiet_start="$(_shelldone_state_read "quiet_start" 2>/dev/null)" || quiet_start=""
+    quiet_end="$(_shelldone_state_read "quiet_end" 2>/dev/null)" || quiet_end=""
     if [[ -n "$quiet_start" && -n "$quiet_end" ]]; then
       printf 'Quiet hours: %s-%s\n' "$quiet_start" "$quiet_end"
-    elif [[ -n "${CLI_ALERT_QUIET_HOURS:-}" ]]; then
-      printf 'Quiet hours: %s (from env)\n' "$CLI_ALERT_QUIET_HOURS"
+    elif [[ -n "${SHELLDONE_QUIET_HOURS:-}" ]]; then
+      printf 'Quiet hours: %s (from env)\n' "$SHELLDONE_QUIET_HOURS"
     else
       echo "No schedule set."
     fi
@@ -1547,16 +1547,16 @@ cmd_schedule() {
   fi
 
   if [[ "$input" == "off" ]]; then
-    _cli_alert_state_delete "quiet_start"
-    _cli_alert_state_delete "quiet_end"
-    printf '\033[1;32m[cli-alert]\033[0m Schedule cleared.\n'
+    _shelldone_state_delete "quiet_start"
+    _shelldone_state_delete "quiet_end"
+    printf '\033[1;32m[shelldone]\033[0m Schedule cleared.\n'
     return 0
   fi
 
   # Validate HH:MM-HH:MM format
   if [[ ! "$input" =~ ^([0-9]{2}:[0-9]{2})-([0-9]{2}:[0-9]{2})$ ]]; then
-    echo >&2 "Usage: cli-alert schedule [HH:MM-HH:MM|off]"
-    echo >&2 "Example: cli-alert schedule 22:00-08:00"
+    echo >&2 "Usage: shelldone schedule [HH:MM-HH:MM|off]"
+    echo >&2 "Example: shelldone schedule 22:00-08:00"
     exit 1
   fi
 
@@ -1566,44 +1566,44 @@ cmd_schedule() {
   local start_h="${start%%:*}" start_m="${start##*:}"
   local end_h="${end%%:*}" end_m="${end##*:}"
   if (( 10#$start_h > 23 || 10#$start_m > 59 || 10#$end_h > 23 || 10#$end_m > 59 )); then
-    echo >&2 "cli-alert: invalid time in schedule"
+    echo >&2 "shelldone: invalid time in schedule"
     exit 1
   fi
 
-  _cli_alert_state_write "quiet_start" "$start"
-  _cli_alert_state_write "quiet_end" "$end"
-  printf '\033[1;32m[cli-alert]\033[0m Quiet hours set: %s-%s\n' "$start" "$end"
+  _shelldone_state_write "quiet_start" "$start"
+  _shelldone_state_write "quiet_end" "$end"
+  printf '\033[1;32m[shelldone]\033[0m Quiet hours set: %s-%s\n' "$start" "$end"
 }
 
 cmd_help() {
   cat <<'HELP'
-cli-alert — Terminal process completion notifier
+shelldone — Terminal process completion notifier
 
 Usage:
-  cli-alert init [bash|zsh]     Output shell init code (use with eval)
-  cli-alert setup [all|ai-hooks|<ai>-hook]  Configure shell + AI CLI hooks
-  cli-alert uninstall           Remove shell integration + all AI hooks
-  cli-alert status              Show diagnostic info and verify setup
-  cli-alert test-notify         Send a test notification
-  cli-alert sounds              List available system sounds
-  cli-alert exclude [list|add|remove]  Manage auto-notify exclusion list
-  cli-alert webhook [status|test <channel>]  External notification channels
-  cli-alert history [show [N]|--clear|--path]  View notification history
-  cli-alert config [show|init|edit|path]  Manage config file
-  cli-alert mute [duration]     Mute all notifications (e.g., 30m, 2h)
-  cli-alert unmute              Resume notifications
-  cli-alert toggle [layer [on|off]]  Toggle notification layers
-  cli-alert schedule [HH:MM-HH:MM|off]  Set daily quiet hours
-  cli-alert test                Run verification tests
-  cli-alert version [--verbose] Show version (--verbose for details)
-  cli-alert help                Show this help
+  shelldone init [bash|zsh]     Output shell init code (use with eval)
+  shelldone setup [all|ai-hooks|<ai>-hook]  Configure shell + AI CLI hooks
+  shelldone uninstall           Remove shell integration + all AI hooks
+  shelldone status              Show diagnostic info and verify setup
+  shelldone test-notify         Send a test notification
+  shelldone sounds              List available system sounds
+  shelldone exclude [list|add|remove]  Manage auto-notify exclusion list
+  shelldone webhook [status|test <channel>]  External notification channels
+  shelldone history [show [N]|--clear|--path]  View notification history
+  shelldone config [show|init|edit|path]  Manage config file
+  shelldone mute [duration]     Mute all notifications (e.g., 30m, 2h)
+  shelldone unmute              Resume notifications
+  shelldone toggle [layer [on|off]]  Toggle notification layers
+  shelldone schedule [HH:MM-HH:MM|off]  Set daily quiet hours
+  shelldone test                Run verification tests
+  shelldone version [--verbose] Show version (--verbose for details)
+  shelldone help                Show this help
 
 Quick start:
   # Add to your .zshrc or .bashrc:
-  eval "$(cli-alert init zsh)"
+  eval "$(shelldone init zsh)"
 
   # Or auto-configure everything:
-  cli-alert setup
+  shelldone setup
 
 After init, you get:
   alert [--on-failure|--on-success] <command>   Wrap command with notifications
@@ -1611,61 +1611,61 @@ After init, you get:
   (auto-notify)                 Commands >30s auto-notify on completion
 
 AI CLI hooks:
-  cli-alert setup ai-hooks         Install hooks for all detected AI CLIs
-  cli-alert setup claude-hook      Install Claude Code Stop hook
-  cli-alert setup codex-hook       Install Codex CLI hook
-  cli-alert setup gemini-hook      Install Gemini CLI hook
-  cli-alert setup copilot-hook     Install Copilot CLI hook
-  cli-alert setup cursor-hook      Install Cursor hook
-  cli-alert toggle claude off      Disable notifications from Claude
-  cli-alert toggle codex off       Disable notifications from Codex
+  shelldone setup ai-hooks         Install hooks for all detected AI CLIs
+  shelldone setup claude-hook      Install Claude Code Stop hook
+  shelldone setup codex-hook       Install Codex CLI hook
+  shelldone setup gemini-hook      Install Gemini CLI hook
+  shelldone setup copilot-hook     Install Copilot CLI hook
+  shelldone setup cursor-hook      Install Cursor hook
+  shelldone toggle claude off      Disable notifications from Claude
+  shelldone toggle codex off       Disable notifications from Codex
 
   Aider: no native hooks — use: alert aider <prompt>
 
 Config file:
-  Create with: cli-alert config init > ~/.config/cli-alert/config
+  Create with: shelldone config init > ~/.config/shelldone/config
 
 Config (env vars, set before eval):
-  CLI_ALERT_ENABLED=true        Master on/off switch
-  CLI_ALERT_AUTO=true           Auto-notify on/off
-  CLI_ALERT_THRESHOLD=10        Seconds before auto-notify triggers
-  CLI_ALERT_NOTIFY_ON=all       Notify filter: all, failure, success
-  CLI_ALERT_SOUND_SUCCESS=Glass Success sound name or file path
-  CLI_ALERT_SOUND_FAILURE=Sosumi Failure sound name or file path
-  CLI_ALERT_VOICE=true          Enable TTS announcements
-  CLI_ALERT_EXCLUDE="vim ssh"   Commands to skip (supports globs like npm*)
-  CLI_ALERT_DEBUG=true          Enable debug output to stderr
-  CLI_ALERT_SOUND_TIMEOUT=10    Max seconds to wait for sound playback
-  CLI_ALERT_FOCUS_DETECT=true   Suppress notifications when terminal focused
-  CLI_ALERT_ACTIVATE=...        macOS: bundle ID to activate on notification click (auto-detect)
-  CLI_ALERT_TERMINALS="..."     Custom terminal app names for focus detection
-  CLI_ALERT_HISTORY=true        Log notifications to history file
+  SHELLDONE_ENABLED=true        Master on/off switch
+  SHELLDONE_AUTO=true           Auto-notify on/off
+  SHELLDONE_THRESHOLD=10        Seconds before auto-notify triggers
+  SHELLDONE_NOTIFY_ON=all       Notify filter: all, failure, success
+  SHELLDONE_SOUND_SUCCESS=Glass Success sound name or file path
+  SHELLDONE_SOUND_FAILURE=Sosumi Failure sound name or file path
+  SHELLDONE_VOICE=true          Enable TTS announcements
+  SHELLDONE_EXCLUDE="vim ssh"   Commands to skip (supports globs like npm*)
+  SHELLDONE_DEBUG=true          Enable debug output to stderr
+  SHELLDONE_SOUND_TIMEOUT=10    Max seconds to wait for sound playback
+  SHELLDONE_FOCUS_DETECT=true   Suppress notifications when terminal focused
+  SHELLDONE_ACTIVATE=...        macOS: bundle ID to activate on notification click (auto-detect)
+  SHELLDONE_TERMINALS="..."     Custom terminal app names for focus detection
+  SHELLDONE_HISTORY=true        Log notifications to history file
 
 Notification control:
-  cli-alert mute 30m            Mute all for 30 minutes
-  cli-alert mute                Mute indefinitely
-  cli-alert unmute              Resume notifications
-  cli-alert toggle sound off    Disable sound, keep desktop popups
-  cli-alert toggle slack off    Disable Slack channel
-  cli-alert toggle external off Disable all external channels
-  cli-alert toggle claude off   Disable Claude Code notifications
-  cli-alert schedule 22:00-08:00  Set quiet hours (crosses midnight OK)
-  cli-alert schedule off        Clear quiet hours
-  CLI_ALERT_QUIET_HOURS=22:00-08:00  Env var fallback for quiet hours
+  shelldone mute 30m            Mute all for 30 minutes
+  shelldone mute                Mute indefinitely
+  shelldone unmute              Resume notifications
+  shelldone toggle sound off    Disable sound, keep desktop popups
+  shelldone toggle slack off    Disable Slack channel
+  shelldone toggle external off Disable all external channels
+  shelldone toggle claude off   Disable Claude Code notifications
+  shelldone schedule 22:00-08:00  Set quiet hours (crosses midnight OK)
+  shelldone schedule off        Clear quiet hours
+  SHELLDONE_QUIET_HOURS=22:00-08:00  Env var fallback for quiet hours
 
   Layers: desktop, sound, voice, slack, discord, telegram, email,
           whatsapp, webhook, external (group),
           claude, codex, gemini, copilot, cursor (AI CLIs)
 
 External notifications (env vars):
-  CLI_ALERT_SLACK_WEBHOOK=...   Slack incoming webhook URL
-  CLI_ALERT_DISCORD_WEBHOOK=... Discord webhook URL
-  CLI_ALERT_TELEGRAM_TOKEN=...  Telegram bot token (also set _CHAT_ID)
-  CLI_ALERT_EMAIL_TO=...        Email recipient (requires sendmail/mail)
-  CLI_ALERT_WHATSAPP_TOKEN=...  Twilio auth (also set _API_URL, _FROM, _TO)
-  CLI_ALERT_WEBHOOK_URL=...     Generic webhook endpoint
-  CLI_ALERT_RATE_LIMIT=10       Min seconds between external notifications
-  CLI_ALERT_WEBHOOK_TIMEOUT=5   HTTP timeout in seconds
+  SHELLDONE_SLACK_WEBHOOK=...   Slack incoming webhook URL
+  SHELLDONE_DISCORD_WEBHOOK=... Discord webhook URL
+  SHELLDONE_TELEGRAM_TOKEN=...  Telegram bot token (also set _CHAT_ID)
+  SHELLDONE_EMAIL_TO=...        Email recipient (requires sendmail/mail)
+  SHELLDONE_WHATSAPP_TOKEN=...  Twilio auth (also set _API_URL, _FROM, _TO)
+  SHELLDONE_WEBHOOK_URL=...     Generic webhook endpoint
+  SHELLDONE_RATE_LIMIT=10       Min seconds between external notifications
+  SHELLDONE_WEBHOOK_TIMEOUT=5   HTTP timeout in seconds
 HELP
 }
 
@@ -1690,8 +1690,8 @@ case "${1:-help}" in
   version|--version|-v) shift 2>/dev/null; cmd_version "$@" ;;
   help|--help|-h)       cmd_help ;;
   *)
-    echo >&2 "cli-alert: unknown command '$1'"
-    echo >&2 "Run 'cli-alert help' for usage"
+    echo >&2 "shelldone: unknown command '$1'"
+    echo >&2 "Run 'shelldone help' for usage"
     exit 1
     ;;
 esac

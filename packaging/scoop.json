@@ -1,19 +1,19 @@
 {
   "version": "0.2.0",
   "description": "Terminal process completion notifier — OS-native notifications when commands finish",
-  "homepage": "https://github.com/nareshnavinash/cli-alert",
+  "homepage": "https://github.com/nareshnavinash/shelldone",
   "license": "MIT",
-  "url": "https://github.com/nareshnavinash/cli-alert/archive/refs/tags/v0.2.0.tar.gz",
+  "url": "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v0.2.0.tar.gz",
   "hash": "",
   "notes": "The hash field is populated automatically by the release workflow. Install from source if no release exists yet.",
-  "extract_dir": "cli-alert-0.2.0",
-  "bin": "bin/cli-alert",
+  "extract_dir": "shelldone-0.2.0",
+  "bin": "bin/shelldone",
   "post_install": [
-    "Write-Host 'cli-alert installed!' -ForegroundColor Green",
-    "Write-Host 'Add to your shell profile: eval \"$(cli-alert init bash)\"' -ForegroundColor Cyan"
+    "Write-Host 'shelldone installed!' -ForegroundColor Green",
+    "Write-Host 'Add to your shell profile: eval \"$(shelldone init bash)\"' -ForegroundColor Cyan"
   ],
   "checkver": "github",
   "autoupdate": {
-    "url": "https://github.com/nareshnavinash/cli-alert/archive/refs/tags/v$version.tar.gz"
+    "url": "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v$version.tar.gz"
   }
 }

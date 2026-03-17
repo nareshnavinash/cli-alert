@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# uninstall.sh — Clean removal of cli-alert
+# uninstall.sh — Clean removal of shelldone
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Use the CLI if available, otherwise do it inline
-if [[ -x "${SCRIPT_DIR}/bin/cli-alert" ]]; then
-  exec "${SCRIPT_DIR}/bin/cli-alert" uninstall
+if [[ -x "${SCRIPT_DIR}/bin/shelldone" ]]; then
+  exec "${SCRIPT_DIR}/bin/shelldone" uninstall
 fi
 
 # Fallback: inline removal
-MARKER_BEGIN="# >>> cli-alert >>>"
-MARKER_END="# <<< cli-alert <<<"
+MARKER_BEGIN="# >>> shelldone >>>"
+MARKER_END="# <<< shelldone <<<"
 
-ok() { printf '\033[1;32m[cli-alert]\033[0m %s\n' "$1"; }
-info() { printf '\033[1;34m[cli-alert]\033[0m %s\n' "$1"; }
+ok() { printf '\033[1;32m[shelldone]\033[0m %s\n' "$1"; }
+info() { printf '\033[1;34m[shelldone]\033[0m %s\n' "$1"; }
 
 _uninstall_tmp_file=""
 _uninstall_cleanup() { [[ -n "$_uninstall_tmp_file" ]] && rm -f "$_uninstall_tmp_file" 2>/dev/null; }

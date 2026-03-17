@@ -1,107 +1,107 @@
 #!/usr/bin/env bash
-# cli-alert.sh — Core notification engine + `alert` wrapper (cross-platform)
-# Source this file in your shell: eval "$(cli-alert init bash)"
+# shelldone.sh — Core notification engine + `alert` wrapper (cross-platform)
+# Source this file in your shell: eval "$(shelldone init bash)"
 
 # Guard against double-sourcing
-[[ -n "${_CLI_ALERT_LOADED:-}" ]] && return 0
-_CLI_ALERT_LOADED=1
+[[ -n "${_SHELLDONE_LOADED:-}" ]] && return 0
+_SHELLDONE_LOADED=1
 
 # ── Config file (loaded before defaults, so env vars set before init override) ──
 
-_cli_alert_load_config() {
-  local config_file="${CLI_ALERT_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/cli-alert/config}"
+_shelldone_load_config() {
+  local config_file="${SHELLDONE_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/shelldone/config}"
   if [[ -f "$config_file" ]]; then
     # shellcheck source=/dev/null
     source "$config_file" 2>/dev/null || true
   fi
 }
-_cli_alert_load_config
+_shelldone_load_config
 
 # ── Config (override before sourcing) ────────────────────────────────────────
 
-CLI_ALERT_ENABLED="${CLI_ALERT_ENABLED:-true}"
-CLI_ALERT_VOICE="${CLI_ALERT_VOICE:-}"
-CLI_ALERT_FOCUS_DETECT="${CLI_ALERT_FOCUS_DETECT:-true}"
-CLI_ALERT_NOTIFY_ON="${CLI_ALERT_NOTIFY_ON:-all}"
-CLI_ALERT_HISTORY="${CLI_ALERT_HISTORY:-true}"
+SHELLDONE_ENABLED="${SHELLDONE_ENABLED:-true}"
+SHELLDONE_VOICE="${SHELLDONE_VOICE:-}"
+SHELLDONE_FOCUS_DETECT="${SHELLDONE_FOCUS_DETECT:-true}"
+SHELLDONE_NOTIFY_ON="${SHELLDONE_NOTIFY_ON:-all}"
+SHELLDONE_HISTORY="${SHELLDONE_HISTORY:-true}"
 
 # ── External notifications (lazy load) ─────────────────────────────────────
 
-_cli_alert_load_external() {
-  [[ -n "${_CLI_ALERT_EXTERNAL_LOADED:-}" ]] && return 0
-  local ext="${_CLI_ALERT_LIB:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/external-notify.sh"
+_shelldone_load_external() {
+  [[ -n "${_SHELLDONE_EXTERNAL_LOADED:-}" ]] && return 0
+  local ext="${_SHELLDONE_LIB:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/external-notify.sh"
   [[ -f "$ext" ]] && source "$ext"
 }
 # Auto-load if any channel is configured
-if [[ -n "${CLI_ALERT_SLACK_WEBHOOK:-}${CLI_ALERT_DISCORD_WEBHOOK:-}${CLI_ALERT_TELEGRAM_TOKEN:-}${CLI_ALERT_EMAIL_TO:-}${CLI_ALERT_WHATSAPP_TOKEN:-}${CLI_ALERT_WEBHOOK_URL:-}" ]]; then
-  _cli_alert_load_external
+if [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}${SHELLDONE_DISCORD_WEBHOOK:-}${SHELLDONE_TELEGRAM_TOKEN:-}${SHELLDONE_EMAIL_TO:-}${SHELLDONE_WHATSAPP_TOKEN:-}${SHELLDONE_WEBHOOK_URL:-}" ]]; then
+  _shelldone_load_external
 fi
 
 # ── Debug mode ───────────────────────────────────────────────────────────────
 
-_cli_alert_debug() {
-  if [[ "${CLI_ALERT_DEBUG:-}" == "true" ]]; then
-    printf '[cli-alert:debug] %s\n' "$*" >&2
+_shelldone_debug() {
+  if [[ "${SHELLDONE_DEBUG:-}" == "true" ]]; then
+    printf '[shelldone:debug] %s\n' "$*" >&2
   fi
 }
 
 # ── Warning (always prints, but at most once per key per session) ────────────
 
-_cli_alert_warn_once() {
+_shelldone_warn_once() {
   local key="$1"; shift
-  local var="_CLI_ALERT_WARNED_${key}"
+  local var="_SHELLDONE_WARNED_${key}"
   if [[ -z "${!var:-}" ]]; then
     eval "$var=1"
-    printf '\033[1;33m[cli-alert]\033[0m %s\n' "$*" >&2
+    printf '\033[1;33m[shelldone]\033[0m %s\n' "$*" >&2
   fi
 }
 
 # ── Platform detection (runs once) ───────────────────────────────────────────
 
-_cli_alert_detect_platform() {
+_shelldone_detect_platform() {
   case "$(uname -s)" in
     Darwin)
-      _CLI_ALERT_PLATFORM="darwin"
+      _SHELLDONE_PLATFORM="darwin"
       ;;
     Linux)
       if grep -qiE '(microsoft|wsl)' /proc/version 2>/dev/null; then
-        _CLI_ALERT_PLATFORM="wsl"
+        _SHELLDONE_PLATFORM="wsl"
       else
-        _CLI_ALERT_PLATFORM="linux"
+        _SHELLDONE_PLATFORM="linux"
       fi
       ;;
     MINGW*|MSYS*|CYGWIN*)
-      _CLI_ALERT_PLATFORM="windows"
+      _SHELLDONE_PLATFORM="windows"
       ;;
     *)
-      _CLI_ALERT_PLATFORM="unknown"
+      _SHELLDONE_PLATFORM="unknown"
       ;;
   esac
-  _cli_alert_debug "platform detected: $_CLI_ALERT_PLATFORM"
+  _shelldone_debug "platform detected: $_SHELLDONE_PLATFORM"
 }
 
-_cli_alert_detect_platform
+_shelldone_detect_platform
 
 # ── Platform-specific defaults ───────────────────────────────────────────────
 
-case "$_CLI_ALERT_PLATFORM" in
+case "$_SHELLDONE_PLATFORM" in
   darwin)
-    CLI_ALERT_SOUND_SUCCESS="${CLI_ALERT_SOUND_SUCCESS:-Glass}"
-    CLI_ALERT_SOUND_FAILURE="${CLI_ALERT_SOUND_FAILURE:-Sosumi}"
+    SHELLDONE_SOUND_SUCCESS="${SHELLDONE_SOUND_SUCCESS:-Glass}"
+    SHELLDONE_SOUND_FAILURE="${SHELLDONE_SOUND_FAILURE:-Sosumi}"
     ;;
   linux)
-    CLI_ALERT_SOUND_SUCCESS="${CLI_ALERT_SOUND_SUCCESS:-complete}"
-    CLI_ALERT_SOUND_FAILURE="${CLI_ALERT_SOUND_FAILURE:-dialog-error}"
+    SHELLDONE_SOUND_SUCCESS="${SHELLDONE_SOUND_SUCCESS:-complete}"
+    SHELLDONE_SOUND_FAILURE="${SHELLDONE_SOUND_FAILURE:-dialog-error}"
     ;;
   wsl|windows)
-    CLI_ALERT_SOUND_SUCCESS="${CLI_ALERT_SOUND_SUCCESS:-Asterisk}"
-    CLI_ALERT_SOUND_FAILURE="${CLI_ALERT_SOUND_FAILURE:-Hand}"
+    SHELLDONE_SOUND_SUCCESS="${SHELLDONE_SOUND_SUCCESS:-Asterisk}"
+    SHELLDONE_SOUND_FAILURE="${SHELLDONE_SOUND_FAILURE:-Hand}"
     ;;
 esac
 
 # ── Security: sanitize strings for AppleScript interpolation ─────────────────
 
-_cli_alert_sanitize_applescript() {
+_shelldone_sanitize_applescript() {
   local str="$1"
   str="${str//\\/\\\\}"
   str="${str//\"/\\\"}"
@@ -110,8 +110,8 @@ _cli_alert_sanitize_applescript() {
 
 # ── Helper: background process with timeout ──────────────────────────────────
 
-_cli_alert_bg_timeout() {
-  local max_secs="${CLI_ALERT_SOUND_TIMEOUT:-10}"
+_shelldone_bg_timeout() {
+  local max_secs="${SHELLDONE_SOUND_TIMEOUT:-10}"
   (
     "$@" &
     local child=$!
@@ -124,7 +124,7 @@ _cli_alert_bg_timeout() {
 
 # ── Helper: Unicode-safe status icon ─────────────────────────────────────────
 
-_cli_alert_status_icon() {
+_shelldone_status_icon() {
   local exit_code="$1"
   local has_utf8=0
   case "${LC_ALL:-}${LC_CTYPE:-}${LANG:-}" in
@@ -139,7 +139,7 @@ _cli_alert_status_icon() {
 
 # ── Helper: format duration ──────────────────────────────────────────────────
 
-_cli_alert_format_duration() {
+_shelldone_format_duration() {
   local seconds="$1"
   if (( seconds < 60 )); then
     printf '%ds' "$seconds"
@@ -152,9 +152,9 @@ _cli_alert_format_duration() {
 
 # ── Activate auto-detection (macOS terminal → bundle ID for click-to-activate) ─
 
-_cli_alert_resolve_activate() {
-  if [[ -n "${CLI_ALERT_ACTIVATE:-}" ]]; then
-    printf '%s' "$CLI_ALERT_ACTIVATE"; return
+_shelldone_resolve_activate() {
+  if [[ -n "${SHELLDONE_ACTIVATE:-}" ]]; then
+    printf '%s' "$SHELLDONE_ACTIVATE"; return
   fi
   case "${TERM_PROGRAM:-}" in
     vscode)         printf 'com.microsoft.VSCode' ;;
@@ -169,9 +169,9 @@ _cli_alert_resolve_activate() {
 
 # ── Workspace resolution (VS Code window targeting) ─────────────────────────
 
-_cli_alert_resolve_workspace() {
-  if [[ -n "${CLI_ALERT_WORKSPACE:-}" ]]; then
-    printf '%s' "$CLI_ALERT_WORKSPACE"; return
+_shelldone_resolve_workspace() {
+  if [[ -n "${SHELLDONE_WORKSPACE:-}" ]]; then
+    printf '%s' "$SHELLDONE_WORKSPACE"; return
   fi
   if command -v git &>/dev/null; then
     local root
@@ -182,12 +182,12 @@ _cli_alert_resolve_workspace() {
 
 # ── Platform notification functions ──────────────────────────────────────────
 
-_cli_alert_notify_darwin() {
+_shelldone_notify_darwin() {
   local title="$1" message="$2" exit_code="$3"
-  _cli_alert_debug "darwin notifier: title='$title' exit=$exit_code"
+  _shelldone_debug "darwin notifier: title='$title' exit=$exit_code"
 
-  if ! _cli_alert_channel_enabled "desktop" 2>/dev/null; then
-    _cli_alert_debug "desktop channel toggled off"
+  if ! _shelldone_channel_enabled "desktop" 2>/dev/null; then
+    _shelldone_debug "desktop channel toggled off"
   elif command -v terminal-notifier &>/dev/null; then
     local tn_args=(-title "$title" -message "$message")
 
@@ -195,38 +195,38 @@ _cli_alert_notify_darwin() {
     # For other terminals, activate the app by bundle ID.
     if [[ "${TERM_PROGRAM:-}" == "vscode" ]]; then
       local workspace
-      workspace="$(_cli_alert_resolve_workspace)"
+      workspace="$(_shelldone_resolve_workspace)"
       tn_args+=(-open "vscode://file${workspace}")
-      _cli_alert_debug "open workspace on click: vscode://file${workspace}"
+      _shelldone_debug "open workspace on click: vscode://file${workspace}"
     else
       local activate
-      activate="$(_cli_alert_resolve_activate)"
+      activate="$(_shelldone_resolve_activate)"
       tn_args+=(-activate "$activate")
-      _cli_alert_debug "activate on click: $activate"
+      _shelldone_debug "activate on click: $activate"
     fi
 
     if ! terminal-notifier "${tn_args[@]}" 2>/dev/null; then
-      _cli_alert_warn_once DARWIN_TN "terminal-notifier failed — run 'cli-alert status' to diagnose"
+      _shelldone_warn_once DARWIN_TN "terminal-notifier failed — run 'shelldone status' to diagnose"
     fi
   else
     # Fallback: osascript (no custom icon, no click-to-activate)
     local safe_title safe_message
-    safe_title="$(_cli_alert_sanitize_applescript "$title")"
-    safe_message="$(_cli_alert_sanitize_applescript "$message")"
+    safe_title="$(_shelldone_sanitize_applescript "$title")"
+    safe_message="$(_shelldone_sanitize_applescript "$message")"
     if ! osascript -e "display notification \"$safe_message\" with title \"$safe_title\"" 2>/dev/null; then
-      _cli_alert_warn_once DARWIN_OSASCRIPT "osascript notification failed — run 'cli-alert status' to diagnose"
+      _shelldone_warn_once DARWIN_OSASCRIPT "osascript notification failed — run 'shelldone status' to diagnose"
     fi
   fi
 
   # Sound (background with timeout)
-  if _cli_alert_channel_enabled "sound" 2>/dev/null; then
+  if _shelldone_channel_enabled "sound" 2>/dev/null; then
     local sound
     if [[ "$exit_code" -eq 0 ]]; then
-      sound="$CLI_ALERT_SOUND_SUCCESS"
+      sound="$SHELLDONE_SOUND_SUCCESS"
     else
-      sound="$CLI_ALERT_SOUND_FAILURE"
+      sound="$SHELLDONE_SOUND_FAILURE"
     fi
-    _cli_alert_debug "sound: $sound"
+    _shelldone_debug "sound: $sound"
     local sound_file
     if [[ "$sound" == */* ]]; then
       sound_file="$sound"
@@ -234,32 +234,32 @@ _cli_alert_notify_darwin() {
       sound_file="/System/Library/Sounds/${sound}.aiff"
     fi
     if [[ -f "$sound_file" ]]; then
-      _cli_alert_bg_timeout afplay "$sound_file"
+      _shelldone_bg_timeout afplay "$sound_file"
     else
-      _cli_alert_warn_once SOUND "sound file not found: $sound_file — try 'cli-alert sounds'"
+      _shelldone_warn_once SOUND "sound file not found: $sound_file — try 'shelldone sounds'"
     fi
   fi
 
   # TTS (optional, with timeout)
-  if [[ "$CLI_ALERT_VOICE" == "true" ]] && _cli_alert_channel_enabled "voice" 2>/dev/null; then
-    _cli_alert_bg_timeout say "$message"
+  if [[ "$SHELLDONE_VOICE" == "true" ]] && _shelldone_channel_enabled "voice" 2>/dev/null; then
+    _shelldone_bg_timeout say "$message"
   fi
 }
 
-_cli_alert_notify_linux() {
+_shelldone_notify_linux() {
   local title="$1" message="$2" exit_code="$3"
-  _cli_alert_debug "linux notifier: title='$title' exit=$exit_code"
+  _shelldone_debug "linux notifier: title='$title' exit=$exit_code"
 
   # Notification
-  if ! _cli_alert_channel_enabled "desktop" 2>/dev/null; then
-    _cli_alert_debug "desktop channel toggled off"
+  if ! _shelldone_channel_enabled "desktop" 2>/dev/null; then
+    _shelldone_debug "desktop channel toggled off"
   elif command -v notify-send &>/dev/null; then
-    # Try custom cli-alert icon, fall back to system theme icons
+    # Try custom shelldone icon, fall back to system theme icons
     local icon
-    local lib_dir="${_CLI_ALERT_LIB:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-    local custom_icon="${lib_dir}/../assets/linux/cli-alert.png"
+    local lib_dir="${_SHELLDONE_LIB:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+    local custom_icon="${lib_dir}/../assets/linux/shelldone.png"
     if [[ -f "$custom_icon" ]]; then
-      icon="$(cd "$(dirname "$custom_icon")" && pwd)/cli-alert.png"
+      icon="$(cd "$(dirname "$custom_icon")" && pwd)/shelldone.png"
     elif [[ "$exit_code" -eq 0 ]]; then
       icon="dialog-information"
     else
@@ -267,20 +267,20 @@ _cli_alert_notify_linux() {
     fi
     notify-send --icon="$icon" "$title" "$message" 2>/dev/null
   else
-    _cli_alert_warn_once LINUX_NOTIFY "notify-send not found (install libnotify-bin for desktop notifications)"
-    _cli_alert_fallback "$title" "$message"
+    _shelldone_warn_once LINUX_NOTIFY "notify-send not found (install libnotify-bin for desktop notifications)"
+    _shelldone_fallback "$title" "$message"
     return
   fi
 
   # Sound (background with timeout, try paplay → aplay → mpv)
-  if _cli_alert_channel_enabled "sound" 2>/dev/null; then
+  if _shelldone_channel_enabled "sound" 2>/dev/null; then
     local sound
     if [[ "$exit_code" -eq 0 ]]; then
-      sound="$CLI_ALERT_SOUND_SUCCESS"
+      sound="$SHELLDONE_SOUND_SUCCESS"
     else
-      sound="$CLI_ALERT_SOUND_FAILURE"
+      sound="$SHELLDONE_SOUND_FAILURE"
     fi
-    _cli_alert_debug "sound: $sound"
+    _shelldone_debug "sound: $sound"
 
     local sound_file
     if [[ "$sound" == */* ]]; then
@@ -290,101 +290,101 @@ _cli_alert_notify_linux() {
     fi
     if [[ -f "$sound_file" ]]; then
       if command -v paplay &>/dev/null; then
-        _cli_alert_bg_timeout paplay "$sound_file"
+        _shelldone_bg_timeout paplay "$sound_file"
       elif command -v aplay &>/dev/null; then
-        _cli_alert_bg_timeout aplay "$sound_file"
+        _shelldone_bg_timeout aplay "$sound_file"
       elif command -v mpv &>/dev/null; then
-        _cli_alert_bg_timeout mpv --no-terminal "$sound_file"
+        _shelldone_bg_timeout mpv --no-terminal "$sound_file"
       fi
     fi
   fi
 
   # TTS (optional, with timeout)
-  if [[ "$CLI_ALERT_VOICE" == "true" ]] && _cli_alert_channel_enabled "voice" 2>/dev/null; then
+  if [[ "$SHELLDONE_VOICE" == "true" ]] && _shelldone_channel_enabled "voice" 2>/dev/null; then
     if command -v espeak &>/dev/null; then
-      _cli_alert_bg_timeout espeak "$message"
+      _shelldone_bg_timeout espeak "$message"
     elif command -v spd-say &>/dev/null; then
-      _cli_alert_bg_timeout spd-say "$message"
+      _shelldone_bg_timeout spd-say "$message"
     fi
   fi
 }
 
-_cli_alert_notify_wsl() {
+_shelldone_notify_wsl() {
   local title="$1" message="$2" exit_code="$3"
-  _cli_alert_debug "wsl notifier: title='$title' exit=$exit_code"
+  _shelldone_debug "wsl notifier: title='$title' exit=$exit_code"
 
   # Notification: try BurntToast → wsl-notify-send → WinRT toast
   # Pass values via environment variables to avoid PowerShell injection
-  if ! _cli_alert_channel_enabled "desktop" 2>/dev/null; then
-    _cli_alert_debug "desktop channel toggled off"
+  if ! _shelldone_channel_enabled "desktop" 2>/dev/null; then
+    _shelldone_debug "desktop channel toggled off"
   elif powershell.exe -Command "Get-Module -ListAvailable -Name BurntToast" &>/dev/null 2>&1; then
-    CLI_ALERT_PS_TITLE="$title" CLI_ALERT_PS_MSG="$message" \
-      powershell.exe -Command 'Import-Module BurntToast; New-BurntToastNotification -Text $env:CLI_ALERT_PS_TITLE, $env:CLI_ALERT_PS_MSG' 2>/dev/null
+    SHELLDONE_PS_TITLE="$title" SHELLDONE_PS_MSG="$message" \
+      powershell.exe -Command 'Import-Module BurntToast; New-BurntToastNotification -Text $env:SHELLDONE_PS_TITLE, $env:SHELLDONE_PS_MSG' 2>/dev/null
   elif command -v wsl-notify-send &>/dev/null; then
     wsl-notify-send --category "$title" "$message" 2>/dev/null
   elif command -v powershell.exe &>/dev/null; then
-    CLI_ALERT_PS_TITLE="$title" CLI_ALERT_PS_MSG="$message" \
+    SHELLDONE_PS_TITLE="$title" SHELLDONE_PS_MSG="$message" \
       powershell.exe -Command '
         [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
         $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
         $textNodes = $template.GetElementsByTagName("text")
-        $textNodes.Item(0).AppendChild($template.CreateTextNode($env:CLI_ALERT_PS_TITLE)) > $null
-        $textNodes.Item(1).AppendChild($template.CreateTextNode($env:CLI_ALERT_PS_MSG)) > $null
+        $textNodes.Item(0).AppendChild($template.CreateTextNode($env:SHELLDONE_PS_TITLE)) > $null
+        $textNodes.Item(1).AppendChild($template.CreateTextNode($env:SHELLDONE_PS_MSG)) > $null
         $toast = [Windows.UI.Notifications.ToastNotification]::new($template)
-        [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("cli-alert").Show($toast)
+        [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("shelldone").Show($toast)
       ' 2>/dev/null
   else
-    _cli_alert_warn_once WSL_NOTIFY "no Windows notification tool found — run 'cli-alert status' to diagnose"
-    _cli_alert_fallback "$title" "$message"
+    _shelldone_warn_once WSL_NOTIFY "no Windows notification tool found — run 'shelldone status' to diagnose"
+    _shelldone_fallback "$title" "$message"
     return
   fi
 
   # Sound (background with timeout, via env var)
-  if _cli_alert_channel_enabled "sound" 2>/dev/null && command -v powershell.exe &>/dev/null; then
+  if _shelldone_channel_enabled "sound" 2>/dev/null && command -v powershell.exe &>/dev/null; then
     local sound
     if [[ "$exit_code" -eq 0 ]]; then
-      sound="$CLI_ALERT_SOUND_SUCCESS"
+      sound="$SHELLDONE_SOUND_SUCCESS"
     else
-      sound="$CLI_ALERT_SOUND_FAILURE"
+      sound="$SHELLDONE_SOUND_FAILURE"
     fi
-    _cli_alert_debug "sound: $sound"
+    _shelldone_debug "sound: $sound"
     if [[ "$sound" == */* ]]; then
-      CLI_ALERT_PS_SOUND="$sound" \
-        _cli_alert_bg_timeout powershell.exe -Command '(New-Object Media.SoundPlayer ($env:CLI_ALERT_PS_SOUND)).PlaySync()'
+      SHELLDONE_PS_SOUND="$sound" \
+        _shelldone_bg_timeout powershell.exe -Command '(New-Object Media.SoundPlayer ($env:SHELLDONE_PS_SOUND)).PlaySync()'
     else
-      CLI_ALERT_PS_SOUND="$sound" \
-        _cli_alert_bg_timeout powershell.exe -Command '(New-Object Media.SoundPlayer ("C:\Windows\Media\Windows " + $env:CLI_ALERT_PS_SOUND + ".wav")).PlaySync()'
+      SHELLDONE_PS_SOUND="$sound" \
+        _shelldone_bg_timeout powershell.exe -Command '(New-Object Media.SoundPlayer ("C:\Windows\Media\Windows " + $env:SHELLDONE_PS_SOUND + ".wav")).PlaySync()'
     fi
   fi
 
   # TTS (optional, via env var, with timeout)
-  if [[ "$CLI_ALERT_VOICE" == "true" ]] && _cli_alert_channel_enabled "voice" 2>/dev/null && command -v powershell.exe &>/dev/null; then
-    CLI_ALERT_PS_MSG="$message" \
-      _cli_alert_bg_timeout powershell.exe -Command 'Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak($env:CLI_ALERT_PS_MSG)'
+  if [[ "$SHELLDONE_VOICE" == "true" ]] && _shelldone_channel_enabled "voice" 2>/dev/null && command -v powershell.exe &>/dev/null; then
+    SHELLDONE_PS_MSG="$message" \
+      _shelldone_bg_timeout powershell.exe -Command 'Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak($env:SHELLDONE_PS_MSG)'
   fi
 }
 
-_cli_alert_notify_windows() {
+_shelldone_notify_windows() {
   # Git Bash / MSYS2 / Cygwin — same approach as WSL but without wsl-notify-send
-  _cli_alert_notify_wsl "$@"
+  _shelldone_notify_wsl "$@"
 }
 
 # ── Fallback (terminal bell + stderr) ────────────────────────────────────────
 
-_cli_alert_fallback() {
+_shelldone_fallback() {
   local title="$1" message="$2"
   # Terminal bell
   printf '\a' >/dev/tty 2>/dev/null || printf '\a'
   # Colored stderr message
-  printf '\033[1;33m[cli-alert]\033[0m %s: %s\n' "$title" "$message" >&2
+  printf '\033[1;33m[shelldone]\033[0m %s: %s\n' "$title" "$message" >&2
 }
 
 # ── Terminal focus detection ──────────────────────────────────────────────────
 
-_cli_alert_terminal_focused_darwin() {
+_shelldone_terminal_focused_darwin() {
   local frontmost
   frontmost=$(osascript -e 'tell application "System Events" to get name of first application process whose frontmost is true' 2>/dev/null) || return 1
-  local terminals="${CLI_ALERT_TERMINALS:-Terminal iTerm2 Alacritty kitty WezTerm Hyper}"
+  local terminals="${SHELLDONE_TERMINALS:-Terminal iTerm2 Alacritty kitty WezTerm Hyper}"
   local term
   for term in $terminals; do
     [[ "$frontmost" == "$term" ]] && return 0
@@ -392,7 +392,7 @@ _cli_alert_terminal_focused_darwin() {
   return 1
 }
 
-_cli_alert_terminal_focused_linux() {
+_shelldone_terminal_focused_linux() {
   command -v xdotool &>/dev/null || return 1
   local win_pid
   win_pid=$(xdotool getactivewindow getwindowpid 2>/dev/null) || return 1
@@ -405,23 +405,23 @@ _cli_alert_terminal_focused_linux() {
   return 1
 }
 
-_cli_alert_terminal_focused() {
-  [[ "$CLI_ALERT_FOCUS_DETECT" != "true" ]] && return 1
-  case "$_CLI_ALERT_PLATFORM" in
-    darwin)  _cli_alert_terminal_focused_darwin ;;
-    linux)   _cli_alert_terminal_focused_linux ;;
+_shelldone_terminal_focused() {
+  [[ "$SHELLDONE_FOCUS_DETECT" != "true" ]] && return 1
+  case "$_SHELLDONE_PLATFORM" in
+    darwin)  _shelldone_terminal_focused_darwin ;;
+    linux)   _shelldone_terminal_focused_linux ;;
     *)       return 1 ;;  # WSL/Windows: can't detect reliably
   esac
 }
 
 # ── Notification history log ──────────────────────────────────────────────────
 
-_cli_alert_log_history() {
+_shelldone_log_history() {
   local title="$1" message="$2" exit_code="$3"
 
-  [[ "${CLI_ALERT_HISTORY:-true}" != "true" ]] && return 0
+  [[ "${SHELLDONE_HISTORY:-true}" != "true" ]] && return 0
 
-  local log_dir="${CLI_ALERT_HISTORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/cli-alert}"
+  local log_dir="${SHELLDONE_HISTORY_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/shelldone}"
   local log_file="${log_dir}/history.log"
 
   if [[ ! -d "$log_dir" ]]; then
@@ -432,12 +432,12 @@ _cli_alert_log_history() {
   timestamp=$(date '+%Y-%m-%d %H:%M:%S')
 
   local channels="desktop"
-  [[ -n "${CLI_ALERT_SLACK_WEBHOOK:-}" ]]   && channels+=",slack"
-  [[ -n "${CLI_ALERT_DISCORD_WEBHOOK:-}" ]] && channels+=",discord"
-  [[ -n "${CLI_ALERT_TELEGRAM_TOKEN:-}" ]]  && channels+=",telegram"
-  [[ -n "${CLI_ALERT_EMAIL_TO:-}" ]]        && channels+=",email"
-  [[ -n "${CLI_ALERT_WHATSAPP_TOKEN:-}" ]]  && channels+=",whatsapp"
-  [[ -n "${CLI_ALERT_WEBHOOK_URL:-}" ]]     && channels+=",webhook"
+  [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}" ]]   && channels+=",slack"
+  [[ -n "${SHELLDONE_DISCORD_WEBHOOK:-}" ]] && channels+=",discord"
+  [[ -n "${SHELLDONE_TELEGRAM_TOKEN:-}" ]]  && channels+=",telegram"
+  [[ -n "${SHELLDONE_EMAIL_TO:-}" ]]        && channels+=",email"
+  [[ -n "${SHELLDONE_WHATSAPP_TOKEN:-}" ]]  && channels+=",whatsapp"
+  [[ -n "${SHELLDONE_WEBHOOK_URL:-}" ]]     && channels+=",webhook"
 
   printf '%s\t%s\t%s\t%s\t%s\n' \
     "$timestamp" "$title" "$message" "$exit_code" "$channels" \
@@ -446,59 +446,59 @@ _cli_alert_log_history() {
 
 # ── Main notification dispatcher ─────────────────────────────────────────────
 
-_cli_alert_notify() {
+_shelldone_notify() {
   local title="$1" message="$2" exit_code="${3:-0}"
 
   # Validate exit code is numeric
   [[ "$exit_code" =~ ^[0-9]+$ ]] || exit_code=1
 
-  [[ "$CLI_ALERT_ENABLED" != "true" ]] && return 0
+  [[ "$SHELLDONE_ENABLED" != "true" ]] && return 0
 
   # Lazy-load state module
-  if [[ -z "${_CLI_ALERT_STATE_LOADED:-}" ]]; then
-    local _state_lib="${_CLI_ALERT_LIB:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/state.sh"
+  if [[ -z "${_SHELLDONE_STATE_LOADED:-}" ]]; then
+    local _state_lib="${_SHELLDONE_LIB:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/state.sh"
     [[ -f "$_state_lib" ]] && source "$_state_lib"
   fi
 
   # Mute / quiet hours check (full suppression — still logs to history)
-  if _cli_alert_is_muted 2>/dev/null || _cli_alert_is_quiet_hours 2>/dev/null; then
-    _cli_alert_debug "suppressed by mute or quiet hours"
-    _cli_alert_log_history "$title" "$message" "$exit_code"
+  if _shelldone_is_muted 2>/dev/null || _shelldone_is_quiet_hours 2>/dev/null; then
+    _shelldone_debug "suppressed by mute or quiet hours"
+    _shelldone_log_history "$title" "$message" "$exit_code"
     return 0
   fi
 
   # Log to history
-  _cli_alert_log_history "$title" "$message" "$exit_code"
+  _shelldone_log_history "$title" "$message" "$exit_code"
 
   # External notifications (fire regardless of focus, non-blocking)
   # Lazy-load external module if a channel was configured after shell init
-  if ! declare -f _cli_alert_notify_external &>/dev/null; then
-    if [[ -n "${CLI_ALERT_SLACK_WEBHOOK:-}${CLI_ALERT_DISCORD_WEBHOOK:-}${CLI_ALERT_TELEGRAM_TOKEN:-}${CLI_ALERT_EMAIL_TO:-}${CLI_ALERT_WHATSAPP_TOKEN:-}${CLI_ALERT_WEBHOOK_URL:-}" ]]; then
-      _cli_alert_load_external
+  if ! declare -f _shelldone_notify_external &>/dev/null; then
+    if [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}${SHELLDONE_DISCORD_WEBHOOK:-}${SHELLDONE_TELEGRAM_TOKEN:-}${SHELLDONE_EMAIL_TO:-}${SHELLDONE_WHATSAPP_TOKEN:-}${SHELLDONE_WEBHOOK_URL:-}" ]]; then
+      _shelldone_load_external
     fi
   fi
-  if declare -f _cli_alert_notify_external &>/dev/null; then
-    _cli_alert_notify_external "$title" "$message" "$exit_code"
+  if declare -f _shelldone_notify_external &>/dev/null; then
+    _shelldone_notify_external "$title" "$message" "$exit_code"
   fi
 
-  if _cli_alert_terminal_focused; then
-    _cli_alert_debug "terminal focused, suppressing notification"
+  if _shelldone_terminal_focused; then
+    _shelldone_debug "terminal focused, suppressing notification"
     return 0
   fi
 
-  _cli_alert_debug "notify: title='$title' exit=$exit_code platform=$_CLI_ALERT_PLATFORM"
+  _shelldone_debug "notify: title='$title' exit=$exit_code platform=$_SHELLDONE_PLATFORM"
 
-  case "$_CLI_ALERT_PLATFORM" in
-    darwin)  _cli_alert_notify_darwin  "$title" "$message" "$exit_code" ;;
-    linux)   _cli_alert_notify_linux   "$title" "$message" "$exit_code" ;;
-    wsl)     _cli_alert_notify_wsl     "$title" "$message" "$exit_code" ;;
-    windows) _cli_alert_notify_windows "$title" "$message" "$exit_code" ;;
-    *)       _cli_alert_fallback       "$title" "$message" ;;
+  case "$_SHELLDONE_PLATFORM" in
+    darwin)  _shelldone_notify_darwin  "$title" "$message" "$exit_code" ;;
+    linux)   _shelldone_notify_linux   "$title" "$message" "$exit_code" ;;
+    wsl)     _shelldone_notify_wsl     "$title" "$message" "$exit_code" ;;
+    windows) _shelldone_notify_windows "$title" "$message" "$exit_code" ;;
+    *)       _shelldone_fallback       "$title" "$message" ;;
   esac
 
   # Clean up metadata to prevent stale vars leaking across notifications
-  if declare -f _cli_alert_clear_metadata &>/dev/null; then
-    _cli_alert_clear_metadata
+  if declare -f _shelldone_clear_metadata &>/dev/null; then
+    _shelldone_clear_metadata
   fi
 }
 
@@ -506,7 +506,7 @@ _cli_alert_notify() {
 
 alert() {
   # Parse flags
-  local notify_on="${CLI_ALERT_NOTIFY_ON:-all}"
+  local notify_on="${SHELLDONE_NOTIFY_ON:-all}"
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --on-failure) notify_on="failure"; shift ;;
@@ -535,7 +535,7 @@ alert() {
 
   local elapsed=$((SECONDS - start_seconds))
   local duration
-  duration=$(_cli_alert_format_duration "$elapsed")
+  duration=$(_shelldone_format_duration "$elapsed")
 
   # Check notification filter
   if [[ "$notify_on" == "failure" && "$exit_code" -eq 0 ]]; then
@@ -546,16 +546,16 @@ alert() {
   fi
 
   local status_icon
-  status_icon="$(_cli_alert_status_icon "$exit_code")"
+  status_icon="$(_shelldone_status_icon "$exit_code")"
 
   local cmd_base="${1##*/}"
 
   # Set metadata for enriched Slack messages
-  export _CLI_ALERT_META_CMD="$cmd_display"
-  export _CLI_ALERT_META_DURATION="$duration"
-  export _CLI_ALERT_META_SOURCE="shell"
+  export _SHELLDONE_META_CMD="$cmd_display"
+  export _SHELLDONE_META_DURATION="$duration"
+  export _SHELLDONE_META_SOURCE="shell"
 
-  _cli_alert_notify \
+  _shelldone_notify \
     "${cmd_base} Complete" \
     "${status_icon} ${cmd_display} (${duration}, exit ${exit_code})"  \
     "$exit_code"
@@ -622,17 +622,17 @@ alert-bg() {
 
   local elapsed=$((SECONDS - start_seconds))
   local duration
-  duration=$(_cli_alert_format_duration "$elapsed")
+  duration=$(_shelldone_format_duration "$elapsed")
 
   if [[ "$exit_code" == "unknown" ]]; then
-    _cli_alert_notify \
+    _shelldone_notify \
       "Background Job Complete" \
       "? ${job_name} (${duration}, exit unknown)" \
       0
   else
     local status_icon
-    status_icon="$(_cli_alert_status_icon "$exit_code")"
-    _cli_alert_notify \
+    status_icon="$(_shelldone_status_icon "$exit_code")"
+    _shelldone_notify \
       "Background Job Complete" \
       "${status_icon} ${job_name} (${duration}, exit ${exit_code})" \
       "$exit_code"

@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security issue in cli-alert, please report it responsibly.
+If you discover a security issue in shelldone, please report it responsibly.
 
 **Email:** nareshnavinash@gmail.com
 
@@ -22,7 +22,7 @@ You can expect an initial response within 72 hours. We will work with you to und
 
 ## Scope
 
-cli-alert is a local shell tool. Security-relevant areas include:
+shelldone is a local shell tool. Security-relevant areas include:
 
 - Command injection via unsanitized input in notification payloads
 - Credential exposure (webhook URLs, API tokens) in logs or debug output

@@ -1,7 +1,7 @@
-#compdef cli-alert
-# Zsh completion for cli-alert
+#compdef shelldone
+# Zsh completion for shelldone
 
-_cli-alert() {
+_shelldone() {
   local -a commands
   commands=(
     'init:Output shell init code (use with eval)'
@@ -29,7 +29,7 @@ _cli-alert() {
 
   case "$state" in
     command)
-      _describe -t commands 'cli-alert command' commands
+      _describe -t commands 'shelldone command' commands
       ;;
     args)
       case "${words[1]}" in
@@ -73,4 +73,4 @@ _cli-alert() {
   esac
 }
 
-_cli-alert "$@"
+_shelldone "$@"

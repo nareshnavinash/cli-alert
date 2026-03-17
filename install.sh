@@ -5,12 +5,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-info()  { printf '\033[1;34m[cli-alert]\033[0m %s\n' "$1"; }
-ok()    { printf '\033[1;32m[cli-alert]\033[0m %s\n' "$1"; }
-warn()  { printf '\033[1;33m[cli-alert]\033[0m %s\n' "$1"; }
+info()  { printf '\033[1;34m[shelldone]\033[0m %s\n' "$1"; }
+ok()    { printf '\033[1;32m[shelldone]\033[0m %s\n' "$1"; }
+warn()  { printf '\033[1;33m[shelldone]\033[0m %s\n' "$1"; }
 
 # ── Detect platform ─────────────────────────────────────────────────────────
-# Keep in sync with lib/cli-alert.sh:_cli_alert_detect_platform
+# Keep in sync with lib/shelldone.sh:_shelldone_detect_platform
 
 detect_platform() {
   case "$(uname -s)" in
@@ -31,7 +31,7 @@ info "Detected platform: $PLATFORM"
 
 # ── Make scripts executable ──────────────────────────────────────────────────
 
-chmod +x "${SCRIPT_DIR}/bin/cli-alert"
+chmod +x "${SCRIPT_DIR}/bin/shelldone"
 chmod +x "${SCRIPT_DIR}/hooks/"*.sh
 chmod +x "${SCRIPT_DIR}/test.sh"
 chmod +x "${SCRIPT_DIR}/uninstall.sh"
@@ -47,7 +47,7 @@ fi
 
 # ── Run setup ────────────────────────────────────────────────────────────────
 
-"${BIN_DIR}/cli-alert" setup
+"${BIN_DIR}/shelldone" setup
 
 # ── Check for notification tools ─────────────────────────────────────────────
 

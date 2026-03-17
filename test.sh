@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# test.sh — Verification script for cli-alert
+# test.sh — Verification script for shelldone
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Resolve lib directory (same logic as bin/cli-alert)
-if [[ -f "${SCRIPT_DIR}/lib/cli-alert/cli-alert.sh" ]]; then
-  LIB_DIR="${SCRIPT_DIR}/lib/cli-alert"
-elif [[ -f "${SCRIPT_DIR}/lib/cli-alert.sh" ]]; then
+# Resolve lib directory (same logic as bin/shelldone)
+if [[ -f "${SCRIPT_DIR}/lib/shelldone/shelldone.sh" ]]; then
+  LIB_DIR="${SCRIPT_DIR}/lib/shelldone"
+elif [[ -f "${SCRIPT_DIR}/lib/shelldone.sh" ]]; then
   LIB_DIR="${SCRIPT_DIR}/lib"
 else
   echo "Cannot find lib directory" >&2
@@ -17,24 +17,24 @@ fi
 # ── Suppress real notifications during tests ─────────────────────────────────
 # Save and unset all notification-triggering env vars before any tests run.
 # This prevents real Slack messages, sounds, and TTS from firing.
-_SAVED_CLI_ALERT_SLACK_WEBHOOK="${CLI_ALERT_SLACK_WEBHOOK:-}"
-_SAVED_CLI_ALERT_DISCORD_WEBHOOK="${CLI_ALERT_DISCORD_WEBHOOK:-}"
-_SAVED_CLI_ALERT_TELEGRAM_TOKEN="${CLI_ALERT_TELEGRAM_TOKEN:-}"
-_SAVED_CLI_ALERT_TELEGRAM_CHAT_ID="${CLI_ALERT_TELEGRAM_CHAT_ID:-}"
-_SAVED_CLI_ALERT_EMAIL_TO="${CLI_ALERT_EMAIL_TO:-}"
-_SAVED_CLI_ALERT_WHATSAPP_TOKEN="${CLI_ALERT_WHATSAPP_TOKEN:-}"
-_SAVED_CLI_ALERT_WEBHOOK_URL="${CLI_ALERT_WEBHOOK_URL:-}"
-_SAVED_CLI_ALERT_SOUND_SUCCESS="${CLI_ALERT_SOUND_SUCCESS:-}"
-_SAVED_CLI_ALERT_SOUND_FAILURE="${CLI_ALERT_SOUND_FAILURE:-}"
-_SAVED_CLI_ALERT_VOICE="${CLI_ALERT_VOICE:-}"
+_SAVED_SHELLDONE_SLACK_WEBHOOK="${SHELLDONE_SLACK_WEBHOOK:-}"
+_SAVED_SHELLDONE_DISCORD_WEBHOOK="${SHELLDONE_DISCORD_WEBHOOK:-}"
+_SAVED_SHELLDONE_TELEGRAM_TOKEN="${SHELLDONE_TELEGRAM_TOKEN:-}"
+_SAVED_SHELLDONE_TELEGRAM_CHAT_ID="${SHELLDONE_TELEGRAM_CHAT_ID:-}"
+_SAVED_SHELLDONE_EMAIL_TO="${SHELLDONE_EMAIL_TO:-}"
+_SAVED_SHELLDONE_WHATSAPP_TOKEN="${SHELLDONE_WHATSAPP_TOKEN:-}"
+_SAVED_SHELLDONE_WEBHOOK_URL="${SHELLDONE_WEBHOOK_URL:-}"
+_SAVED_SHELLDONE_SOUND_SUCCESS="${SHELLDONE_SOUND_SUCCESS:-}"
+_SAVED_SHELLDONE_SOUND_FAILURE="${SHELLDONE_SOUND_FAILURE:-}"
+_SAVED_SHELLDONE_VOICE="${SHELLDONE_VOICE:-}"
 
-unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_DISCORD_WEBHOOK
-unset CLI_ALERT_TELEGRAM_TOKEN CLI_ALERT_TELEGRAM_CHAT_ID
-unset CLI_ALERT_EMAIL_TO CLI_ALERT_WHATSAPP_TOKEN CLI_ALERT_WEBHOOK_URL
-export CLI_ALERT_SOUND_SUCCESS=""
-export CLI_ALERT_SOUND_FAILURE=""
-unset CLI_ALERT_VOICE
-unset _CLI_ALERT_EXTERNAL_LOADED
+unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_DISCORD_WEBHOOK
+unset SHELLDONE_TELEGRAM_TOKEN SHELLDONE_TELEGRAM_CHAT_ID
+unset SHELLDONE_EMAIL_TO SHELLDONE_WHATSAPP_TOKEN SHELLDONE_WEBHOOK_URL
+export SHELLDONE_SOUND_SUCCESS=""
+export SHELLDONE_SOUND_FAILURE=""
+unset SHELLDONE_VOICE
+unset _SHELLDONE_EXTERNAL_LOADED
 
 pass() { printf '\033[1;32m  ✓ PASS\033[0m %s\n' "$1"; }
 fail() { printf '\033[1;31m  ✗ FAIL\033[0m %s\n' "$1"; }
@@ -61,13 +61,13 @@ run_test() {
 header "Platform Detection"
 
 # shellcheck disable=SC1091
-unset _CLI_ALERT_LOADED
-source "${LIB_DIR}/cli-alert.sh"
+unset _SHELLDONE_LOADED
+source "${LIB_DIR}/shelldone.sh"
 
-info "Detected platform: $_CLI_ALERT_PLATFORM"
+info "Detected platform: $_SHELLDONE_PLATFORM"
 
 test_platform_valid() {
-  [[ "$_CLI_ALERT_PLATFORM" =~ ^(darwin|linux|wsl|windows|unknown)$ ]]
+  [[ "$_SHELLDONE_PLATFORM" =~ ^(darwin|linux|wsl|windows|unknown)$ ]]
 }
 run_test "Platform is valid" test_platform_valid
 
@@ -76,67 +76,67 @@ run_test "Platform is valid" test_platform_valid
 header "CLI Entry Point"
 
 test_cli_exists() {
-  [[ -x "${SCRIPT_DIR}/bin/cli-alert" ]]
+  [[ -x "${SCRIPT_DIR}/bin/shelldone" ]]
 }
 
 test_cli_version() {
-  "${SCRIPT_DIR}/bin/cli-alert" version 2>/dev/null | grep -q "cli-alert"
+  "${SCRIPT_DIR}/bin/shelldone" version 2>/dev/null | grep -q "shelldone"
 }
 
 test_cli_help() {
-  "${SCRIPT_DIR}/bin/cli-alert" help 2>/dev/null | grep -q "init"
+  "${SCRIPT_DIR}/bin/shelldone" help 2>/dev/null | grep -q "init"
 }
 
 test_cli_init_bash() {
-  "${SCRIPT_DIR}/bin/cli-alert" init bash 2>/dev/null | grep -q "cli-alert.sh"
+  "${SCRIPT_DIR}/bin/shelldone" init bash 2>/dev/null | grep -q "shelldone.sh"
 }
 
 test_cli_init_zsh() {
-  "${SCRIPT_DIR}/bin/cli-alert" init zsh 2>/dev/null | grep -q "auto-notify.zsh"
+  "${SCRIPT_DIR}/bin/shelldone" init zsh 2>/dev/null | grep -q "auto-notify.zsh"
 }
 
-run_test "bin/cli-alert exists and is executable" test_cli_exists
-run_test "cli-alert version works" test_cli_version
-run_test "cli-alert help works" test_cli_help
-run_test "cli-alert init bash outputs source lines" test_cli_init_bash
-run_test "cli-alert init zsh outputs source lines" test_cli_init_zsh
+run_test "bin/shelldone exists and is executable" test_cli_exists
+run_test "shelldone version works" test_cli_version
+run_test "shelldone help works" test_cli_help
+run_test "shelldone init bash outputs source lines" test_cli_init_bash
+run_test "shelldone init zsh outputs source lines" test_cli_init_zsh
 
 # ── Core function availability ───────────────────────────────────────────────
 
 header "Core Functions"
 
-test_notify_exists() { declare -f _cli_alert_notify &>/dev/null; }
+test_notify_exists() { declare -f _shelldone_notify &>/dev/null; }
 test_alert_exists() { declare -f alert &>/dev/null; }
-test_format_exists() { declare -f _cli_alert_format_duration &>/dev/null; }
-test_status_icon_exists() { declare -f _cli_alert_status_icon &>/dev/null; }
-test_sanitize_exists() { declare -f _cli_alert_sanitize_applescript &>/dev/null; }
-test_bg_timeout_exists() { declare -f _cli_alert_bg_timeout &>/dev/null; }
-test_debug_exists() { declare -f _cli_alert_debug &>/dev/null; }
-test_resolve_activate_exists() { declare -f _cli_alert_resolve_activate &>/dev/null; }
-test_resolve_workspace_exists() { declare -f _cli_alert_resolve_workspace &>/dev/null; }
+test_format_exists() { declare -f _shelldone_format_duration &>/dev/null; }
+test_status_icon_exists() { declare -f _shelldone_status_icon &>/dev/null; }
+test_sanitize_exists() { declare -f _shelldone_sanitize_applescript &>/dev/null; }
+test_bg_timeout_exists() { declare -f _shelldone_bg_timeout &>/dev/null; }
+test_debug_exists() { declare -f _shelldone_debug &>/dev/null; }
+test_resolve_activate_exists() { declare -f _shelldone_resolve_activate &>/dev/null; }
+test_resolve_workspace_exists() { declare -f _shelldone_resolve_workspace &>/dev/null; }
 
-run_test "_cli_alert_notify function exists" test_notify_exists
+run_test "_shelldone_notify function exists" test_notify_exists
 run_test "alert function exists" test_alert_exists
-run_test "_cli_alert_format_duration function exists" test_format_exists
-run_test "_cli_alert_status_icon function exists" test_status_icon_exists
-run_test "_cli_alert_sanitize_applescript function exists" test_sanitize_exists
-run_test "_cli_alert_bg_timeout function exists" test_bg_timeout_exists
-run_test "_cli_alert_debug function exists" test_debug_exists
-run_test "_cli_alert_resolve_activate function exists" test_resolve_activate_exists
-run_test "_cli_alert_resolve_workspace function exists" test_resolve_workspace_exists
+run_test "_shelldone_format_duration function exists" test_format_exists
+run_test "_shelldone_status_icon function exists" test_status_icon_exists
+run_test "_shelldone_sanitize_applescript function exists" test_sanitize_exists
+run_test "_shelldone_bg_timeout function exists" test_bg_timeout_exists
+run_test "_shelldone_debug function exists" test_debug_exists
+run_test "_shelldone_resolve_activate function exists" test_resolve_activate_exists
+run_test "_shelldone_resolve_workspace function exists" test_resolve_workspace_exists
 
 # ── Duration formatting ──────────────────────────────────────────────────────
 
 header "Duration Formatting"
 
 test_format_seconds() {
-  [[ "$(_cli_alert_format_duration 45)" == "45s" ]]
+  [[ "$(_shelldone_format_duration 45)" == "45s" ]]
 }
 test_format_minutes() {
-  [[ "$(_cli_alert_format_duration 135)" == "2m 15s" ]]
+  [[ "$(_shelldone_format_duration 135)" == "2m 15s" ]]
 }
 test_format_hours() {
-  [[ "$(_cli_alert_format_duration 3661)" == "1h 1m 1s" ]]
+  [[ "$(_shelldone_format_duration 3661)" == "1h 1m 1s" ]]
 }
 
 run_test "Formats seconds correctly" test_format_seconds
@@ -174,17 +174,17 @@ header "AppleScript Sanitization"
 
 test_sanitize_quotes() {
   local result
-  result=$(_cli_alert_sanitize_applescript 'He said "hello"')
+  result=$(_shelldone_sanitize_applescript 'He said "hello"')
   [[ "$result" == 'He said \"hello\"' ]]
 }
 test_sanitize_backslash() {
   local result
-  result=$(_cli_alert_sanitize_applescript 'path\to\file')
+  result=$(_shelldone_sanitize_applescript 'path\to\file')
   [[ "$result" == 'path\\to\\file' ]]
 }
 test_sanitize_mixed() {
   local result
-  result=$(_cli_alert_sanitize_applescript 'a\"b')
+  result=$(_shelldone_sanitize_applescript 'a\"b')
   [[ "$result" == 'a\\\"b' ]]
 }
 
@@ -198,27 +198,27 @@ header "Activate Auto-Detection"
 
 test_activate_default_fallback() {
   local result
-  result=$(TERM_PROGRAM="" CLI_ALERT_ACTIVATE="" _cli_alert_resolve_activate)
+  result=$(TERM_PROGRAM="" SHELLDONE_ACTIVATE="" _shelldone_resolve_activate)
   [[ "$result" == "com.apple.Terminal" ]]
 }
 test_activate_vscode() {
   local result
-  result=$(TERM_PROGRAM="vscode" CLI_ALERT_ACTIVATE="" _cli_alert_resolve_activate)
+  result=$(TERM_PROGRAM="vscode" SHELLDONE_ACTIVATE="" _shelldone_resolve_activate)
   [[ "$result" == "com.microsoft.VSCode" ]]
 }
 test_activate_iterm() {
   local result
-  result=$(TERM_PROGRAM="iTerm.app" CLI_ALERT_ACTIVATE="" _cli_alert_resolve_activate)
+  result=$(TERM_PROGRAM="iTerm.app" SHELLDONE_ACTIVATE="" _shelldone_resolve_activate)
   [[ "$result" == "com.googlecode.iterm2" ]]
 }
 test_activate_apple_terminal() {
   local result
-  result=$(TERM_PROGRAM="Apple_Terminal" CLI_ALERT_ACTIVATE="" _cli_alert_resolve_activate)
+  result=$(TERM_PROGRAM="Apple_Terminal" SHELLDONE_ACTIVATE="" _shelldone_resolve_activate)
   [[ "$result" == "com.apple.Terminal" ]]
 }
 test_activate_override() {
   local result
-  result=$(TERM_PROGRAM="vscode" CLI_ALERT_ACTIVATE="com.custom.App" _cli_alert_resolve_activate)
+  result=$(TERM_PROGRAM="vscode" SHELLDONE_ACTIVATE="com.custom.App" _shelldone_resolve_activate)
   [[ "$result" == "com.custom.App" ]]
 }
 
@@ -226,7 +226,7 @@ run_test "Activate: default fallback is com.apple.Terminal" test_activate_defaul
 run_test "Activate: vscode maps to com.microsoft.VSCode" test_activate_vscode
 run_test "Activate: iTerm.app maps to com.googlecode.iterm2" test_activate_iterm
 run_test "Activate: Apple_Terminal maps to com.apple.Terminal" test_activate_apple_terminal
-run_test "Activate: CLI_ALERT_ACTIVATE override takes precedence" test_activate_override
+run_test "Activate: SHELLDONE_ACTIVATE override takes precedence" test_activate_override
 
 # ── Workspace Resolution ──────────────────────────────────────────────────
 
@@ -240,7 +240,7 @@ test_workspace_git_root() {
   git init -q "$tmpdir"
   mkdir -p "$tmpdir/sub/dir"
   local result
-  result=$(cd "$tmpdir/sub/dir" && CLI_ALERT_WORKSPACE="" _cli_alert_resolve_workspace)
+  result=$(cd "$tmpdir/sub/dir" && SHELLDONE_WORKSPACE="" _shelldone_resolve_workspace)
   local rc=0
   [[ "$result" == "$tmpdir" ]] || rc=1
   rm -rf "$tmpdir"
@@ -249,7 +249,7 @@ test_workspace_git_root() {
 
 test_workspace_override() {
   local result
-  result=$(CLI_ALERT_WORKSPACE="/custom/path" _cli_alert_resolve_workspace)
+  result=$(SHELLDONE_WORKSPACE="/custom/path" _shelldone_resolve_workspace)
   [[ "$result" == "/custom/path" ]]
 }
 
@@ -257,7 +257,7 @@ test_workspace_fallback_pwd() {
   local tmpdir
   tmpdir=$(mktemp -d)
   local result
-  result=$(cd "$tmpdir" && CLI_ALERT_WORKSPACE="" GIT_CEILING_DIRECTORIES="$tmpdir" _cli_alert_resolve_workspace 2>/dev/null)
+  result=$(cd "$tmpdir" && SHELLDONE_WORKSPACE="" GIT_CEILING_DIRECTORIES="$tmpdir" _shelldone_resolve_workspace 2>/dev/null)
   local rc=0
   [[ "$result" == "$tmpdir" ]] || rc=1
   rm -rf "$tmpdir"
@@ -265,7 +265,7 @@ test_workspace_fallback_pwd() {
 }
 
 run_test "Workspace: git root detected" test_workspace_git_root
-run_test "Workspace: CLI_ALERT_WORKSPACE override takes precedence" test_workspace_override
+run_test "Workspace: SHELLDONE_WORKSPACE override takes precedence" test_workspace_override
 run_test "Workspace: falls back to PWD outside git repo" test_workspace_fallback_pwd
 
 # ── Exit code validation ────────────────────────────────────────────────────
@@ -274,13 +274,13 @@ header "Exit Code Validation"
 
 test_exit_code_non_numeric() {
   # Should not produce a bash error with non-numeric exit code
-  _cli_alert_notify "test" "msg" "not-a-number" 2>/dev/null
+  _shelldone_notify "test" "msg" "not-a-number" 2>/dev/null
 }
 test_exit_code_empty() {
-  _cli_alert_notify "test" "msg" "" 2>/dev/null
+  _shelldone_notify "test" "msg" "" 2>/dev/null
 }
 test_exit_code_valid() {
-  _cli_alert_notify "test" "msg" 0 2>/dev/null
+  _shelldone_notify "test" "msg" 0 2>/dev/null
 }
 
 run_test "Non-numeric exit code handled" test_exit_code_non_numeric
@@ -293,22 +293,22 @@ header "Status Icon"
 
 test_icon_success_utf8() {
   local result
-  result=$(LANG=en_US.UTF-8 LC_ALL="" LC_CTYPE="" _cli_alert_status_icon 0)
+  result=$(LANG=en_US.UTF-8 LC_ALL="" LC_CTYPE="" _shelldone_status_icon 0)
   [[ "$result" == "✓" ]]
 }
 test_icon_failure_utf8() {
   local result
-  result=$(LANG=en_US.UTF-8 LC_ALL="" LC_CTYPE="" _cli_alert_status_icon 1)
+  result=$(LANG=en_US.UTF-8 LC_ALL="" LC_CTYPE="" _shelldone_status_icon 1)
   [[ "$result" == "✗" ]]
 }
 test_icon_success_ascii() {
   local result
-  result=$(LANG=C LC_ALL=C LC_CTYPE=C _cli_alert_status_icon 0)
+  result=$(LANG=C LC_ALL=C LC_CTYPE=C _shelldone_status_icon 0)
   [[ "$result" == "[OK]" ]]
 }
 test_icon_failure_ascii() {
   local result
-  result=$(LANG=C LC_ALL=C LC_CTYPE=C _cli_alert_status_icon 1)
+  result=$(LANG=C LC_ALL=C LC_CTYPE=C _shelldone_status_icon 1)
   [[ "$result" == "[FAIL]" ]]
 }
 
@@ -322,7 +322,7 @@ run_test "Failure icon with ASCII locale" test_icon_failure_ascii
 header "Notification Delivery"
 
 test_notification() {
-  _cli_alert_notify "cli-alert test" "If you see this, notifications work!" 0
+  _shelldone_notify "shelldone test" "If you see this, notifications work!" 0
 }
 
 info "Sending test notification..."
@@ -332,10 +332,10 @@ run_test "Notification sends without error" test_notification
 
 header "Sound Playback"
 
-case "$_CLI_ALERT_PLATFORM" in
+case "$_SHELLDONE_PLATFORM" in
   darwin)
     test_sound_file() {
-      [[ -f "/System/Library/Sounds/${CLI_ALERT_SOUND_SUCCESS}.aiff" ]]
+      [[ -f "/System/Library/Sounds/${SHELLDONE_SOUND_SUCCESS}.aiff" ]]
     }
     run_test "Success sound file exists" test_sound_file
     ;;
@@ -451,7 +451,7 @@ run_test "cursor-notify.sh processes JSON event" test_cursor_notify_runs
 
 header "Available Tools"
 
-case "$_CLI_ALERT_PLATFORM" in
+case "$_SHELLDONE_PLATFORM" in
   darwin)
     info "terminal-notifier: $(command -v terminal-notifier 2>/dev/null || echo 'not found (brew install terminal-notifier)')"
     info "osascript: $(command -v osascript 2>/dev/null || echo 'not found')"
@@ -475,47 +475,47 @@ header "New CLI Commands"
 
 test_cli_status() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>/dev/null) || true
-  echo "$out" | grep -q "cli-alert"
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>/dev/null) || true
+  echo "$out" | grep -q "shelldone"
 }
 test_cli_test_notify() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" test-notify 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" test-notify 2>/dev/null) || true
   echo "$out" | grep -q "Sending test notification"
 }
 test_cli_sounds() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" sounds 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" sounds 2>/dev/null) || true
   echo "$out" | grep -q "Available sounds"
 }
 test_cli_exclude_list() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" exclude list 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" exclude list 2>/dev/null) || true
   echo "$out" | grep -q "Current exclusion list"
 }
 test_cli_exclude_add() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" exclude add docker 2>/dev/null) || true
-  echo "$out" | grep -q "export CLI_ALERT_EXCLUDE"
+  out=$("${SCRIPT_DIR}/bin/shelldone" exclude add docker 2>/dev/null) || true
+  echo "$out" | grep -q "export SHELLDONE_EXCLUDE"
 }
 test_cli_exclude_remove() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" exclude remove vim 2>/dev/null) || true
-  echo "$out" | grep -q "export CLI_ALERT_EXCLUDE"
+  out=$("${SCRIPT_DIR}/bin/shelldone" exclude remove vim 2>/dev/null) || true
+  echo "$out" | grep -q "export SHELLDONE_EXCLUDE"
 }
 test_cli_version_verbose() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" version --verbose 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" version --verbose 2>/dev/null) || true
   echo "$out" | grep -q "platform:"
 }
 
-run_test "cli-alert status works" test_cli_status
-run_test "cli-alert test-notify works" test_cli_test_notify
-run_test "cli-alert sounds works" test_cli_sounds
-run_test "cli-alert exclude list works" test_cli_exclude_list
-run_test "cli-alert exclude add works" test_cli_exclude_add
-run_test "cli-alert exclude remove works" test_cli_exclude_remove
-run_test "cli-alert version --verbose works" test_cli_version_verbose
+run_test "shelldone status works" test_cli_status
+run_test "shelldone test-notify works" test_cli_test_notify
+run_test "shelldone sounds works" test_cli_sounds
+run_test "shelldone exclude list works" test_cli_exclude_list
+run_test "shelldone exclude add works" test_cli_exclude_add
+run_test "shelldone exclude remove works" test_cli_exclude_remove
+run_test "shelldone version --verbose works" test_cli_version_verbose
 
 # ── Dynamic notification title ───────────────────────────────────────────────
 
@@ -523,12 +523,12 @@ header "Dynamic Notification Title"
 
 test_dynamic_title() {
   local captured_title=""
-  _cli_alert_notify() { captured_title="$1"; }
+  _shelldone_notify() { captured_title="$1"; }
   alert true 2>/dev/null
   # Restore
-  unset -f _cli_alert_notify
-  unset _CLI_ALERT_LOADED
-  source "${LIB_DIR}/cli-alert.sh"
+  unset -f _shelldone_notify
+  unset _SHELLDONE_LOADED
+  source "${LIB_DIR}/shelldone.sh"
   [[ "$captured_title" == "true Complete" ]]
 }
 
@@ -539,34 +539,34 @@ run_test "alert() uses dynamic title" test_dynamic_title
 header "Warning Function"
 
 test_warn_once_exists() {
-  declare -f _cli_alert_warn_once &>/dev/null
+  declare -f _shelldone_warn_once &>/dev/null
 }
 test_warn_once_deduplicates() {
-  unset _CLI_ALERT_WARNED_TESTDEDUP
+  unset _SHELLDONE_WARNED_TESTDEDUP
   # Call twice — first should warn, second should be silent
   local combined
-  combined=$({ _cli_alert_warn_once TESTDEDUP "first call" ; _cli_alert_warn_once TESTDEDUP "second call"; } 2>&1)
+  combined=$({ _shelldone_warn_once TESTDEDUP "first call" ; _shelldone_warn_once TESTDEDUP "second call"; } 2>&1)
   # Should contain "first call" but not "second call"
   [[ "$combined" == *"first call"* ]] && [[ "$combined" != *"second call"* ]]
 }
 
-run_test "_cli_alert_warn_once function exists" test_warn_once_exists
-run_test "_cli_alert_warn_once deduplicates" test_warn_once_deduplicates
+run_test "_shelldone_warn_once function exists" test_warn_once_exists
+run_test "_shelldone_warn_once deduplicates" test_warn_once_deduplicates
 
 # ── Focus detection ──────────────────────────────────────────────────────────
 
 header "Focus Detection"
 
 test_focus_detect_exists() {
-  declare -f _cli_alert_terminal_focused &>/dev/null
+  declare -f _shelldone_terminal_focused &>/dev/null
 }
 test_focus_detect_disable() {
-  CLI_ALERT_FOCUS_DETECT=false _cli_alert_terminal_focused
+  SHELLDONE_FOCUS_DETECT=false _shelldone_terminal_focused
   [[ $? -eq 1 ]]
 }
 
-run_test "_cli_alert_terminal_focused function exists" test_focus_detect_exists
-run_test "Focus detection respects CLI_ALERT_FOCUS_DETECT=false" test_focus_detect_disable
+run_test "_shelldone_terminal_focused function exists" test_focus_detect_exists
+run_test "Focus detection respects SHELLDONE_FOCUS_DETECT=false" test_focus_detect_disable
 
 # ── Glob exclusion matching ──────────────────────────────────────────────────
 
@@ -595,28 +595,28 @@ run_test "Glob pattern npm* does not match make" test_glob_no_false_positive
 header "External Notifications"
 
 # Load external module directly for testing
-unset _CLI_ALERT_EXTERNAL_LOADED
+unset _SHELLDONE_EXTERNAL_LOADED
 source "${LIB_DIR}/external-notify.sh"
 
 test_json_escape_plain() {
-  [[ "$(_cli_alert_json_escape "hello world")" == "hello world" ]]
+  [[ "$(_shelldone_json_escape "hello world")" == "hello world" ]]
 }
 test_json_escape_quotes() {
-  [[ "$(_cli_alert_json_escape 'He said "hi"')" == 'He said \"hi\"' ]]
+  [[ "$(_shelldone_json_escape 'He said "hi"')" == 'He said \"hi\"' ]]
 }
 test_json_escape_backslash() {
-  [[ "$(_cli_alert_json_escape 'path\to\file')" == 'path\\to\\file' ]]
+  [[ "$(_shelldone_json_escape 'path\to\file')" == 'path\\to\\file' ]]
 }
 test_json_escape_newline() {
   local input=$'line1\nline2'
   local result
-  result=$(_cli_alert_json_escape "$input")
+  result=$(_shelldone_json_escape "$input")
   [[ "$result" == 'line1\nline2' ]]
 }
 test_json_escape_tab() {
   local input=$'col1\tcol2'
   local result
-  result=$(_cli_alert_json_escape "$input")
+  result=$(_shelldone_json_escape "$input")
   [[ "$result" == 'col1\tcol2' ]]
 }
 
@@ -628,14 +628,14 @@ run_test "JSON escape: tabs" test_json_escape_tab
 
 test_rate_limit_cycle() {
   local channel="test_$$"
-  local stamp="/tmp/.cli_alert_rate_${channel}"
+  local stamp="/tmp/.shelldone_rate_${channel}"
   rm -f "$stamp" 2>/dev/null
   # Should pass (no stamp)
-  _cli_alert_rate_limit_check "$channel" || return 1
+  _shelldone_rate_limit_check "$channel" || return 1
   # Update stamp
-  _cli_alert_rate_limit_update "$channel"
+  _shelldone_rate_limit_update "$channel"
   # Should fail (within rate limit)
-  ! _cli_alert_rate_limit_check "$channel" || return 1
+  ! _shelldone_rate_limit_check "$channel" || return 1
   # Clean up
   rm -f "$stamp" 2>/dev/null
 }
@@ -643,39 +643,39 @@ test_rate_limit_cycle() {
 run_test "Rate limiting: check/update cycle" test_rate_limit_cycle
 
 test_transport_detection() {
-  [[ -n "$_CLI_ALERT_HTTP_TRANSPORT" ]]
+  [[ -n "$_SHELLDONE_HTTP_TRANSPORT" ]]
 }
 run_test "HTTP transport detected" test_transport_detection
 
 test_external_functions_exist() {
-  declare -f _cli_alert_notify_external &>/dev/null &&
-  declare -f _cli_alert_external_slack &>/dev/null &&
-  declare -f _cli_alert_external_discord &>/dev/null &&
-  declare -f _cli_alert_external_telegram &>/dev/null &&
-  declare -f _cli_alert_external_email &>/dev/null &&
-  declare -f _cli_alert_external_whatsapp &>/dev/null &&
-  declare -f _cli_alert_external_webhook &>/dev/null
+  declare -f _shelldone_notify_external &>/dev/null &&
+  declare -f _shelldone_external_slack &>/dev/null &&
+  declare -f _shelldone_external_discord &>/dev/null &&
+  declare -f _shelldone_external_telegram &>/dev/null &&
+  declare -f _shelldone_external_email &>/dev/null &&
+  declare -f _shelldone_external_whatsapp &>/dev/null &&
+  declare -f _shelldone_external_webhook &>/dev/null
 }
 run_test "All external channel functions exist" test_external_functions_exist
 
 test_redact_url() {
   local result
-  result=$(_cli_alert_redact_url "https://hooks.slack.com/services/T123/B456/secret")
+  result=$(_shelldone_redact_url "https://hooks.slack.com/services/T123/B456/secret")
   [[ "$result" == "https://hooks.slack.com/<redacted>" ]]
 }
 run_test "URL redaction strips path" test_redact_url
 
 test_slack_payload() {
-  # Mock _cli_alert_http_post to capture payload
+  # Mock _shelldone_http_post to capture payload
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  _cli_alert_external_slack "Test Title" "Test message" 0
-  unset CLI_ALERT_SLACK_WEBHOOK
-  unset -f _cli_alert_http_post
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  _shelldone_external_slack "Test Title" "Test message" 0
+  unset SHELLDONE_SLACK_WEBHOOK
+  unset -f _shelldone_http_post
   # Load transport detection again
-  _cli_alert_detect_http_transport
+  _shelldone_detect_http_transport
   # Verify payload contains expected JSON fields
   [[ "$captured_payload" == *'"text":"Test Title - Test message"'* ]] && [[ "$captured_payload" == *'"type":"header"'* ]]
 }
@@ -683,13 +683,13 @@ run_test "Slack payload has correct structure" test_slack_payload
 
 test_discord_payload() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
-  rm -f "/tmp/.cli_alert_rate_discord" 2>/dev/null
-  _cli_alert_external_discord "Test Title" "Test message" 1
-  unset CLI_ALERT_DISCORD_WEBHOOK
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
+  rm -f "/tmp/.shelldone_rate_discord" 2>/dev/null
+  _shelldone_external_discord "Test Title" "Test message" 1
+  unset SHELLDONE_DISCORD_WEBHOOK
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   # Verify payload contains expected JSON fields and failure color
   [[ "$captured_payload" == *'"title":"Test Title"'* ]] && [[ "$captured_payload" == *'"color":14431557'* ]]
 }
@@ -697,10 +697,10 @@ run_test "Discord payload has correct structure" test_discord_payload
 
 test_cli_webhook_status() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" webhook status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" webhook status 2>/dev/null) || true
   echo "$out" | grep -q "External notifications"
 }
-run_test "cli-alert webhook status works" test_cli_webhook_status
+run_test "shelldone webhook status works" test_cli_webhook_status
 
 # ── HTTP Status Capture (Unit) ──────────────────────────────────────────────
 
@@ -709,108 +709,108 @@ header "HTTP Status Capture"
 test_http_post_curl_captures_200() {
   curl() { printf '200'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "200" ]] && [[ $rc -eq 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "200" ]] && [[ $rc -eq 0 ]]
 }
 run_test "curl: captures 200, returns success" test_http_post_curl_captures_200
 
 test_http_post_curl_captures_201() {
   curl() { printf '201'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "201" ]] && [[ $rc -eq 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "201" ]] && [[ $rc -eq 0 ]]
 }
 run_test "curl: captures 201, returns success" test_http_post_curl_captures_201
 
 test_http_post_curl_captures_204() {
   curl() { printf '204'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "204" ]] && [[ $rc -eq 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "204" ]] && [[ $rc -eq 0 ]]
 }
 run_test "curl: captures 204, returns success" test_http_post_curl_captures_204
 
 test_http_post_curl_fails_on_301() {
   curl() { printf '301'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "301" ]] && [[ $rc -ne 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "301" ]] && [[ $rc -ne 0 ]]
 }
 run_test "curl: captures 301, returns failure" test_http_post_curl_fails_on_301
 
 test_http_post_curl_fails_on_400() {
   curl() { printf '400'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "400" ]] && [[ $rc -ne 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "400" ]] && [[ $rc -ne 0 ]]
 }
 run_test "curl: captures 400, returns failure" test_http_post_curl_fails_on_400
 
 test_http_post_curl_fails_on_403() {
   curl() { printf '403'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "403" ]] && [[ $rc -ne 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "403" ]] && [[ $rc -ne 0 ]]
 }
 run_test "curl: captures 403, returns failure" test_http_post_curl_fails_on_403
 
 test_http_post_curl_fails_on_404() {
   curl() { printf '404'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "404" ]] && [[ $rc -ne 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "404" ]] && [[ $rc -ne 0 ]]
 }
 run_test "curl: captures 404, returns failure" test_http_post_curl_fails_on_404
 
 test_http_post_curl_fails_on_500() {
   curl() { printf '500'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "500" ]] && [[ $rc -ne 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "500" ]] && [[ $rc -ne 0 ]]
 }
 run_test "curl: captures 500, returns failure" test_http_post_curl_fails_on_500
 
 test_http_post_curl_fails_on_503() {
   curl() { printf '503'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "503" ]] && [[ $rc -ne 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "503" ]] && [[ $rc -ne 0 ]]
 }
 run_test "curl: captures 503, returns failure" test_http_post_curl_fails_on_503
 
@@ -818,12 +818,12 @@ test_http_post_curl_handles_empty_output() {
   # Simulates network error where curl produces no output
   curl() { printf ''; return 1; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "" ]] && [[ $rc -ne 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "" ]] && [[ $rc -ne 0 ]]
 }
 run_test "curl: empty output (network error) returns failure" test_http_post_curl_handles_empty_output
 
@@ -831,12 +831,12 @@ test_http_post_curl_handles_000() {
   # curl returns "000" on connection refused / timeout
   curl() { printf '000'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' ""
   local rc=$?
   unset -f curl
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "000" ]] && [[ $rc -ne 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "000" ]] && [[ $rc -ne 0 ]]
 }
 run_test "curl: 000 (connection refused) returns failure" test_http_post_curl_handles_000
 
@@ -845,10 +845,10 @@ test_http_post_curl_passes_extra_headers() {
   tmpfile=$(mktemp)
   curl() { printf '%s\n' "$@" > "$tmpfile"; printf '200'; return 0; }
   export -f curl
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post_curl "http://example.com" '{}' "Authorization: Bearer tok123|X-Custom: val"
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post_curl "http://example.com" '{}' "Authorization: Bearer tok123|X-Custom: val"
   unset -f curl
-  _cli_alert_detect_http_transport
+  _shelldone_detect_http_transport
   local args
   args=$(cat "$tmpfile")
   rm -f "$tmpfile"
@@ -860,55 +860,55 @@ test_http_post_wget_sets_unknown_status() {
   # Mock wget to succeed
   wget() { return 0; }
   export -f wget
-  _CLI_ALERT_HTTP_TRANSPORT="wget"
-  _cli_alert_http_post_wget "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="wget"
+  _shelldone_http_post_wget "http://example.com" '{}' ""
   local rc=$?
   unset -f wget
-  _cli_alert_detect_http_transport
-  [[ "$_CLI_ALERT_LAST_HTTP_STATUS" == "unknown" ]] && [[ $rc -eq 0 ]]
+  _shelldone_detect_http_transport
+  [[ "$_SHELLDONE_LAST_HTTP_STATUS" == "unknown" ]] && [[ $rc -eq 0 ]]
 }
 run_test "wget: sets status to 'unknown', returns success on success" test_http_post_wget_sets_unknown_status
 
 test_http_post_wget_returns_failure_on_error() {
   wget() { return 1; }
   export -f wget
-  _CLI_ALERT_HTTP_TRANSPORT="wget"
-  _cli_alert_http_post_wget "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="wget"
+  _shelldone_http_post_wget "http://example.com" '{}' ""
   local rc=$?
   unset -f wget
-  _cli_alert_detect_http_transport
+  _shelldone_detect_http_transport
   [[ $rc -ne 0 ]]
 }
 run_test "wget: returns failure when wget fails" test_http_post_wget_returns_failure_on_error
 
 test_http_post_dispatcher_routes_curl() {
-  # Ensure _cli_alert_http_post exists (may have been unset by prior mock tests)
-  if ! declare -f _cli_alert_http_post &>/dev/null; then
-    unset _CLI_ALERT_EXTERNAL_LOADED
+  # Ensure _shelldone_http_post exists (may have been unset by prior mock tests)
+  if ! declare -f _shelldone_http_post &>/dev/null; then
+    unset _SHELLDONE_EXTERNAL_LOADED
     source "${LIB_DIR}/external-notify.sh"
   fi
   local tmpfile
   tmpfile=$(mktemp)
-  _cli_alert_http_post_curl() { echo "curl" > "$tmpfile"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  _CLI_ALERT_HTTP_TRANSPORT="curl"
-  _cli_alert_http_post "http://example.com" '{}' ""
+  _shelldone_http_post_curl() { echo "curl" > "$tmpfile"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  _SHELLDONE_HTTP_TRANSPORT="curl"
+  _shelldone_http_post "http://example.com" '{}' ""
   local rc=$?
   local captured_transport
   captured_transport=$(cat "$tmpfile")
   rm -f "$tmpfile"
-  # Restore original _cli_alert_http_post_curl
-  unset -f _cli_alert_http_post_curl
-  unset _CLI_ALERT_EXTERNAL_LOADED
+  # Restore original _shelldone_http_post_curl
+  unset -f _shelldone_http_post_curl
+  unset _SHELLDONE_EXTERNAL_LOADED
   source "${LIB_DIR}/external-notify.sh"
   [[ "$captured_transport" == "curl" ]] && [[ $rc -eq 0 ]]
 }
 run_test "HTTP dispatcher routes to curl backend" test_http_post_dispatcher_routes_curl
 
 test_http_post_dispatcher_unknown_transport() {
-  _CLI_ALERT_HTTP_TRANSPORT="nonexistent"
-  _cli_alert_http_post "http://example.com" '{}' ""
+  _SHELLDONE_HTTP_TRANSPORT="nonexistent"
+  _shelldone_http_post "http://example.com" '{}' ""
   local rc=$?
-  _cli_alert_detect_http_transport
+  _shelldone_detect_http_transport
   [[ $rc -ne 0 ]]
 }
 run_test "HTTP dispatcher fails on unknown transport" test_http_post_dispatcher_unknown_transport
@@ -918,171 +918,171 @@ run_test "HTTP dispatcher fails on unknown transport" test_http_post_dispatcher_
 header "Channel Validation"
 
 test_validate_fn_exists() {
-  declare -f _cli_alert_validate_channel &>/dev/null
+  declare -f _shelldone_validate_channel &>/dev/null
 }
-run_test "_cli_alert_validate_channel function exists" test_validate_fn_exists
+run_test "_shelldone_validate_channel function exists" test_validate_fn_exists
 
 test_validate_slack_missing() {
   (
-    unset CLI_ALERT_SLACK_WEBHOOK
+    unset SHELLDONE_SLACK_WEBHOOK
     local err
-    err=$(_cli_alert_validate_channel "slack" 2>&1)
-    [[ $? -ne 0 ]] && [[ "$err" == *"CLI_ALERT_SLACK_WEBHOOK not set"* ]]
+    err=$(_shelldone_validate_channel "slack" 2>&1)
+    [[ $? -ne 0 ]] && [[ "$err" == *"SHELLDONE_SLACK_WEBHOOK not set"* ]]
   )
 }
 run_test "Validate: slack catches missing SLACK_WEBHOOK" test_validate_slack_missing
 
 test_validate_slack_ok() {
   (
-    CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-    _cli_alert_validate_channel "slack"
+    SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+    _shelldone_validate_channel "slack"
   )
 }
 run_test "Validate: slack passes when SLACK_WEBHOOK set" test_validate_slack_ok
 
 test_validate_discord_missing() {
   (
-    unset CLI_ALERT_DISCORD_WEBHOOK
+    unset SHELLDONE_DISCORD_WEBHOOK
     local err
-    err=$(_cli_alert_validate_channel "discord" 2>&1)
-    [[ $? -ne 0 ]] && [[ "$err" == *"CLI_ALERT_DISCORD_WEBHOOK not set"* ]]
+    err=$(_shelldone_validate_channel "discord" 2>&1)
+    [[ $? -ne 0 ]] && [[ "$err" == *"SHELLDONE_DISCORD_WEBHOOK not set"* ]]
   )
 }
 run_test "Validate: discord catches missing DISCORD_WEBHOOK" test_validate_discord_missing
 
 test_validate_discord_ok() {
   (
-    CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
-    _cli_alert_validate_channel "discord"
+    SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
+    _shelldone_validate_channel "discord"
   )
 }
 run_test "Validate: discord passes when DISCORD_WEBHOOK set" test_validate_discord_ok
 
 test_validate_telegram_missing_token() {
   (
-    unset CLI_ALERT_TELEGRAM_TOKEN
-    unset CLI_ALERT_TELEGRAM_CHAT_ID
+    unset SHELLDONE_TELEGRAM_TOKEN
+    unset SHELLDONE_TELEGRAM_CHAT_ID
     local err
-    err=$(_cli_alert_validate_channel "telegram" 2>&1)
-    [[ $? -ne 0 ]] && [[ "$err" == *"CLI_ALERT_TELEGRAM_TOKEN not set"* ]]
+    err=$(_shelldone_validate_channel "telegram" 2>&1)
+    [[ $? -ne 0 ]] && [[ "$err" == *"SHELLDONE_TELEGRAM_TOKEN not set"* ]]
   )
 }
 run_test "Validate: telegram catches missing TOKEN" test_validate_telegram_missing_token
 
 test_validate_telegram_missing_chat_id() {
-  local old_token="${CLI_ALERT_TELEGRAM_TOKEN:-}"
-  local old_chat="${CLI_ALERT_TELEGRAM_CHAT_ID:-}"
-  CLI_ALERT_TELEGRAM_TOKEN="fake-token"
-  unset CLI_ALERT_TELEGRAM_CHAT_ID
+  local old_token="${SHELLDONE_TELEGRAM_TOKEN:-}"
+  local old_chat="${SHELLDONE_TELEGRAM_CHAT_ID:-}"
+  SHELLDONE_TELEGRAM_TOKEN="fake-token"
+  unset SHELLDONE_TELEGRAM_CHAT_ID
   local err
-  err=$(_cli_alert_validate_channel "telegram" 2>&1)
+  err=$(_shelldone_validate_channel "telegram" 2>&1)
   local rc=$?
-  CLI_ALERT_TELEGRAM_TOKEN="$old_token"
-  CLI_ALERT_TELEGRAM_CHAT_ID="$old_chat"
-  [[ $rc -ne 0 ]] && [[ "$err" == *"CLI_ALERT_TELEGRAM_CHAT_ID not set"* ]]
+  SHELLDONE_TELEGRAM_TOKEN="$old_token"
+  SHELLDONE_TELEGRAM_CHAT_ID="$old_chat"
+  [[ $rc -ne 0 ]] && [[ "$err" == *"SHELLDONE_TELEGRAM_CHAT_ID not set"* ]]
 }
 run_test "Validate: telegram catches missing CHAT_ID" test_validate_telegram_missing_chat_id
 
 test_validate_telegram_ok() {
   (
-    CLI_ALERT_TELEGRAM_TOKEN="fake-token"
-    CLI_ALERT_TELEGRAM_CHAT_ID="12345"
-    _cli_alert_validate_channel "telegram"
+    SHELLDONE_TELEGRAM_TOKEN="fake-token"
+    SHELLDONE_TELEGRAM_CHAT_ID="12345"
+    _shelldone_validate_channel "telegram"
   )
 }
 run_test "Validate: telegram passes with both TOKEN and CHAT_ID" test_validate_telegram_ok
 
 test_validate_email_missing_to() {
   (
-    unset CLI_ALERT_EMAIL_TO
+    unset SHELLDONE_EMAIL_TO
     local err
-    err=$(_cli_alert_validate_channel "email" 2>&1)
-    [[ $? -ne 0 ]] && [[ "$err" == *"CLI_ALERT_EMAIL_TO not set"* ]]
+    err=$(_shelldone_validate_channel "email" 2>&1)
+    [[ $? -ne 0 ]] && [[ "$err" == *"SHELLDONE_EMAIL_TO not set"* ]]
   )
 }
 run_test "Validate: email catches missing EMAIL_TO" test_validate_email_missing_to
 
 test_validate_whatsapp_missing_token() {
   (
-    unset CLI_ALERT_WHATSAPP_TOKEN
+    unset SHELLDONE_WHATSAPP_TOKEN
     local err
-    err=$(_cli_alert_validate_channel "whatsapp" 2>&1)
-    [[ $? -ne 0 ]] && [[ "$err" == *"CLI_ALERT_WHATSAPP_TOKEN not set"* ]]
+    err=$(_shelldone_validate_channel "whatsapp" 2>&1)
+    [[ $? -ne 0 ]] && [[ "$err" == *"SHELLDONE_WHATSAPP_TOKEN not set"* ]]
   )
 }
 run_test "Validate: whatsapp catches missing TOKEN" test_validate_whatsapp_missing_token
 
 test_validate_whatsapp_missing_api_url() {
-  local old_token="${CLI_ALERT_WHATSAPP_TOKEN:-}"
-  local old_url="${CLI_ALERT_WHATSAPP_API_URL:-}"
-  CLI_ALERT_WHATSAPP_TOKEN="fake-token"
-  unset CLI_ALERT_WHATSAPP_API_URL
+  local old_token="${SHELLDONE_WHATSAPP_TOKEN:-}"
+  local old_url="${SHELLDONE_WHATSAPP_API_URL:-}"
+  SHELLDONE_WHATSAPP_TOKEN="fake-token"
+  unset SHELLDONE_WHATSAPP_API_URL
   local err
-  err=$(_cli_alert_validate_channel "whatsapp" 2>&1)
+  err=$(_shelldone_validate_channel "whatsapp" 2>&1)
   local rc=$?
-  CLI_ALERT_WHATSAPP_TOKEN="$old_token"
-  CLI_ALERT_WHATSAPP_API_URL="$old_url"
-  [[ $rc -ne 0 ]] && [[ "$err" == *"CLI_ALERT_WHATSAPP_API_URL not set"* ]]
+  SHELLDONE_WHATSAPP_TOKEN="$old_token"
+  SHELLDONE_WHATSAPP_API_URL="$old_url"
+  [[ $rc -ne 0 ]] && [[ "$err" == *"SHELLDONE_WHATSAPP_API_URL not set"* ]]
 }
 run_test "Validate: whatsapp catches missing API_URL" test_validate_whatsapp_missing_api_url
 
 test_validate_whatsapp_missing_from() {
   (
-    CLI_ALERT_WHATSAPP_TOKEN="fake"
-    CLI_ALERT_WHATSAPP_API_URL="https://api.twilio.com/test"
-    unset CLI_ALERT_WHATSAPP_FROM
+    SHELLDONE_WHATSAPP_TOKEN="fake"
+    SHELLDONE_WHATSAPP_API_URL="https://api.twilio.com/test"
+    unset SHELLDONE_WHATSAPP_FROM
     local err
-    err=$(_cli_alert_validate_channel "whatsapp" 2>&1)
-    [[ $? -ne 0 ]] && [[ "$err" == *"CLI_ALERT_WHATSAPP_FROM not set"* ]]
+    err=$(_shelldone_validate_channel "whatsapp" 2>&1)
+    [[ $? -ne 0 ]] && [[ "$err" == *"SHELLDONE_WHATSAPP_FROM not set"* ]]
   )
 }
 run_test "Validate: whatsapp catches missing FROM" test_validate_whatsapp_missing_from
 
 test_validate_whatsapp_missing_to() {
   (
-    CLI_ALERT_WHATSAPP_TOKEN="fake"
-    CLI_ALERT_WHATSAPP_API_URL="https://api.twilio.com/test"
-    CLI_ALERT_WHATSAPP_FROM="+14155238886"
-    unset CLI_ALERT_WHATSAPP_TO
+    SHELLDONE_WHATSAPP_TOKEN="fake"
+    SHELLDONE_WHATSAPP_API_URL="https://api.twilio.com/test"
+    SHELLDONE_WHATSAPP_FROM="+14155238886"
+    unset SHELLDONE_WHATSAPP_TO
     local err
-    err=$(_cli_alert_validate_channel "whatsapp" 2>&1)
-    [[ $? -ne 0 ]] && [[ "$err" == *"CLI_ALERT_WHATSAPP_TO not set"* ]]
+    err=$(_shelldone_validate_channel "whatsapp" 2>&1)
+    [[ $? -ne 0 ]] && [[ "$err" == *"SHELLDONE_WHATSAPP_TO not set"* ]]
   )
 }
 run_test "Validate: whatsapp catches missing TO" test_validate_whatsapp_missing_to
 
 test_validate_whatsapp_ok() {
   (
-    CLI_ALERT_WHATSAPP_TOKEN="fake"
-    CLI_ALERT_WHATSAPP_API_URL="https://api.twilio.com/test"
-    CLI_ALERT_WHATSAPP_FROM="+14155238886"
-    CLI_ALERT_WHATSAPP_TO="+1234567890"
-    _cli_alert_validate_channel "whatsapp"
+    SHELLDONE_WHATSAPP_TOKEN="fake"
+    SHELLDONE_WHATSAPP_API_URL="https://api.twilio.com/test"
+    SHELLDONE_WHATSAPP_FROM="+14155238886"
+    SHELLDONE_WHATSAPP_TO="+1234567890"
+    _shelldone_validate_channel "whatsapp"
   )
 }
 run_test "Validate: whatsapp passes with all 4 vars set" test_validate_whatsapp_ok
 
 test_validate_webhook_missing() {
   (
-    unset CLI_ALERT_WEBHOOK_URL
+    unset SHELLDONE_WEBHOOK_URL
     local err
-    err=$(_cli_alert_validate_channel "webhook" 2>&1)
-    [[ $? -ne 0 ]] && [[ "$err" == *"CLI_ALERT_WEBHOOK_URL not set"* ]]
+    err=$(_shelldone_validate_channel "webhook" 2>&1)
+    [[ $? -ne 0 ]] && [[ "$err" == *"SHELLDONE_WEBHOOK_URL not set"* ]]
   )
 }
 run_test "Validate: webhook catches missing WEBHOOK_URL" test_validate_webhook_missing
 
 test_validate_webhook_ok() {
   (
-    CLI_ALERT_WEBHOOK_URL="http://example.com/hook"
-    _cli_alert_validate_channel "webhook"
+    SHELLDONE_WEBHOOK_URL="http://example.com/hook"
+    _shelldone_validate_channel "webhook"
   )
 }
 run_test "Validate: webhook passes when WEBHOOK_URL set" test_validate_webhook_ok
 
 test_validate_unknown_channel() {
   local err
-  err=$(_cli_alert_validate_channel "nonexistent" 2>&1)
+  err=$(_shelldone_validate_channel "nonexistent" 2>&1)
   local rc=$?
   [[ $rc -ne 0 ]] && [[ "$err" == *"unknown channel"* ]]
 }
@@ -1092,27 +1092,27 @@ run_test "Validate: unknown channel returns error" test_validate_unknown_channel
 
 header "Channel Error Handling"
 
-# Helper: save/restore _cli_alert_http_post
+# Helper: save/restore _shelldone_http_post
 _test_save_http_post() {
-  if declare -f _cli_alert_http_post &>/dev/null; then
-    eval "_test_orig_http_post() $(declare -f _cli_alert_http_post | tail -n +2)"
+  if declare -f _shelldone_http_post &>/dev/null; then
+    eval "_test_orig_http_post() $(declare -f _shelldone_http_post | tail -n +2)"
   fi
 }
 _test_restore_http_post() {
   if declare -f _test_orig_http_post &>/dev/null; then
-    eval "_cli_alert_http_post() $(declare -f _test_orig_http_post | tail -n +2)"
+    eval "_shelldone_http_post() $(declare -f _test_orig_http_post | tail -n +2)"
     unset -f _test_orig_http_post
   fi
 }
 
 test_slack_success_returns_0() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  _cli_alert_external_slack "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  _shelldone_external_slack "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_SLACK_WEBHOOK
+  unset SHELLDONE_SLACK_WEBHOOK
   _test_restore_http_post
   [[ $rc -eq 0 ]]
 }
@@ -1120,12 +1120,12 @@ run_test "Slack: returns 0 on HTTP success" test_slack_success_returns_0
 
 test_slack_failure_returns_1() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="403"; return 1; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  _cli_alert_external_slack "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="403"; return 1; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  _shelldone_external_slack "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_SLACK_WEBHOOK
+  unset SHELLDONE_SLACK_WEBHOOK
   _test_restore_http_post
   [[ $rc -eq 1 ]]
 }
@@ -1133,12 +1133,12 @@ run_test "Slack: returns 1 on HTTP failure" test_slack_failure_returns_1
 
 test_slack_no_rate_update_on_failure() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="500"; return 1; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  local stamp="/tmp/.cli_alert_rate_slack"
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="500"; return 1; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  local stamp="/tmp/.shelldone_rate_slack"
   rm -f "$stamp" 2>/dev/null
-  _cli_alert_external_slack "Title" "Message" 0 2>/dev/null
-  unset CLI_ALERT_SLACK_WEBHOOK
+  _shelldone_external_slack "Title" "Message" 0 2>/dev/null
+  unset SHELLDONE_SLACK_WEBHOOK
   _test_restore_http_post
   # Stamp should NOT exist after failure
   [[ ! -f "$stamp" ]]
@@ -1147,12 +1147,12 @@ run_test "Slack: rate limit NOT updated on failure" test_slack_no_rate_update_on
 
 test_slack_rate_update_on_success() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  local stamp="/tmp/.cli_alert_rate_slack"
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  local stamp="/tmp/.shelldone_rate_slack"
   rm -f "$stamp" 2>/dev/null
-  _cli_alert_external_slack "Title" "Message" 0
-  unset CLI_ALERT_SLACK_WEBHOOK
+  _shelldone_external_slack "Title" "Message" 0
+  unset SHELLDONE_SLACK_WEBHOOK
   _test_restore_http_post
   local result=1
   [[ -f "$stamp" ]] && result=0
@@ -1163,12 +1163,12 @@ run_test "Slack: rate limit updated on success" test_slack_rate_update_on_succes
 
 test_discord_success_returns_0() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
-  rm -f "/tmp/.cli_alert_rate_discord" 2>/dev/null
-  _cli_alert_external_discord "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
+  rm -f "/tmp/.shelldone_rate_discord" 2>/dev/null
+  _shelldone_external_discord "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_DISCORD_WEBHOOK
+  unset SHELLDONE_DISCORD_WEBHOOK
   _test_restore_http_post
   [[ $rc -eq 0 ]]
 }
@@ -1176,12 +1176,12 @@ run_test "Discord: returns 0 on HTTP success" test_discord_success_returns_0
 
 test_discord_failure_returns_1() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="403"; return 1; }
-  CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
-  rm -f "/tmp/.cli_alert_rate_discord" 2>/dev/null
-  _cli_alert_external_discord "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="403"; return 1; }
+  SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
+  rm -f "/tmp/.shelldone_rate_discord" 2>/dev/null
+  _shelldone_external_discord "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_DISCORD_WEBHOOK
+  unset SHELLDONE_DISCORD_WEBHOOK
   _test_restore_http_post
   [[ $rc -eq 1 ]]
 }
@@ -1189,12 +1189,12 @@ run_test "Discord: returns 1 on HTTP failure" test_discord_failure_returns_1
 
 test_discord_no_rate_update_on_failure() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="500"; return 1; }
-  CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
-  local stamp="/tmp/.cli_alert_rate_discord"
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="500"; return 1; }
+  SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
+  local stamp="/tmp/.shelldone_rate_discord"
   rm -f "$stamp" 2>/dev/null
-  _cli_alert_external_discord "Title" "Message" 0 2>/dev/null
-  unset CLI_ALERT_DISCORD_WEBHOOK
+  _shelldone_external_discord "Title" "Message" 0 2>/dev/null
+  unset SHELLDONE_DISCORD_WEBHOOK
   _test_restore_http_post
   [[ ! -f "$stamp" ]]
 }
@@ -1202,13 +1202,13 @@ run_test "Discord: rate limit NOT updated on failure" test_discord_no_rate_updat
 
 test_telegram_success_returns_0() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_TELEGRAM_TOKEN="fake-token"
-  CLI_ALERT_TELEGRAM_CHAT_ID="12345"
-  rm -f "/tmp/.cli_alert_rate_telegram" 2>/dev/null
-  _cli_alert_external_telegram "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_TELEGRAM_TOKEN="fake-token"
+  SHELLDONE_TELEGRAM_CHAT_ID="12345"
+  rm -f "/tmp/.shelldone_rate_telegram" 2>/dev/null
+  _shelldone_external_telegram "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_TELEGRAM_TOKEN CLI_ALERT_TELEGRAM_CHAT_ID
+  unset SHELLDONE_TELEGRAM_TOKEN SHELLDONE_TELEGRAM_CHAT_ID
   _test_restore_http_post
   [[ $rc -eq 0 ]]
 }
@@ -1216,37 +1216,37 @@ run_test "Telegram: returns 0 on HTTP success" test_telegram_success_returns_0
 
 test_telegram_failure_returns_1() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="401"; return 1; }
-  CLI_ALERT_TELEGRAM_TOKEN="fake-token"
-  CLI_ALERT_TELEGRAM_CHAT_ID="12345"
-  rm -f "/tmp/.cli_alert_rate_telegram" 2>/dev/null
-  _cli_alert_external_telegram "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="401"; return 1; }
+  SHELLDONE_TELEGRAM_TOKEN="fake-token"
+  SHELLDONE_TELEGRAM_CHAT_ID="12345"
+  rm -f "/tmp/.shelldone_rate_telegram" 2>/dev/null
+  _shelldone_external_telegram "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_TELEGRAM_TOKEN CLI_ALERT_TELEGRAM_CHAT_ID
+  unset SHELLDONE_TELEGRAM_TOKEN SHELLDONE_TELEGRAM_CHAT_ID
   _test_restore_http_post
   [[ $rc -eq 1 ]]
 }
 run_test "Telegram: returns 1 on HTTP failure" test_telegram_failure_returns_1
 
 test_telegram_missing_chat_id_returns_1() {
-  CLI_ALERT_TELEGRAM_TOKEN="fake-token"
-  unset CLI_ALERT_TELEGRAM_CHAT_ID 2>/dev/null
-  _cli_alert_external_telegram "Title" "Message" 0 2>/dev/null
+  SHELLDONE_TELEGRAM_TOKEN="fake-token"
+  unset SHELLDONE_TELEGRAM_CHAT_ID 2>/dev/null
+  _shelldone_external_telegram "Title" "Message" 0 2>/dev/null
   local rc=$?
-  unset CLI_ALERT_TELEGRAM_TOKEN
+  unset SHELLDONE_TELEGRAM_TOKEN
   [[ $rc -eq 1 ]]
 }
 run_test "Telegram: returns 1 when CHAT_ID missing" test_telegram_missing_chat_id_returns_1
 
 test_telegram_no_rate_update_on_failure() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="500"; return 1; }
-  CLI_ALERT_TELEGRAM_TOKEN="fake-token"
-  CLI_ALERT_TELEGRAM_CHAT_ID="12345"
-  local stamp="/tmp/.cli_alert_rate_telegram"
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="500"; return 1; }
+  SHELLDONE_TELEGRAM_TOKEN="fake-token"
+  SHELLDONE_TELEGRAM_CHAT_ID="12345"
+  local stamp="/tmp/.shelldone_rate_telegram"
   rm -f "$stamp" 2>/dev/null
-  _cli_alert_external_telegram "Title" "Message" 0 2>/dev/null
-  unset CLI_ALERT_TELEGRAM_TOKEN CLI_ALERT_TELEGRAM_CHAT_ID
+  _shelldone_external_telegram "Title" "Message" 0 2>/dev/null
+  unset SHELLDONE_TELEGRAM_TOKEN SHELLDONE_TELEGRAM_CHAT_ID
   _test_restore_http_post
   [[ ! -f "$stamp" ]]
 }
@@ -1254,12 +1254,12 @@ run_test "Telegram: rate limit NOT updated on failure" test_telegram_no_rate_upd
 
 test_webhook_success_returns_0() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_WEBHOOK_URL="http://example.com/hook"
-  rm -f "/tmp/.cli_alert_rate_webhook" 2>/dev/null
-  _cli_alert_external_webhook "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_WEBHOOK_URL="http://example.com/hook"
+  rm -f "/tmp/.shelldone_rate_webhook" 2>/dev/null
+  _shelldone_external_webhook "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_WEBHOOK_URL
+  unset SHELLDONE_WEBHOOK_URL
   _test_restore_http_post
   [[ $rc -eq 0 ]]
 }
@@ -1267,12 +1267,12 @@ run_test "Webhook: returns 0 on HTTP success" test_webhook_success_returns_0
 
 test_webhook_failure_returns_1() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="502"; return 1; }
-  CLI_ALERT_WEBHOOK_URL="http://example.com/hook"
-  rm -f "/tmp/.cli_alert_rate_webhook" 2>/dev/null
-  _cli_alert_external_webhook "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="502"; return 1; }
+  SHELLDONE_WEBHOOK_URL="http://example.com/hook"
+  rm -f "/tmp/.shelldone_rate_webhook" 2>/dev/null
+  _shelldone_external_webhook "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_WEBHOOK_URL
+  unset SHELLDONE_WEBHOOK_URL
   _test_restore_http_post
   [[ $rc -eq 1 ]]
 }
@@ -1280,12 +1280,12 @@ run_test "Webhook: returns 1 on HTTP failure" test_webhook_failure_returns_1
 
 test_webhook_no_rate_update_on_failure() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="500"; return 1; }
-  CLI_ALERT_WEBHOOK_URL="http://example.com/hook"
-  local stamp="/tmp/.cli_alert_rate_webhook"
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="500"; return 1; }
+  SHELLDONE_WEBHOOK_URL="http://example.com/hook"
+  local stamp="/tmp/.shelldone_rate_webhook"
   rm -f "$stamp" 2>/dev/null
-  _cli_alert_external_webhook "Title" "Message" 0 2>/dev/null
-  unset CLI_ALERT_WEBHOOK_URL
+  _shelldone_external_webhook "Title" "Message" 0 2>/dev/null
+  unset SHELLDONE_WEBHOOK_URL
   _test_restore_http_post
   [[ ! -f "$stamp" ]]
 }
@@ -1294,12 +1294,12 @@ run_test "Webhook: rate limit NOT updated on failure" test_webhook_no_rate_updat
 test_webhook_passes_custom_headers() {
   local captured_headers=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_headers="${3:-}"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_WEBHOOK_URL="http://example.com/hook"
-  CLI_ALERT_WEBHOOK_HEADERS="Authorization: Bearer mytoken|X-Req-Id: 42"
-  rm -f "/tmp/.cli_alert_rate_webhook" 2>/dev/null
-  _cli_alert_external_webhook "Title" "Message" 0
-  unset CLI_ALERT_WEBHOOK_URL CLI_ALERT_WEBHOOK_HEADERS
+  _shelldone_http_post() { captured_headers="${3:-}"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_WEBHOOK_URL="http://example.com/hook"
+  SHELLDONE_WEBHOOK_HEADERS="Authorization: Bearer mytoken|X-Req-Id: 42"
+  rm -f "/tmp/.shelldone_rate_webhook" 2>/dev/null
+  _shelldone_external_webhook "Title" "Message" 0
+  unset SHELLDONE_WEBHOOK_URL SHELLDONE_WEBHOOK_HEADERS
   _test_restore_http_post
   [[ "$captured_headers" == "Authorization: Bearer mytoken|X-Req-Id: 42" ]]
 }
@@ -1307,15 +1307,15 @@ run_test "Webhook: passes custom headers to HTTP post" test_webhook_passes_custo
 
 test_whatsapp_success_returns_0() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="201"; return 0; }
-  CLI_ALERT_WHATSAPP_TOKEN="fake-token"
-  CLI_ALERT_WHATSAPP_API_URL="https://api.twilio.com/test"
-  CLI_ALERT_WHATSAPP_FROM="+14155238886"
-  CLI_ALERT_WHATSAPP_TO="+1234567890"
-  rm -f "/tmp/.cli_alert_rate_whatsapp" 2>/dev/null
-  _cli_alert_external_whatsapp "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="201"; return 0; }
+  SHELLDONE_WHATSAPP_TOKEN="fake-token"
+  SHELLDONE_WHATSAPP_API_URL="https://api.twilio.com/test"
+  SHELLDONE_WHATSAPP_FROM="+14155238886"
+  SHELLDONE_WHATSAPP_TO="+1234567890"
+  rm -f "/tmp/.shelldone_rate_whatsapp" 2>/dev/null
+  _shelldone_external_whatsapp "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_WHATSAPP_TOKEN CLI_ALERT_WHATSAPP_API_URL CLI_ALERT_WHATSAPP_FROM CLI_ALERT_WHATSAPP_TO
+  unset SHELLDONE_WHATSAPP_TOKEN SHELLDONE_WHATSAPP_API_URL SHELLDONE_WHATSAPP_FROM SHELLDONE_WHATSAPP_TO
   _test_restore_http_post
   [[ $rc -eq 0 ]]
 }
@@ -1323,26 +1323,26 @@ run_test "WhatsApp: returns 0 on HTTP success" test_whatsapp_success_returns_0
 
 test_whatsapp_failure_returns_1() {
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="401"; return 1; }
-  CLI_ALERT_WHATSAPP_TOKEN="fake-token"
-  CLI_ALERT_WHATSAPP_API_URL="https://api.twilio.com/test"
-  CLI_ALERT_WHATSAPP_FROM="+14155238886"
-  CLI_ALERT_WHATSAPP_TO="+1234567890"
-  rm -f "/tmp/.cli_alert_rate_whatsapp" 2>/dev/null
-  _cli_alert_external_whatsapp "Title" "Message" 0
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="401"; return 1; }
+  SHELLDONE_WHATSAPP_TOKEN="fake-token"
+  SHELLDONE_WHATSAPP_API_URL="https://api.twilio.com/test"
+  SHELLDONE_WHATSAPP_FROM="+14155238886"
+  SHELLDONE_WHATSAPP_TO="+1234567890"
+  rm -f "/tmp/.shelldone_rate_whatsapp" 2>/dev/null
+  _shelldone_external_whatsapp "Title" "Message" 0
   local rc=$?
-  unset CLI_ALERT_WHATSAPP_TOKEN CLI_ALERT_WHATSAPP_API_URL CLI_ALERT_WHATSAPP_FROM CLI_ALERT_WHATSAPP_TO
+  unset SHELLDONE_WHATSAPP_TOKEN SHELLDONE_WHATSAPP_API_URL SHELLDONE_WHATSAPP_FROM SHELLDONE_WHATSAPP_TO
   _test_restore_http_post
   [[ $rc -eq 1 ]]
 }
 run_test "WhatsApp: returns 1 on HTTP failure" test_whatsapp_failure_returns_1
 
 test_whatsapp_missing_config_returns_1() {
-  CLI_ALERT_WHATSAPP_TOKEN="fake-token"
-  unset CLI_ALERT_WHATSAPP_API_URL CLI_ALERT_WHATSAPP_FROM CLI_ALERT_WHATSAPP_TO 2>/dev/null
-  _cli_alert_external_whatsapp "Title" "Message" 0 2>/dev/null
+  SHELLDONE_WHATSAPP_TOKEN="fake-token"
+  unset SHELLDONE_WHATSAPP_API_URL SHELLDONE_WHATSAPP_FROM SHELLDONE_WHATSAPP_TO 2>/dev/null
+  _shelldone_external_whatsapp "Title" "Message" 0 2>/dev/null
   local rc=$?
-  unset CLI_ALERT_WHATSAPP_TOKEN
+  unset SHELLDONE_WHATSAPP_TOKEN
   [[ $rc -eq 1 ]]
 }
 run_test "WhatsApp: returns 1 when config incomplete" test_whatsapp_missing_config_returns_1
@@ -1354,11 +1354,11 @@ header "Channel Payload Structure"
 test_slack_payload_success_color() {
   local captured_payload=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_payload="$2"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  _cli_alert_external_slack "Build OK" "All good" 0
-  unset CLI_ALERT_SLACK_WEBHOOK
+  _shelldone_http_post() { captured_payload="$2"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  _shelldone_external_slack "Build OK" "All good" 0
+  unset SHELLDONE_SLACK_WEBHOOK
   _test_restore_http_post
   [[ "$captured_payload" == *'"color":"#36a64f"'* ]]
 }
@@ -1367,11 +1367,11 @@ run_test "Slack payload: green color on exit 0" test_slack_payload_success_color
 test_slack_payload_failure_color() {
   local captured_payload=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_payload="$2"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  _cli_alert_external_slack "Build Fail" "Error" 1
-  unset CLI_ALERT_SLACK_WEBHOOK
+  _shelldone_http_post() { captured_payload="$2"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  _shelldone_external_slack "Build Fail" "Error" 1
+  unset SHELLDONE_SLACK_WEBHOOK
   _test_restore_http_post
   [[ "$captured_payload" == *'"color":"#dc3545"'* ]]
 }
@@ -1380,12 +1380,12 @@ run_test "Slack payload: red color on exit 1" test_slack_payload_failure_color
 test_slack_payload_custom_username() {
   local captured_payload=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_payload="$2"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_USERNAME="my-bot"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  _cli_alert_external_slack "Title" "Msg" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_USERNAME
+  _shelldone_http_post() { captured_payload="$2"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_USERNAME="my-bot"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  _shelldone_external_slack "Title" "Msg" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_USERNAME
   _test_restore_http_post
   [[ "$captured_payload" == *'"username":"my-bot"'* ]]
 }
@@ -1394,12 +1394,12 @@ run_test "Slack payload: respects custom username" test_slack_payload_custom_use
 test_slack_payload_optional_channel() {
   local captured_payload=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_payload="$2"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_CHANNEL="#alerts"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  _cli_alert_external_slack "Title" "Msg" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_CHANNEL
+  _shelldone_http_post() { captured_payload="$2"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_CHANNEL="#alerts"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  _shelldone_external_slack "Title" "Msg" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_CHANNEL
   _test_restore_http_post
   [[ "$captured_payload" == *'"channel":"#alerts"'* ]]
 }
@@ -1408,11 +1408,11 @@ run_test "Slack payload: includes optional channel" test_slack_payload_optional_
 test_discord_payload_success_color() {
   local captured_payload=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_payload="$2"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
-  rm -f "/tmp/.cli_alert_rate_discord" 2>/dev/null
-  _cli_alert_external_discord "Title" "Msg" 0
-  unset CLI_ALERT_DISCORD_WEBHOOK
+  _shelldone_http_post() { captured_payload="$2"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
+  rm -f "/tmp/.shelldone_rate_discord" 2>/dev/null
+  _shelldone_external_discord "Title" "Msg" 0
+  unset SHELLDONE_DISCORD_WEBHOOK
   _test_restore_http_post
   [[ "$captured_payload" == *'"color":3583835'* ]]
 }
@@ -1421,11 +1421,11 @@ run_test "Discord payload: green color on exit 0" test_discord_payload_success_c
 test_discord_payload_failure_color() {
   local captured_payload=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_payload="$2"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
-  rm -f "/tmp/.cli_alert_rate_discord" 2>/dev/null
-  _cli_alert_external_discord "Title" "Msg" 1
-  unset CLI_ALERT_DISCORD_WEBHOOK
+  _shelldone_http_post() { captured_payload="$2"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test"
+  rm -f "/tmp/.shelldone_rate_discord" 2>/dev/null
+  _shelldone_external_discord "Title" "Msg" 1
+  unset SHELLDONE_DISCORD_WEBHOOK
   _test_restore_http_post
   [[ "$captured_payload" == *'"color":14431557'* ]]
 }
@@ -1434,12 +1434,12 @@ run_test "Discord payload: red color on exit 1" test_discord_payload_failure_col
 test_telegram_payload_structure() {
   local captured_payload="" captured_url=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_url="$1"; captured_payload="$2"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_TELEGRAM_TOKEN="fake-token"
-  CLI_ALERT_TELEGRAM_CHAT_ID="12345"
-  rm -f "/tmp/.cli_alert_rate_telegram" 2>/dev/null
-  _cli_alert_external_telegram "Title" "Msg" 0
-  unset CLI_ALERT_TELEGRAM_TOKEN CLI_ALERT_TELEGRAM_CHAT_ID
+  _shelldone_http_post() { captured_url="$1"; captured_payload="$2"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_TELEGRAM_TOKEN="fake-token"
+  SHELLDONE_TELEGRAM_CHAT_ID="12345"
+  rm -f "/tmp/.shelldone_rate_telegram" 2>/dev/null
+  _shelldone_external_telegram "Title" "Msg" 0
+  unset SHELLDONE_TELEGRAM_TOKEN SHELLDONE_TELEGRAM_CHAT_ID
   _test_restore_http_post
   [[ "$captured_url" == *"api.telegram.org/botfake-token/sendMessage"* ]] &&
   [[ "$captured_payload" == *'"chat_id":"12345"'* ]] &&
@@ -1450,11 +1450,11 @@ run_test "Telegram payload: correct URL, chat_id, parse_mode" test_telegram_payl
 test_webhook_payload_exit_code() {
   local captured_payload=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_payload="$2"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_WEBHOOK_URL="http://example.com/hook"
-  rm -f "/tmp/.cli_alert_rate_webhook" 2>/dev/null
-  _cli_alert_external_webhook "Title" "Msg" 42
-  unset CLI_ALERT_WEBHOOK_URL
+  _shelldone_http_post() { captured_payload="$2"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_WEBHOOK_URL="http://example.com/hook"
+  rm -f "/tmp/.shelldone_rate_webhook" 2>/dev/null
+  _shelldone_external_webhook "Title" "Msg" 42
+  unset SHELLDONE_WEBHOOK_URL
   _test_restore_http_post
   [[ "$captured_payload" == *'"exit_code":42'* ]]
 }
@@ -1463,14 +1463,14 @@ run_test "Webhook payload: includes exit_code" test_webhook_payload_exit_code
 test_whatsapp_payload_auth_header() {
   local captured_headers=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_headers="${3:-}"; _CLI_ALERT_LAST_HTTP_STATUS="201"; return 0; }
-  CLI_ALERT_WHATSAPP_TOKEN="dXNlcjpwYXNz"
-  CLI_ALERT_WHATSAPP_API_URL="https://api.twilio.com/test"
-  CLI_ALERT_WHATSAPP_FROM="+14155238886"
-  CLI_ALERT_WHATSAPP_TO="+1234567890"
-  rm -f "/tmp/.cli_alert_rate_whatsapp" 2>/dev/null
-  _cli_alert_external_whatsapp "Title" "Msg" 0
-  unset CLI_ALERT_WHATSAPP_TOKEN CLI_ALERT_WHATSAPP_API_URL CLI_ALERT_WHATSAPP_FROM CLI_ALERT_WHATSAPP_TO
+  _shelldone_http_post() { captured_headers="${3:-}"; _SHELLDONE_LAST_HTTP_STATUS="201"; return 0; }
+  SHELLDONE_WHATSAPP_TOKEN="dXNlcjpwYXNz"
+  SHELLDONE_WHATSAPP_API_URL="https://api.twilio.com/test"
+  SHELLDONE_WHATSAPP_FROM="+14155238886"
+  SHELLDONE_WHATSAPP_TO="+1234567890"
+  rm -f "/tmp/.shelldone_rate_whatsapp" 2>/dev/null
+  _shelldone_external_whatsapp "Title" "Msg" 0
+  unset SHELLDONE_WHATSAPP_TOKEN SHELLDONE_WHATSAPP_API_URL SHELLDONE_WHATSAPP_FROM SHELLDONE_WHATSAPP_TO
   _test_restore_http_post
   [[ "$captured_headers" == "Authorization: Basic dXNlcjpwYXNz" ]]
 }
@@ -1479,11 +1479,11 @@ run_test "WhatsApp payload: sends auth header" test_whatsapp_payload_auth_header
 test_payload_json_escaping() {
   local captured_payload=""
   _test_save_http_post
-  _cli_alert_http_post() { captured_payload="$2"; _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_WEBHOOK_URL="http://example.com/hook"
-  rm -f "/tmp/.cli_alert_rate_webhook" 2>/dev/null
-  _cli_alert_external_webhook 'Title with "quotes"' 'Message with \backslash' 0
-  unset CLI_ALERT_WEBHOOK_URL
+  _shelldone_http_post() { captured_payload="$2"; _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_WEBHOOK_URL="http://example.com/hook"
+  rm -f "/tmp/.shelldone_rate_webhook" 2>/dev/null
+  _shelldone_external_webhook 'Title with "quotes"' 'Message with \backslash' 0
+  unset SHELLDONE_WEBHOOK_URL
   _test_restore_http_post
   [[ "$captured_payload" == *'\"quotes\"'* ]] && [[ "$captured_payload" == *'\\backslash'* ]]
 }
@@ -1495,16 +1495,16 @@ header "Rate Limiting"
 
 test_rate_limit_no_stamp() {
   local channel="test_nostamp_$$"
-  rm -f "/tmp/.cli_alert_rate_${channel}" 2>/dev/null
-  _cli_alert_rate_limit_check "$channel"
+  rm -f "/tmp/.shelldone_rate_${channel}" 2>/dev/null
+  _shelldone_rate_limit_check "$channel"
 }
 run_test "Rate limit: passes when no stamp file" test_rate_limit_no_stamp
 
 test_rate_limit_fresh_stamp() {
   local channel="test_fresh_$$"
-  local stamp="/tmp/.cli_alert_rate_${channel}"
+  local stamp="/tmp/.shelldone_rate_${channel}"
   date +%s > "$stamp"
-  ! _cli_alert_rate_limit_check "$channel"
+  ! _shelldone_rate_limit_check "$channel"
   local rc=$?
   rm -f "$stamp" 2>/dev/null
   [[ $rc -eq 0 ]]
@@ -1513,10 +1513,10 @@ run_test "Rate limit: blocks when stamp is fresh" test_rate_limit_fresh_stamp
 
 test_rate_limit_expired_stamp() {
   local channel="test_expired_$$"
-  local stamp="/tmp/.cli_alert_rate_${channel}"
+  local stamp="/tmp/.shelldone_rate_${channel}"
   # Write a timestamp 60 seconds in the past
   echo $(( $(date +%s) - 60 )) > "$stamp"
-  _cli_alert_rate_limit_check "$channel"
+  _shelldone_rate_limit_check "$channel"
   local rc=$?
   rm -f "$stamp" 2>/dev/null
   [[ $rc -eq 0 ]]
@@ -1525,12 +1525,12 @@ run_test "Rate limit: passes when stamp is expired" test_rate_limit_expired_stam
 
 test_rate_limit_skip_flag() {
   local channel="test_skip2_$$"
-  local stamp="/tmp/.cli_alert_rate_${channel}"
+  local stamp="/tmp/.shelldone_rate_${channel}"
   date +%s > "$stamp"
-  _CLI_ALERT_SKIP_RATE_LIMIT=true
-  _cli_alert_rate_limit_check "$channel"
+  _SHELLDONE_SKIP_RATE_LIMIT=true
+  _shelldone_rate_limit_check "$channel"
   local rc=$?
-  unset _CLI_ALERT_SKIP_RATE_LIMIT
+  unset _SHELLDONE_SKIP_RATE_LIMIT
   rm -f "$stamp" 2>/dev/null
   [[ $rc -eq 0 ]]
 }
@@ -1538,22 +1538,22 @@ run_test "Rate limit: skip flag bypasses fresh stamp" test_rate_limit_skip_flag
 
 test_rate_limit_independent_channels() {
   local ch_a="test_cha_$$" ch_b="test_chb_$$"
-  rm -f "/tmp/.cli_alert_rate_${ch_a}" "/tmp/.cli_alert_rate_${ch_b}" 2>/dev/null
-  _cli_alert_rate_limit_update "$ch_a"
+  rm -f "/tmp/.shelldone_rate_${ch_a}" "/tmp/.shelldone_rate_${ch_b}" 2>/dev/null
+  _shelldone_rate_limit_update "$ch_a"
   # ch_a should be rate-limited, ch_b should not
   local a_blocked=0 b_ok=0
-  ! _cli_alert_rate_limit_check "$ch_a" && a_blocked=1
-  _cli_alert_rate_limit_check "$ch_b" && b_ok=1
-  rm -f "/tmp/.cli_alert_rate_${ch_a}" "/tmp/.cli_alert_rate_${ch_b}" 2>/dev/null
+  ! _shelldone_rate_limit_check "$ch_a" && a_blocked=1
+  _shelldone_rate_limit_check "$ch_b" && b_ok=1
+  rm -f "/tmp/.shelldone_rate_${ch_a}" "/tmp/.shelldone_rate_${ch_b}" 2>/dev/null
   [[ $a_blocked -eq 1 ]] && [[ $b_ok -eq 1 ]]
 }
 run_test "Rate limit: channels are independent" test_rate_limit_independent_channels
 
 test_rate_limit_update_creates_stamp() {
   local channel="test_create_$$"
-  local stamp="/tmp/.cli_alert_rate_${channel}"
+  local stamp="/tmp/.shelldone_rate_${channel}"
   rm -f "$stamp" 2>/dev/null
-  _cli_alert_rate_limit_update "$channel"
+  _shelldone_rate_limit_update "$channel"
   local result=1
   [[ -f "$stamp" ]] && result=0
   rm -f "$stamp" 2>/dev/null
@@ -1563,113 +1563,113 @@ run_test "Rate limit: update creates stamp file" test_rate_limit_update_creates_
 
 test_rate_limit_custom_interval() {
   local channel="test_custom_$$"
-  local stamp="/tmp/.cli_alert_rate_${channel}"
+  local stamp="/tmp/.shelldone_rate_${channel}"
   # Write stamp 3 seconds ago
   echo $(( $(date +%s) - 3 )) > "$stamp"
   # With 5-second rate limit, should be blocked
-  local old_limit="$CLI_ALERT_RATE_LIMIT"
-  CLI_ALERT_RATE_LIMIT=5
-  ! _cli_alert_rate_limit_check "$channel"
+  local old_limit="$SHELLDONE_RATE_LIMIT"
+  SHELLDONE_RATE_LIMIT=5
+  ! _shelldone_rate_limit_check "$channel"
   local blocked=$?
   # With 2-second rate limit, should pass
-  CLI_ALERT_RATE_LIMIT=2
-  _cli_alert_rate_limit_check "$channel"
+  SHELLDONE_RATE_LIMIT=2
+  _shelldone_rate_limit_check "$channel"
   local passed=$?
-  CLI_ALERT_RATE_LIMIT="$old_limit"
+  SHELLDONE_RATE_LIMIT="$old_limit"
   rm -f "$stamp" 2>/dev/null
   [[ $blocked -eq 0 ]] && [[ $passed -eq 0 ]]
 }
-run_test "Rate limit: respects custom CLI_ALERT_RATE_LIMIT" test_rate_limit_custom_interval
+run_test "Rate limit: respects custom SHELLDONE_RATE_LIMIT" test_rate_limit_custom_interval
 
 # ── Debug Output (Integration) ────────────────────────────────────────────────
 
 header "Debug Output"
 
 test_debug_output_on_failure() {
-  local old_debug="$CLI_ALERT_EXTERNAL_DEBUG"
-  CLI_ALERT_EXTERNAL_DEBUG=true
+  local old_debug="$SHELLDONE_EXTERNAL_DEBUG"
+  SHELLDONE_EXTERNAL_DEBUG=true
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="403"; return 1; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="403"; return 1; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
   local debug_out
-  debug_out=$(_cli_alert_external_slack "Title" "Msg" 0 2>&1)
-  unset CLI_ALERT_SLACK_WEBHOOK
+  debug_out=$(_shelldone_external_slack "Title" "Msg" 0 2>&1)
+  unset SHELLDONE_SLACK_WEBHOOK
   _test_restore_http_post
-  CLI_ALERT_EXTERNAL_DEBUG="$old_debug"
+  SHELLDONE_EXTERNAL_DEBUG="$old_debug"
   [[ "$debug_out" == *"FAILED"* ]] && [[ "$debug_out" == *"403"* ]]
 }
 run_test "Debug: failure message includes FAILED and HTTP status" test_debug_output_on_failure
 
 test_debug_output_on_success() {
-  local old_debug="$CLI_ALERT_EXTERNAL_DEBUG"
-  CLI_ALERT_EXTERNAL_DEBUG=true
+  local old_debug="$SHELLDONE_EXTERNAL_DEBUG"
+  SHELLDONE_EXTERNAL_DEBUG=true
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
   local debug_out
-  debug_out=$(_cli_alert_external_slack "Title" "Msg" 0 2>&1)
-  unset CLI_ALERT_SLACK_WEBHOOK
+  debug_out=$(_shelldone_external_slack "Title" "Msg" 0 2>&1)
+  unset SHELLDONE_SLACK_WEBHOOK
   _test_restore_http_post
-  CLI_ALERT_EXTERNAL_DEBUG="$old_debug"
+  SHELLDONE_EXTERNAL_DEBUG="$old_debug"
   [[ "$debug_out" == *"slack notification sent"* ]]
 }
 run_test "Debug: success message says 'notification sent'" test_debug_output_on_success
 
 test_debug_silent_when_off() {
-  local old_debug="$CLI_ALERT_EXTERNAL_DEBUG"
-  CLI_ALERT_EXTERNAL_DEBUG=false
+  local old_debug="$SHELLDONE_EXTERNAL_DEBUG"
+  SHELLDONE_EXTERNAL_DEBUG=false
   _test_save_http_post
-  _cli_alert_http_post() { _CLI_ALERT_LAST_HTTP_STATUS="200"; return 0; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
+  _shelldone_http_post() { _SHELLDONE_LAST_HTTP_STATUS="200"; return 0; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
   local debug_out
-  debug_out=$(_cli_alert_external_slack "Title" "Msg" 0 2>&1)
-  unset CLI_ALERT_SLACK_WEBHOOK
+  debug_out=$(_shelldone_external_slack "Title" "Msg" 0 2>&1)
+  unset SHELLDONE_SLACK_WEBHOOK
   _test_restore_http_post
-  CLI_ALERT_EXTERNAL_DEBUG="$old_debug"
+  SHELLDONE_EXTERNAL_DEBUG="$old_debug"
   [[ -z "$debug_out" ]]
 }
-run_test "Debug: silent when CLI_ALERT_EXTERNAL_DEBUG=false" test_debug_silent_when_off
+run_test "Debug: silent when SHELLDONE_EXTERNAL_DEBUG=false" test_debug_silent_when_off
 
 # ── URL Parsing & Redaction (Unit) ────────────────────────────────────────────
 
 header "URL Parsing & Redaction"
 
 test_parse_https_url() {
-  _cli_alert_parse_url "https://hooks.slack.com/services/T123/B456"
+  _shelldone_parse_url "https://hooks.slack.com/services/T123/B456"
   [[ "$_PARSED_SCHEME" == "https" ]] && [[ "$_PARSED_HOST" == "hooks.slack.com" ]] && [[ "$_PARSED_PORT" == "443" ]]
 }
 run_test "URL parse: https with default port" test_parse_https_url
 
 test_parse_http_url() {
-  _cli_alert_parse_url "http://example.com/webhook"
+  _shelldone_parse_url "http://example.com/webhook"
   [[ "$_PARSED_SCHEME" == "http" ]] && [[ "$_PARSED_HOST" == "example.com" ]] && [[ "$_PARSED_PORT" == "80" ]]
 }
 run_test "URL parse: http with default port" test_parse_http_url
 
 test_parse_custom_port() {
-  _cli_alert_parse_url "http://localhost:8080/hook"
+  _shelldone_parse_url "http://localhost:8080/hook"
   [[ "$_PARSED_HOST" == "localhost" ]] && [[ "$_PARSED_PORT" == "8080" ]] && [[ "$_PARSED_PATH" == "/hook" ]]
 }
 run_test "URL parse: custom port" test_parse_custom_port
 
 test_parse_invalid_scheme() {
-  ! _cli_alert_parse_url "ftp://example.com/file"
+  ! _shelldone_parse_url "ftp://example.com/file"
 }
 run_test "URL parse: rejects non-HTTP scheme" test_parse_invalid_scheme
 
 test_redact_url_with_path() {
   local result
-  result=$(_cli_alert_redact_url "https://hooks.slack.com/services/T123/B456/secret")
+  result=$(_shelldone_redact_url "https://hooks.slack.com/services/T123/B456/secret")
   [[ "$result" == "https://hooks.slack.com/<redacted>" ]]
 }
 run_test "URL redact: strips path" test_redact_url_with_path
 
 test_redact_url_no_path() {
   local result
-  result=$(_cli_alert_redact_url "https://example.com")
+  result=$(_shelldone_redact_url "https://example.com")
   # Should still redact even without a trailing path
   [[ "$result" == *"example.com"* ]]
 }
@@ -1677,7 +1677,7 @@ run_test "URL redact: handles URL with no trailing path" test_redact_url_no_path
 
 test_redact_url_non_http() {
   local result
-  result=$(_cli_alert_redact_url "not-a-url")
+  result=$(_shelldone_redact_url "not-a-url")
   [[ "$result" == "<redacted-url>" ]]
 }
 run_test "URL redact: non-HTTP URL fully redacted" test_redact_url_non_http
@@ -1687,24 +1687,24 @@ run_test "URL redact: non-HTTP URL fully redacted" test_redact_url_non_http
 header "JSON Escaping Edge Cases"
 
 test_json_escape_empty() {
-  [[ "$(_cli_alert_json_escape "")" == "" ]]
+  [[ "$(_shelldone_json_escape "")" == "" ]]
 }
 run_test "JSON escape: empty string" test_json_escape_empty
 
 test_json_escape_only_quotes() {
-  [[ "$(_cli_alert_json_escape '""')" == '\"\"' ]]
+  [[ "$(_shelldone_json_escape '""')" == '\"\"' ]]
 }
 run_test "JSON escape: only double quotes" test_json_escape_only_quotes
 
 test_json_escape_only_backslashes() {
-  [[ "$(_cli_alert_json_escape '\\\\')" == '\\\\\\\\' ]]
+  [[ "$(_shelldone_json_escape '\\\\')" == '\\\\\\\\' ]]
 }
 run_test "JSON escape: only backslashes" test_json_escape_only_backslashes
 
 test_json_escape_carriage_return() {
   local input=$'line1\r\nline2'
   local result
-  result=$(_cli_alert_json_escape "$input")
+  result=$(_shelldone_json_escape "$input")
   [[ "$result" == 'line1\r\nline2' ]]
 }
 run_test "JSON escape: carriage return + newline" test_json_escape_carriage_return
@@ -1713,7 +1713,7 @@ test_json_escape_long_string() {
   local input="This is a longer string with \"quotes\" and \\backslashes and a
 newline in the middle"
   local result
-  result=$(_cli_alert_json_escape "$input")
+  result=$(_shelldone_json_escape "$input")
   [[ "$result" == *'\"quotes\"'* ]] && [[ "$result" == *'\\backslashes'* ]] && [[ "$result" == *'\n'* ]]
 }
 run_test "JSON escape: mixed special chars in long string" test_json_escape_long_string
@@ -1724,58 +1724,58 @@ header "CLI webhook test (E2E)"
 
 test_cli_webhook_test_no_channel() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" webhook test 2>&1) || true
-  [[ "$out" == *"Usage: cli-alert webhook test"* ]]
+  out=$("${SCRIPT_DIR}/bin/shelldone" webhook test 2>&1) || true
+  [[ "$out" == *"Usage: shelldone webhook test"* ]]
 }
 run_test "CLI webhook test: no channel shows usage" test_cli_webhook_test_no_channel
 
 test_cli_webhook_test_unknown_channel() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" webhook test nonexistent 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" webhook test nonexistent 2>&1) || true
   [[ "$out" == *"unknown channel"* ]] || [[ "$out" == *"not set"* ]]
 }
 run_test "CLI webhook test: unknown channel shows error" test_cli_webhook_test_unknown_channel
 
 test_cli_webhook_test_slack_missing_var() {
   local out
-  out=$(unset CLI_ALERT_SLACK_WEBHOOK; CLI_ALERT_CONFIG=/dev/null "${SCRIPT_DIR}/bin/cli-alert" webhook test slack 2>&1) || true
-  [[ "$out" == *"CLI_ALERT_SLACK_WEBHOOK not set"* ]]
+  out=$(unset SHELLDONE_SLACK_WEBHOOK; SHELLDONE_CONFIG=/dev/null "${SCRIPT_DIR}/bin/shelldone" webhook test slack 2>&1) || true
+  [[ "$out" == *"SHELLDONE_SLACK_WEBHOOK not set"* ]]
 }
 run_test "CLI webhook test: slack missing var shows specific error" test_cli_webhook_test_slack_missing_var
 
 test_cli_webhook_test_discord_missing_var() {
   local out
-  out=$(unset CLI_ALERT_DISCORD_WEBHOOK; "${SCRIPT_DIR}/bin/cli-alert" webhook test discord 2>&1) || true
-  [[ "$out" == *"CLI_ALERT_DISCORD_WEBHOOK not set"* ]]
+  out=$(unset SHELLDONE_DISCORD_WEBHOOK; "${SCRIPT_DIR}/bin/shelldone" webhook test discord 2>&1) || true
+  [[ "$out" == *"SHELLDONE_DISCORD_WEBHOOK not set"* ]]
 }
 run_test "CLI webhook test: discord missing var shows specific error" test_cli_webhook_test_discord_missing_var
 
 test_cli_webhook_test_telegram_missing_chat_id() {
   local out
-  out=$(CLI_ALERT_TELEGRAM_TOKEN="fake" unset CLI_ALERT_TELEGRAM_CHAT_ID; "${SCRIPT_DIR}/bin/cli-alert" webhook test telegram 2>&1) || true
+  out=$(SHELLDONE_TELEGRAM_TOKEN="fake" unset SHELLDONE_TELEGRAM_CHAT_ID; "${SCRIPT_DIR}/bin/shelldone" webhook test telegram 2>&1) || true
   # Either TOKEN or CHAT_ID error is acceptable — depends on env
-  [[ "$out" == *"CLI_ALERT_TELEGRAM"* ]] && [[ "$out" == *"not set"* ]]
+  [[ "$out" == *"SHELLDONE_TELEGRAM"* ]] && [[ "$out" == *"not set"* ]]
 }
 run_test "CLI webhook test: telegram missing config shows error" test_cli_webhook_test_telegram_missing_chat_id
 
 test_cli_webhook_test_whatsapp_partial_config() {
   local out
-  out=$(CLI_ALERT_WHATSAPP_TOKEN="fake" "${SCRIPT_DIR}/bin/cli-alert" webhook test whatsapp 2>&1) || true
-  [[ "$out" == *"CLI_ALERT_WHATSAPP_API_URL not set"* ]]
+  out=$(SHELLDONE_WHATSAPP_TOKEN="fake" "${SCRIPT_DIR}/bin/shelldone" webhook test whatsapp 2>&1) || true
+  [[ "$out" == *"SHELLDONE_WHATSAPP_API_URL not set"* ]]
 }
 run_test "CLI webhook test: whatsapp partial config catches first missing var" test_cli_webhook_test_whatsapp_partial_config
 
 test_cli_webhook_test_webhook_missing_url() {
   local out
-  out=$(unset CLI_ALERT_WEBHOOK_URL; "${SCRIPT_DIR}/bin/cli-alert" webhook test webhook 2>&1) || true
-  [[ "$out" == *"CLI_ALERT_WEBHOOK_URL not set"* ]]
+  out=$(unset SHELLDONE_WEBHOOK_URL; "${SCRIPT_DIR}/bin/shelldone" webhook test webhook 2>&1) || true
+  [[ "$out" == *"SHELLDONE_WEBHOOK_URL not set"* ]]
 }
 run_test "CLI webhook test: webhook missing URL shows specific error" test_cli_webhook_test_webhook_missing_url
 
 test_cli_webhook_test_email_missing() {
   local out
-  out=$(unset CLI_ALERT_EMAIL_TO; "${SCRIPT_DIR}/bin/cli-alert" webhook test email 2>&1) || true
-  [[ "$out" == *"CLI_ALERT_EMAIL_TO not set"* ]]
+  out=$(unset SHELLDONE_EMAIL_TO; "${SCRIPT_DIR}/bin/shelldone" webhook test email 2>&1) || true
+  [[ "$out" == *"SHELLDONE_EMAIL_TO not set"* ]]
 }
 run_test "CLI webhook test: email missing EMAIL_TO shows error" test_cli_webhook_test_email_missing
 
@@ -1801,8 +1801,8 @@ test_cli_webhook_test_success_e2e() {
   local out
   out=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
-    CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test" \
-    "${SCRIPT_DIR}/bin/cli-alert" webhook test slack 2>&1
+    SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test slack 2>&1
   )
   local rc=$?
   _test_teardown_mock_curl
@@ -1815,8 +1815,8 @@ test_cli_webhook_test_failure_e2e() {
   local out
   out=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
-    CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test" \
-    "${SCRIPT_DIR}/bin/cli-alert" webhook test slack 2>&1
+    SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test slack 2>&1
   )
   local rc=$?
   _test_teardown_mock_curl
@@ -1829,8 +1829,8 @@ test_cli_webhook_test_500_e2e() {
   local out
   out=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
-    CLI_ALERT_WEBHOOK_URL="http://example.com/hook" \
-    "${SCRIPT_DIR}/bin/cli-alert" webhook test webhook 2>&1
+    SHELLDONE_WEBHOOK_URL="http://example.com/hook" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test webhook 2>&1
   )
   local rc=$?
   _test_teardown_mock_curl
@@ -1843,8 +1843,8 @@ test_cli_webhook_test_201_e2e() {
   local out
   out=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
-    CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test" \
-    "${SCRIPT_DIR}/bin/cli-alert" webhook test discord 2>&1
+    SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/test" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test discord 2>&1
   )
   local rc=$?
   _test_teardown_mock_curl
@@ -1857,11 +1857,11 @@ test_cli_webhook_test_debug_hint() {
   local out
   out=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
-    CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test" \
-    "${SCRIPT_DIR}/bin/cli-alert" webhook test slack 2>&1
+    SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test slack 2>&1
   )
   _test_teardown_mock_curl
-  [[ "$out" == *"CLI_ALERT_EXTERNAL_DEBUG=true"* ]]
+  [[ "$out" == *"SHELLDONE_EXTERNAL_DEBUG=true"* ]]
 }
 run_test "CLI webhook test E2E: failure shows debug hint" test_cli_webhook_test_debug_hint
 
@@ -1871,13 +1871,13 @@ test_cli_webhook_test_not_rate_limited() {
   local out1 out2
   out1=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
-    CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test" \
-    "${SCRIPT_DIR}/bin/cli-alert" webhook test slack 2>&1
+    SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test slack 2>&1
   )
   out2=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
-    CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test" \
-    "${SCRIPT_DIR}/bin/cli-alert" webhook test slack 2>&1
+    SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test slack 2>&1
   )
   local rc2=$?
   _test_teardown_mock_curl
@@ -1890,9 +1890,9 @@ test_cli_webhook_test_telegram_e2e() {
   local out
   out=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
-    CLI_ALERT_TELEGRAM_TOKEN="fake-token" \
-    CLI_ALERT_TELEGRAM_CHAT_ID="12345" \
-    "${SCRIPT_DIR}/bin/cli-alert" webhook test telegram 2>&1
+    SHELLDONE_TELEGRAM_TOKEN="fake-token" \
+    SHELLDONE_TELEGRAM_CHAT_ID="12345" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test telegram 2>&1
   )
   local rc=$?
   _test_teardown_mock_curl
@@ -1905,11 +1905,11 @@ test_cli_webhook_test_whatsapp_e2e() {
   local out
   out=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
-    CLI_ALERT_WHATSAPP_TOKEN="dXNlcjpwYXNz" \
-    CLI_ALERT_WHATSAPP_API_URL="https://api.twilio.com/test" \
-    CLI_ALERT_WHATSAPP_FROM="+14155238886" \
-    CLI_ALERT_WHATSAPP_TO="+1234567890" \
-    "${SCRIPT_DIR}/bin/cli-alert" webhook test whatsapp 2>&1
+    SHELLDONE_WHATSAPP_TOKEN="dXNlcjpwYXNz" \
+    SHELLDONE_WHATSAPP_API_URL="https://api.twilio.com/test" \
+    SHELLDONE_WHATSAPP_FROM="+14155238886" \
+    SHELLDONE_WHATSAPP_TO="+1234567890" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test whatsapp 2>&1
   )
   local rc=$?
   _test_teardown_mock_curl
@@ -1924,34 +1924,34 @@ header "Background Dispatch"
 test_dispatch_calls_configured_channels() {
   local tmpfile
   tmpfile=$(mktemp)
-  _cli_alert_external_slack()    { echo "slack" >> "$tmpfile"; }
-  _cli_alert_external_discord()  { echo "discord" >> "$tmpfile"; }
-  _cli_alert_external_telegram() { echo "telegram" >> "$tmpfile"; }
-  _cli_alert_external_email()    { echo "email" >> "$tmpfile"; }
-  _cli_alert_external_whatsapp() { echo "whatsapp" >> "$tmpfile"; }
-  _cli_alert_external_webhook()  { echo "webhook" >> "$tmpfile"; }
+  _shelldone_external_slack()    { echo "slack" >> "$tmpfile"; }
+  _shelldone_external_discord()  { echo "discord" >> "$tmpfile"; }
+  _shelldone_external_telegram() { echo "telegram" >> "$tmpfile"; }
+  _shelldone_external_email()    { echo "email" >> "$tmpfile"; }
+  _shelldone_external_whatsapp() { echo "whatsapp" >> "$tmpfile"; }
+  _shelldone_external_webhook()  { echo "webhook" >> "$tmpfile"; }
 
-  CLI_ALERT_SLACK_WEBHOOK="set"
-  CLI_ALERT_DISCORD_WEBHOOK="set"
-  unset CLI_ALERT_TELEGRAM_TOKEN CLI_ALERT_EMAIL_TO CLI_ALERT_WHATSAPP_TOKEN CLI_ALERT_WEBHOOK_URL 2>/dev/null
+  SHELLDONE_SLACK_WEBHOOK="set"
+  SHELLDONE_DISCORD_WEBHOOK="set"
+  unset SHELLDONE_TELEGRAM_TOKEN SHELLDONE_EMAIL_TO SHELLDONE_WHATSAPP_TOKEN SHELLDONE_WEBHOOK_URL 2>/dev/null
 
-  # Run dispatch logic inline (same as _cli_alert_notify_external but synchronous)
+  # Run dispatch logic inline (same as _shelldone_notify_external but synchronous)
   set +e
-  [[ -n "${CLI_ALERT_SLACK_WEBHOOK:-}" ]]   && _cli_alert_external_slack    "T" "M" 0
-  [[ -n "${CLI_ALERT_DISCORD_WEBHOOK:-}" ]] && _cli_alert_external_discord  "T" "M" 0
-  [[ -n "${CLI_ALERT_TELEGRAM_TOKEN:-}" ]]  && _cli_alert_external_telegram "T" "M" 0
-  [[ -n "${CLI_ALERT_EMAIL_TO:-}" ]]        && _cli_alert_external_email    "T" "M" 0
-  [[ -n "${CLI_ALERT_WHATSAPP_TOKEN:-}" ]]  && _cli_alert_external_whatsapp "T" "M" 0
-  [[ -n "${CLI_ALERT_WEBHOOK_URL:-}" ]]     && _cli_alert_external_webhook  "T" "M" 0
+  [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}" ]]   && _shelldone_external_slack    "T" "M" 0
+  [[ -n "${SHELLDONE_DISCORD_WEBHOOK:-}" ]] && _shelldone_external_discord  "T" "M" 0
+  [[ -n "${SHELLDONE_TELEGRAM_TOKEN:-}" ]]  && _shelldone_external_telegram "T" "M" 0
+  [[ -n "${SHELLDONE_EMAIL_TO:-}" ]]        && _shelldone_external_email    "T" "M" 0
+  [[ -n "${SHELLDONE_WHATSAPP_TOKEN:-}" ]]  && _shelldone_external_whatsapp "T" "M" 0
+  [[ -n "${SHELLDONE_WEBHOOK_URL:-}" ]]     && _shelldone_external_webhook  "T" "M" 0
   set -e
 
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_DISCORD_WEBHOOK
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_DISCORD_WEBHOOK
   local called
   called=$(cat "$tmpfile")
   rm -f "$tmpfile"
   # Restore channel functions
-  unset -f _cli_alert_external_slack _cli_alert_external_discord _cli_alert_external_telegram _cli_alert_external_email _cli_alert_external_whatsapp _cli_alert_external_webhook
-  unset _CLI_ALERT_EXTERNAL_LOADED
+  unset -f _shelldone_external_slack _shelldone_external_discord _shelldone_external_telegram _shelldone_external_email _shelldone_external_whatsapp _shelldone_external_webhook
+  unset _SHELLDONE_EXTERNAL_LOADED
   source "${LIB_DIR}/external-notify.sh"
   [[ "$called" == *"slack"* ]] && [[ "$called" == *"discord"* ]] &&
   [[ "$called" != *"telegram"* ]] && [[ "$called" != *"email"* ]]
@@ -1959,25 +1959,25 @@ test_dispatch_calls_configured_channels() {
 run_test "Dispatch: only calls configured channels" test_dispatch_calls_configured_channels
 
 test_dispatch_debug_mode_stderr() {
-  local old_debug="$CLI_ALERT_EXTERNAL_DEBUG"
-  CLI_ALERT_EXTERNAL_DEBUG=true
+  local old_debug="$SHELLDONE_EXTERNAL_DEBUG"
+  SHELLDONE_EXTERNAL_DEBUG=true
   local err_dest="/dev/null"
-  if [[ "$CLI_ALERT_EXTERNAL_DEBUG" == "true" ]]; then
+  if [[ "$SHELLDONE_EXTERNAL_DEBUG" == "true" ]]; then
     err_dest="/dev/stderr"
   fi
-  CLI_ALERT_EXTERNAL_DEBUG="$old_debug"
+  SHELLDONE_EXTERNAL_DEBUG="$old_debug"
   [[ "$err_dest" == "/dev/stderr" ]]
 }
 run_test "Dispatch: debug mode routes stderr to /dev/stderr" test_dispatch_debug_mode_stderr
 
 test_dispatch_non_debug_swallows_stderr() {
-  local old_debug="$CLI_ALERT_EXTERNAL_DEBUG"
-  CLI_ALERT_EXTERNAL_DEBUG=false
+  local old_debug="$SHELLDONE_EXTERNAL_DEBUG"
+  SHELLDONE_EXTERNAL_DEBUG=false
   local err_dest="/dev/null"
-  if [[ "$CLI_ALERT_EXTERNAL_DEBUG" == "true" ]]; then
+  if [[ "$SHELLDONE_EXTERNAL_DEBUG" == "true" ]]; then
     err_dest="/dev/stderr"
   fi
-  CLI_ALERT_EXTERNAL_DEBUG="$old_debug"
+  SHELLDONE_EXTERNAL_DEBUG="$old_debug"
   [[ "$err_dest" == "/dev/null" ]]
 }
 run_test "Dispatch: non-debug mode swallows stderr" test_dispatch_non_debug_swallows_stderr
@@ -1988,36 +1988,36 @@ header "CLI Webhook Status (E2E)"
 
 test_cli_webhook_status_shows_transport() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" webhook status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" webhook status 2>/dev/null) || true
   echo "$out" | grep -q "HTTP transport:"
 }
 run_test "CLI webhook status: shows HTTP transport" test_cli_webhook_status_shows_transport
 
 test_cli_webhook_status_shows_rate_limit() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" webhook status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" webhook status 2>/dev/null) || true
   echo "$out" | grep -q "Rate limit:"
 }
 run_test "CLI webhook status: shows rate limit" test_cli_webhook_status_shows_rate_limit
 
 test_cli_webhook_status_shows_channels() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" webhook status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" webhook status 2>/dev/null) || true
   echo "$out" | grep -q "Channels:"
 }
 run_test "CLI webhook status: shows channels section" test_cli_webhook_status_shows_channels
 
 test_cli_webhook_status_shows_timeout() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" webhook status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" webhook status 2>/dev/null) || true
   echo "$out" | grep -q "Timeout:"
 }
 run_test "CLI webhook status: shows timeout" test_cli_webhook_status_shows_timeout
 
 test_cli_webhook_bad_action() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" webhook badaction 2>&1) || true
-  [[ "$out" == *"Usage: cli-alert webhook"* ]]
+  out=$("${SCRIPT_DIR}/bin/shelldone" webhook badaction 2>&1) || true
+  [[ "$out" == *"Usage: shelldone webhook"* ]]
 }
 run_test "CLI webhook: bad action shows usage" test_cli_webhook_bad_action
 
@@ -2027,40 +2027,40 @@ header "Alert Notify Filters"
 
 test_alert_on_failure_suppresses_success() {
   local notified=0
-  _cli_alert_notify() { notified=1; }
+  _shelldone_notify() { notified=1; }
   alert --on-failure true 2>/dev/null
-  unset -f _cli_alert_notify
-  unset _CLI_ALERT_LOADED; source "${LIB_DIR}/cli-alert.sh"
+  unset -f _shelldone_notify
+  unset _SHELLDONE_LOADED; source "${LIB_DIR}/shelldone.sh"
   [[ $notified -eq 0 ]]
 }
 run_test "alert --on-failure: suppresses on success" test_alert_on_failure_suppresses_success
 
 test_alert_on_failure_allows_failure() {
   local notified=0
-  _cli_alert_notify() { notified=1; }
+  _shelldone_notify() { notified=1; }
   alert --on-failure false 2>/dev/null
-  unset -f _cli_alert_notify
-  unset _CLI_ALERT_LOADED; source "${LIB_DIR}/cli-alert.sh"
+  unset -f _shelldone_notify
+  unset _SHELLDONE_LOADED; source "${LIB_DIR}/shelldone.sh"
   [[ $notified -eq 1 ]]
 }
 run_test "alert --on-failure: notifies on failure" test_alert_on_failure_allows_failure
 
 test_alert_on_success_suppresses_failure() {
   local notified=0
-  _cli_alert_notify() { notified=1; }
+  _shelldone_notify() { notified=1; }
   alert --on-success false 2>/dev/null
-  unset -f _cli_alert_notify
-  unset _CLI_ALERT_LOADED; source "${LIB_DIR}/cli-alert.sh"
+  unset -f _shelldone_notify
+  unset _SHELLDONE_LOADED; source "${LIB_DIR}/shelldone.sh"
   [[ $notified -eq 0 ]]
 }
 run_test "alert --on-success: suppresses on failure" test_alert_on_success_suppresses_failure
 
 test_alert_on_success_allows_success() {
   local notified=0
-  _cli_alert_notify() { notified=1; }
+  _shelldone_notify() { notified=1; }
   alert --on-success true 2>/dev/null
-  unset -f _cli_alert_notify
-  unset _CLI_ALERT_LOADED; source "${LIB_DIR}/cli-alert.sh"
+  unset -f _shelldone_notify
+  unset _SHELLDONE_LOADED; source "${LIB_DIR}/shelldone.sh"
   [[ $notified -eq 1 ]]
 }
 run_test "alert --on-success: notifies on success" test_alert_on_success_allows_success
@@ -2085,42 +2085,42 @@ run_test "alert --on-failure -- cmd: handles double-dash separator" test_alert_d
 
 test_notify_on_env_failure() {
   local notified=0
-  _cli_alert_notify() { notified=1; }
-  local old="${CLI_ALERT_NOTIFY_ON:-}"
-  CLI_ALERT_NOTIFY_ON=failure
+  _shelldone_notify() { notified=1; }
+  local old="${SHELLDONE_NOTIFY_ON:-}"
+  SHELLDONE_NOTIFY_ON=failure
   alert true 2>/dev/null
-  CLI_ALERT_NOTIFY_ON="$old"
-  unset -f _cli_alert_notify
-  unset _CLI_ALERT_LOADED; source "${LIB_DIR}/cli-alert.sh"
+  SHELLDONE_NOTIFY_ON="$old"
+  unset -f _shelldone_notify
+  unset _SHELLDONE_LOADED; source "${LIB_DIR}/shelldone.sh"
   [[ $notified -eq 0 ]]
 }
-run_test "CLI_ALERT_NOTIFY_ON=failure: suppresses success" test_notify_on_env_failure
+run_test "SHELLDONE_NOTIFY_ON=failure: suppresses success" test_notify_on_env_failure
 
 test_notify_on_env_success() {
   local notified=0
-  _cli_alert_notify() { notified=1; }
-  local old="${CLI_ALERT_NOTIFY_ON:-}"
-  CLI_ALERT_NOTIFY_ON=success
+  _shelldone_notify() { notified=1; }
+  local old="${SHELLDONE_NOTIFY_ON:-}"
+  SHELLDONE_NOTIFY_ON=success
   alert false 2>/dev/null
-  CLI_ALERT_NOTIFY_ON="$old"
-  unset -f _cli_alert_notify
-  unset _CLI_ALERT_LOADED; source "${LIB_DIR}/cli-alert.sh"
+  SHELLDONE_NOTIFY_ON="$old"
+  unset -f _shelldone_notify
+  unset _SHELLDONE_LOADED; source "${LIB_DIR}/shelldone.sh"
   [[ $notified -eq 0 ]]
 }
-run_test "CLI_ALERT_NOTIFY_ON=success: suppresses failure" test_notify_on_env_success
+run_test "SHELLDONE_NOTIFY_ON=success: suppresses failure" test_notify_on_env_success
 
 test_flag_overrides_env() {
   local notified=0
-  _cli_alert_notify() { notified=1; }
-  local old="${CLI_ALERT_NOTIFY_ON:-}"
-  CLI_ALERT_NOTIFY_ON=all
+  _shelldone_notify() { notified=1; }
+  local old="${SHELLDONE_NOTIFY_ON:-}"
+  SHELLDONE_NOTIFY_ON=all
   alert --on-failure true 2>/dev/null
-  CLI_ALERT_NOTIFY_ON="$old"
-  unset -f _cli_alert_notify
-  unset _CLI_ALERT_LOADED; source "${LIB_DIR}/cli-alert.sh"
+  SHELLDONE_NOTIFY_ON="$old"
+  unset -f _shelldone_notify
+  unset _SHELLDONE_LOADED; source "${LIB_DIR}/shelldone.sh"
   [[ $notified -eq 0 ]]
 }
-run_test "alert --on-failure overrides CLI_ALERT_NOTIFY_ON=all" test_flag_overrides_env
+run_test "alert --on-failure overrides SHELLDONE_NOTIFY_ON=all" test_flag_overrides_env
 
 # ── Background Job Tracking ──────────────────────────────────────────────────
 
@@ -2165,11 +2165,11 @@ run_test "alert-bg: bad arg shows usage message" test_alert_bg_usage_message
 
 test_alert_bg_captures_failure() {
   local captured_exit=""
-  _cli_alert_notify() { captured_exit="$3"; }
+  _shelldone_notify() { captured_exit="$3"; }
   bash -c 'exit 1' &
   alert-bg 2>/dev/null
-  unset -f _cli_alert_notify
-  unset _CLI_ALERT_LOADED; source "${LIB_DIR}/cli-alert.sh"
+  unset -f _shelldone_notify
+  unset _SHELLDONE_LOADED; source "${LIB_DIR}/shelldone.sh"
   [[ "$captured_exit" == "1" ]]
 }
 run_test "alert-bg: captures non-zero exit code" test_alert_bg_captures_failure
@@ -2179,20 +2179,20 @@ run_test "alert-bg: captures non-zero exit code" test_alert_bg_captures_failure
 header "Notification History"
 
 test_history_log_fn_exists() {
-  declare -f _cli_alert_log_history &>/dev/null
+  declare -f _shelldone_log_history &>/dev/null
 }
-run_test "History: _cli_alert_log_history function exists" test_history_log_fn_exists
+run_test "History: _shelldone_log_history function exists" test_history_log_fn_exists
 
 test_history_log_created() {
   local tmpdir
   tmpdir=$(mktemp -d)
-  CLI_ALERT_HISTORY_DIR="$tmpdir"
-  CLI_ALERT_HISTORY=true
-  _cli_alert_log_history "Test Title" "Test msg" 0
+  SHELLDONE_HISTORY_DIR="$tmpdir"
+  SHELLDONE_HISTORY=true
+  _shelldone_log_history "Test Title" "Test msg" 0
   local result=1
   [[ -f "${tmpdir}/history.log" ]] && result=0
   rm -rf "$tmpdir"
-  unset CLI_ALERT_HISTORY_DIR
+  unset SHELLDONE_HISTORY_DIR
   [[ $result -eq 0 ]]
 }
 run_test "History: log file created on first notification" test_history_log_created
@@ -2200,13 +2200,13 @@ run_test "History: log file created on first notification" test_history_log_crea
 test_history_log_format() {
   local tmpdir
   tmpdir=$(mktemp -d)
-  CLI_ALERT_HISTORY_DIR="$tmpdir"
-  CLI_ALERT_HISTORY=true
-  _cli_alert_log_history "Build Complete" "ok" 0
+  SHELLDONE_HISTORY_DIR="$tmpdir"
+  SHELLDONE_HISTORY=true
+  _shelldone_log_history "Build Complete" "ok" 0
   local line
   line=$(cat "${tmpdir}/history.log")
   rm -rf "$tmpdir"
-  unset CLI_ALERT_HISTORY_DIR
+  unset SHELLDONE_HISTORY_DIR
   # Should have 5 tab-separated fields
   local fields
   fields=$(echo "$line" | awk -F'\t' '{print NF}')
@@ -2217,37 +2217,37 @@ run_test "History: log has 5 tab-separated fields" test_history_log_format
 test_history_log_disabled() {
   local tmpdir
   tmpdir=$(mktemp -d)
-  CLI_ALERT_HISTORY_DIR="$tmpdir"
-  CLI_ALERT_HISTORY=false
-  _cli_alert_log_history "Test" "msg" 0
+  SHELLDONE_HISTORY_DIR="$tmpdir"
+  SHELLDONE_HISTORY=false
+  _shelldone_log_history "Test" "msg" 0
   local result=0
   [[ ! -f "${tmpdir}/history.log" ]] && result=1
   rm -rf "$tmpdir"
-  unset CLI_ALERT_HISTORY_DIR
-  CLI_ALERT_HISTORY=true
+  unset SHELLDONE_HISTORY_DIR
+  SHELLDONE_HISTORY=true
   [[ $result -eq 1 ]]
 }
-run_test "History: disabled when CLI_ALERT_HISTORY=false" test_history_log_disabled
+run_test "History: disabled when SHELLDONE_HISTORY=false" test_history_log_disabled
 
 test_history_log_channels() {
   local tmpdir
   tmpdir=$(mktemp -d)
-  CLI_ALERT_HISTORY_DIR="$tmpdir"
-  CLI_ALERT_HISTORY=true
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  _cli_alert_log_history "Test" "msg" 0
+  SHELLDONE_HISTORY_DIR="$tmpdir"
+  SHELLDONE_HISTORY=true
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  _shelldone_log_history "Test" "msg" 0
   local line
   line=$(cat "${tmpdir}/history.log")
-  unset CLI_ALERT_SLACK_WEBHOOK
+  unset SHELLDONE_SLACK_WEBHOOK
   rm -rf "$tmpdir"
-  unset CLI_ALERT_HISTORY_DIR
+  unset SHELLDONE_HISTORY_DIR
   [[ "$line" == *"slack"* ]]
 }
 run_test "History: log includes configured channels" test_history_log_channels
 
 test_cli_history_show_empty() {
   local out
-  out=$(CLI_ALERT_HISTORY_DIR="/tmp/nonexistent_$$" "${SCRIPT_DIR}/bin/cli-alert" history show 2>&1) || true
+  out=$(SHELLDONE_HISTORY_DIR="/tmp/nonexistent_$$" "${SCRIPT_DIR}/bin/shelldone" history show 2>&1) || true
   [[ "$out" == *"No notification history found"* ]]
 }
 run_test "CLI history show: empty when no log" test_cli_history_show_empty
@@ -2257,7 +2257,7 @@ test_cli_history_clear() {
   tmpdir=$(mktemp -d)
   echo "test" > "${tmpdir}/history.log"
   local out
-  out=$(CLI_ALERT_HISTORY_DIR="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" history --clear 2>&1) || true
+  out=$(SHELLDONE_HISTORY_DIR="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" history --clear 2>&1) || true
   local result=1
   [[ ! -f "${tmpdir}/history.log" ]] && [[ "$out" == *"History cleared"* ]] && result=0
   rm -rf "$tmpdir"
@@ -2267,15 +2267,15 @@ run_test "CLI history --clear: removes log file" test_cli_history_clear
 
 test_cli_history_path() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" history --path 2>&1) || true
-  [[ "$out" == *"cli-alert/history.log"* ]]
+  out=$("${SCRIPT_DIR}/bin/shelldone" history --path 2>&1) || true
+  [[ "$out" == *"shelldone/history.log"* ]]
 }
 run_test "CLI history --path: shows log file path" test_cli_history_path
 
 test_cli_history_bad_action() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" history badaction 2>&1) || true
-  [[ "$out" == *"Usage: cli-alert history"* ]]
+  out=$("${SCRIPT_DIR}/bin/shelldone" history badaction 2>&1) || true
+  [[ "$out" == *"Usage: shelldone history"* ]]
 }
 run_test "CLI history: bad action shows usage" test_cli_history_bad_action
 
@@ -2284,22 +2284,22 @@ run_test "CLI history: bad action shows usage" test_cli_history_bad_action
 header "Config File Support"
 
 test_config_load_fn_exists() {
-  declare -f _cli_alert_load_config &>/dev/null
+  declare -f _shelldone_load_config &>/dev/null
 }
-run_test "Config: _cli_alert_load_config function exists" test_config_load_fn_exists
+run_test "Config: _shelldone_load_config function exists" test_config_load_fn_exists
 
 test_config_file_sourced() {
   (
     local tmpdir
     tmpdir=$(mktemp -d)
     local config_file="${tmpdir}/config"
-    echo '_CLI_ALERT_TEST_CONFIG_VAR=loaded_from_config' > "$config_file"
-    unset _CLI_ALERT_TEST_CONFIG_VAR
-    unset _CLI_ALERT_LOADED
-    export CLI_ALERT_CONFIG="$config_file"
-    source "${LIB_DIR}/cli-alert.sh"
+    echo '_SHELLDONE_TEST_CONFIG_VAR=loaded_from_config' > "$config_file"
+    unset _SHELLDONE_TEST_CONFIG_VAR
+    unset _SHELLDONE_LOADED
+    export SHELLDONE_CONFIG="$config_file"
+    source "${LIB_DIR}/shelldone.sh"
     local result=1
-    [[ "${_CLI_ALERT_TEST_CONFIG_VAR:-}" == "loaded_from_config" ]] && result=0
+    [[ "${_SHELLDONE_TEST_CONFIG_VAR:-}" == "loaded_from_config" ]] && result=0
     rm -rf "$tmpdir"
     exit $([[ $result -eq 0 ]] && echo 0 || echo 1)
   )
@@ -2308,9 +2308,9 @@ run_test "Config: config file is sourced on load" test_config_file_sourced
 
 test_config_missing_file_ok() {
   (
-    unset _CLI_ALERT_LOADED
-    export CLI_ALERT_CONFIG="/nonexistent/path/config"
-    source "${LIB_DIR}/cli-alert.sh" 2>/dev/null
+    unset _SHELLDONE_LOADED
+    export SHELLDONE_CONFIG="/nonexistent/path/config"
+    source "${LIB_DIR}/shelldone.sh" 2>/dev/null
   )
   # Subshell should exit 0 (no error)
   [[ $? -eq 0 ]]
@@ -2322,13 +2322,13 @@ test_config_env_override() {
     local tmpdir
     tmpdir=$(mktemp -d)
     local config_file="${tmpdir}/config"
-    echo ': "${CLI_ALERT_THRESHOLD:=999}"' > "$config_file"
-    unset _CLI_ALERT_LOADED
-    export CLI_ALERT_THRESHOLD=42
-    export CLI_ALERT_CONFIG="$config_file"
-    source "${LIB_DIR}/cli-alert.sh"
+    echo ': "${SHELLDONE_THRESHOLD:=999}"' > "$config_file"
+    unset _SHELLDONE_LOADED
+    export SHELLDONE_THRESHOLD=42
+    export SHELLDONE_CONFIG="$config_file"
+    source "${LIB_DIR}/shelldone.sh"
     local result=1
-    [[ "${CLI_ALERT_THRESHOLD}" == "42" ]] && result=0
+    [[ "${SHELLDONE_THRESHOLD}" == "42" ]] && result=0
     rm -rf "$tmpdir"
     exit $([[ $result -eq 0 ]] && echo 0 || echo 1)
   )
@@ -2337,29 +2337,29 @@ run_test "Config: env vars override config file values" test_config_env_override
 
 test_cli_config_show() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" config show 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" config show 2>&1) || true
   [[ "$out" == *"Config file:"* ]]
 }
 run_test "CLI config show: displays config file info" test_cli_config_show
 
 test_cli_config_init() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" config init 2>&1) || true
-  [[ "$out" == *"CLI_ALERT_ENABLED"* ]] && [[ "$out" == *"CLI_ALERT_NOTIFY_ON"* ]]
+  out=$("${SCRIPT_DIR}/bin/shelldone" config init 2>&1) || true
+  [[ "$out" == *"SHELLDONE_ENABLED"* ]] && [[ "$out" == *"SHELLDONE_NOTIFY_ON"* ]]
 }
 run_test "CLI config init: outputs template with all vars" test_cli_config_init
 
 test_cli_config_path() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" config path 2>&1) || true
-  [[ "$out" == *"cli-alert/config"* ]]
+  out=$("${SCRIPT_DIR}/bin/shelldone" config path 2>&1) || true
+  [[ "$out" == *"shelldone/config"* ]]
 }
 run_test "CLI config path: shows config file path" test_cli_config_path
 
 test_cli_config_bad_action() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" config badaction 2>&1) || true
-  [[ "$out" == *"Usage: cli-alert config"* ]]
+  out=$("${SCRIPT_DIR}/bin/shelldone" config badaction 2>&1) || true
+  [[ "$out" == *"Usage: shelldone config"* ]]
 }
 run_test "CLI config: bad action shows usage" test_cli_config_bad_action
 
@@ -2369,59 +2369,59 @@ header "New CLI Commands (history/config)"
 
 test_cli_help_shows_history() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" help 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>&1) || true
   [[ "$out" == *"history"* ]]
 }
 run_test "CLI help: mentions history command" test_cli_help_shows_history
 
 test_cli_help_shows_config() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" help 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>&1) || true
   [[ "$out" == *"config"* ]]
 }
 run_test "CLI help: mentions config command" test_cli_help_shows_config
 
 test_cli_help_shows_on_failure() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" help 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>&1) || true
   [[ "$out" == *"on-failure"* ]]
 }
 run_test "CLI help: mentions --on-failure flag" test_cli_help_shows_on_failure
 
 test_cli_help_shows_alert_bg() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" help 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>&1) || true
   [[ "$out" == *"alert-bg"* ]]
 }
 run_test "CLI help: mentions alert-bg" test_cli_help_shows_alert_bg
 
 test_cli_status_shows_notify_on() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>&1) || true
-  [[ "$out" == *"CLI_ALERT_NOTIFY_ON"* ]]
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  [[ "$out" == *"SHELLDONE_NOTIFY_ON"* ]]
 }
-run_test "CLI status: shows CLI_ALERT_NOTIFY_ON" test_cli_status_shows_notify_on
+run_test "CLI status: shows SHELLDONE_NOTIFY_ON" test_cli_status_shows_notify_on
 
 test_cli_status_shows_config_file() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
   [[ "$out" == *"Config file:"* ]]
 }
 run_test "CLI status: shows config file info" test_cli_status_shows_config_file
 
 test_cli_status_shows_history() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
   [[ "$out" == *"History:"* ]]
 }
 run_test "CLI status: shows history info" test_cli_status_shows_history
 
 test_cli_status_shows_activate() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>&1) || true
-  [[ "$out" == *"CLI_ALERT_ACTIVATE"* ]]
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  [[ "$out" == *"SHELLDONE_ACTIVATE"* ]]
 }
-run_test "CLI status: shows CLI_ALERT_ACTIVATE" test_cli_status_shows_activate
+run_test "CLI status: shows SHELLDONE_ACTIVATE" test_cli_status_shows_activate
 
 # ── State Management (mute / toggle / schedule) ─────────────────────────────
 
@@ -2429,84 +2429,84 @@ header "State Management"
 
 # Use a temporary state directory for isolation
 _TEST_STATE_DIR="$(mktemp -d)"
-export CLI_ALERT_STATE_DIR="$_TEST_STATE_DIR"
+export SHELLDONE_STATE_DIR="$_TEST_STATE_DIR"
 
 # Load state module
-unset _CLI_ALERT_STATE_LOADED
+unset _SHELLDONE_STATE_LOADED
 source "${LIB_DIR}/state.sh"
 
 # -- State file functions --
 
 test_state_dir_resolved() {
   local dir
-  dir="$(_cli_alert_state_dir)"
+  dir="$(_shelldone_state_dir)"
   [[ "$dir" == "$_TEST_STATE_DIR" ]]
 }
-run_test "state_dir resolves to CLI_ALERT_STATE_DIR" test_state_dir_resolved
+run_test "state_dir resolves to SHELLDONE_STATE_DIR" test_state_dir_resolved
 
 test_state_file_resolved() {
   local f
-  f="$(_cli_alert_state_file)"
+  f="$(_shelldone_state_file)"
   [[ "$f" == "$_TEST_STATE_DIR/state" ]]
 }
 run_test "state_file resolves correctly" test_state_file_resolved
 
 test_state_read_missing_file() {
-  rm -f "$(_cli_alert_state_file)"
-  ! _cli_alert_state_read "key" 2>/dev/null
+  rm -f "$(_shelldone_state_file)"
+  ! _shelldone_state_read "key" 2>/dev/null
 }
 run_test "state_read returns 1 for missing file" test_state_read_missing_file
 
 test_state_write_and_read() {
-  _cli_alert_state_write "testkey" "testval"
+  _shelldone_state_write "testkey" "testval"
   local val
-  val="$(_cli_alert_state_read "testkey")"
+  val="$(_shelldone_state_read "testkey")"
   [[ "$val" == "testval" ]]
 }
 run_test "state_write then state_read roundtrip" test_state_write_and_read
 
 test_state_write_overwrite() {
-  _cli_alert_state_write "testkey" "val1"
-  _cli_alert_state_write "testkey" "val2"
+  _shelldone_state_write "testkey" "val1"
+  _shelldone_state_write "testkey" "val2"
   local val
-  val="$(_cli_alert_state_read "testkey")"
+  val="$(_shelldone_state_read "testkey")"
   [[ "$val" == "val2" ]]
 }
 run_test "state_write overwrites existing key" test_state_write_overwrite
 
 test_state_delete() {
-  _cli_alert_state_write "delme" "gone"
-  _cli_alert_state_delete "delme"
-  ! _cli_alert_state_read "delme" 2>/dev/null
+  _shelldone_state_write "delme" "gone"
+  _shelldone_state_delete "delme"
+  ! _shelldone_state_read "delme" 2>/dev/null
 }
 run_test "state_delete removes key" test_state_delete
 
 test_state_delete_nonexistent() {
-  rm -f "$(_cli_alert_state_file)"
-  _cli_alert_state_delete "nope" 2>/dev/null
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_delete "nope" 2>/dev/null
   true  # Should not error
 }
 run_test "state_delete on missing file is no-op" test_state_delete_nonexistent
 
 test_state_dump() {
-  rm -f "$(_cli_alert_state_file)"
-  _cli_alert_state_write "a" "1"
-  _cli_alert_state_write "b" "2"
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "a" "1"
+  _shelldone_state_write "b" "2"
   local dump
-  dump="$(_cli_alert_state_dump)"
+  dump="$(_shelldone_state_dump)"
   [[ "$dump" == *"a=1"* ]] && [[ "$dump" == *"b=2"* ]]
 }
 run_test "state_dump shows all key=value pairs" test_state_dump
 
 test_state_multiple_keys() {
-  rm -f "$(_cli_alert_state_file)"
-  _cli_alert_state_write "x" "10"
-  _cli_alert_state_write "y" "20"
-  _cli_alert_state_write "z" "30"
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "x" "10"
+  _shelldone_state_write "y" "20"
+  _shelldone_state_write "z" "30"
   local vx vy vz
-  vx="$(_cli_alert_state_read "x")"
-  vy="$(_cli_alert_state_read "y")"
-  vz="$(_cli_alert_state_read "z")"
+  vx="$(_shelldone_state_read "x")"
+  vy="$(_shelldone_state_read "y")"
+  vz="$(_shelldone_state_read "z")"
   [[ "$vx" == "10" ]] && [[ "$vy" == "20" ]] && [[ "$vz" == "30" ]]
 }
 run_test "state: multiple keys coexist" test_state_multiple_keys
@@ -2515,181 +2515,181 @@ run_test "state: multiple keys coexist" test_state_multiple_keys
 
 test_parse_duration_seconds() {
   local val
-  val="$(_cli_alert_parse_duration "30s")"
+  val="$(_shelldone_parse_duration "30s")"
   [[ "$val" == "30" ]]
 }
 run_test "parse_duration: 30s → 30" test_parse_duration_seconds
 
 test_parse_duration_minutes() {
   local val
-  val="$(_cli_alert_parse_duration "5m")"
+  val="$(_shelldone_parse_duration "5m")"
   [[ "$val" == "300" ]]
 }
 run_test "parse_duration: 5m → 300" test_parse_duration_minutes
 
 test_parse_duration_hours() {
   local val
-  val="$(_cli_alert_parse_duration "2h")"
+  val="$(_shelldone_parse_duration "2h")"
   [[ "$val" == "7200" ]]
 }
 run_test "parse_duration: 2h → 7200" test_parse_duration_hours
 
 test_parse_duration_combined() {
   local val
-  val="$(_cli_alert_parse_duration "1h30m")"
+  val="$(_shelldone_parse_duration "1h30m")"
   [[ "$val" == "5400" ]]
 }
 run_test "parse_duration: 1h30m → 5400" test_parse_duration_combined
 
 test_parse_duration_days() {
   local val
-  val="$(_cli_alert_parse_duration "1d")"
+  val="$(_shelldone_parse_duration "1d")"
   [[ "$val" == "86400" ]]
 }
 run_test "parse_duration: 1d → 86400" test_parse_duration_days
 
 test_parse_duration_pure_number() {
   local val
-  val="$(_cli_alert_parse_duration "120")"
+  val="$(_shelldone_parse_duration "120")"
   [[ "$val" == "120" ]]
 }
 run_test "parse_duration: pure number 120 → 120" test_parse_duration_pure_number
 
 test_parse_duration_invalid() {
-  ! _cli_alert_parse_duration "abc" 2>/dev/null
+  ! _shelldone_parse_duration "abc" 2>/dev/null
 }
 run_test "parse_duration: invalid input returns error" test_parse_duration_invalid
 
 test_parse_duration_invalid_zero() {
-  ! _cli_alert_parse_duration "0s" 2>/dev/null
+  ! _shelldone_parse_duration "0s" 2>/dev/null
 }
 run_test "parse_duration: 0s returns error" test_parse_duration_invalid_zero
 
 # -- Mute check --
 
 test_is_muted_no_file() {
-  rm -f "$(_cli_alert_state_file)"
-  ! _cli_alert_is_muted
+  rm -f "$(_shelldone_state_file)"
+  ! _shelldone_is_muted
 }
 run_test "is_muted: not muted when no state file" test_is_muted_no_file
 
 test_is_muted_indefinite() {
-  _cli_alert_state_write "mute_until" "0"
-  _cli_alert_is_muted
+  _shelldone_state_write "mute_until" "0"
+  _shelldone_is_muted
 }
 run_test "is_muted: muted indefinitely (0)" test_is_muted_indefinite
 
 test_is_muted_future() {
   local future=$(( $(date +%s) + 3600 ))
-  _cli_alert_state_write "mute_until" "$future"
-  _cli_alert_is_muted
+  _shelldone_state_write "mute_until" "$future"
+  _shelldone_is_muted
 }
 run_test "is_muted: muted with future timestamp" test_is_muted_future
 
 test_is_muted_expired() {
   local past=$(( $(date +%s) - 100 ))
-  _cli_alert_state_write "mute_until" "$past"
-  ! _cli_alert_is_muted
+  _shelldone_state_write "mute_until" "$past"
+  ! _shelldone_is_muted
 }
 run_test "is_muted: expired timestamp = not muted" test_is_muted_expired
 
 test_is_muted_expired_cleanup() {
   local past=$(( $(date +%s) - 100 ))
-  _cli_alert_state_write "mute_until" "$past"
-  _cli_alert_is_muted 2>/dev/null || true
+  _shelldone_state_write "mute_until" "$past"
+  _shelldone_is_muted 2>/dev/null || true
   # The expired mute_until should be cleaned up
-  ! _cli_alert_state_read "mute_until" 2>/dev/null
+  ! _shelldone_state_read "mute_until" 2>/dev/null
 }
 run_test "is_muted: expired mute auto-cleans state" test_is_muted_expired_cleanup
 
 # -- Channel toggle --
 
 test_channel_enabled_default() {
-  rm -f "$(_cli_alert_state_file)"
-  _cli_alert_channel_enabled "desktop"
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_channel_enabled "desktop"
 }
 run_test "channel_enabled: default is on (no file)" test_channel_enabled_default
 
 test_channel_enabled_explicit_on() {
-  _cli_alert_state_write "sound" "on"
-  _cli_alert_channel_enabled "sound"
+  _shelldone_state_write "sound" "on"
+  _shelldone_channel_enabled "sound"
 }
 run_test "channel_enabled: explicit 'on' returns 0" test_channel_enabled_explicit_on
 
 test_channel_enabled_off() {
-  _cli_alert_state_write "sound" "off"
-  ! _cli_alert_channel_enabled "sound"
+  _shelldone_state_write "sound" "off"
+  ! _shelldone_channel_enabled "sound"
 }
 run_test "channel_enabled: 'off' returns 1" test_channel_enabled_off
 
 test_channel_toggle_flip() {
-  rm -f "$(_cli_alert_state_file)"
+  rm -f "$(_shelldone_state_file)"
   # Default is on, write off
-  _cli_alert_state_write "desktop" "off"
-  ! _cli_alert_channel_enabled "desktop"
+  _shelldone_state_write "desktop" "off"
+  ! _shelldone_channel_enabled "desktop"
   # Toggle back on by deleting
-  _cli_alert_state_delete "desktop"
-  _cli_alert_channel_enabled "desktop"
+  _shelldone_state_delete "desktop"
+  _shelldone_channel_enabled "desktop"
 }
 run_test "channel_enabled: toggle flip works" test_channel_toggle_flip
 
 # -- Quiet hours --
 
 test_quiet_hours_no_schedule() {
-  rm -f "$(_cli_alert_state_file)"
-  unset CLI_ALERT_QUIET_HOURS 2>/dev/null || true
-  ! _cli_alert_is_quiet_hours
+  rm -f "$(_shelldone_state_file)"
+  unset SHELLDONE_QUIET_HOURS 2>/dev/null || true
+  ! _shelldone_is_quiet_hours
 }
 run_test "quiet_hours: no schedule = not quiet" test_quiet_hours_no_schedule
 
 test_quiet_hours_all_day() {
-  rm -f "$(_cli_alert_state_file)"
-  _cli_alert_state_write "quiet_start" "00:00"
-  _cli_alert_state_write "quiet_end" "23:59"
-  _cli_alert_is_quiet_hours
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "quiet_start" "00:00"
+  _shelldone_state_write "quiet_end" "23:59"
+  _shelldone_is_quiet_hours
 }
 run_test "quiet_hours: 00:00-23:59 = always quiet" test_quiet_hours_all_day
 
 test_quiet_hours_env_fallback() {
-  rm -f "$(_cli_alert_state_file)"
-  CLI_ALERT_QUIET_HOURS="00:00-23:59"
-  _cli_alert_is_quiet_hours
+  rm -f "$(_shelldone_state_file)"
+  SHELLDONE_QUIET_HOURS="00:00-23:59"
+  _shelldone_is_quiet_hours
   local result=$?
-  unset CLI_ALERT_QUIET_HOURS
+  unset SHELLDONE_QUIET_HOURS
   [[ $result -eq 0 ]]
 }
 run_test "quiet_hours: env var fallback works" test_quiet_hours_env_fallback
 
 test_quiet_hours_invalid_format() {
-  rm -f "$(_cli_alert_state_file)"
-  CLI_ALERT_QUIET_HOURS="invalid"
-  ! _cli_alert_is_quiet_hours
-  unset CLI_ALERT_QUIET_HOURS 2>/dev/null || true
+  rm -f "$(_shelldone_state_file)"
+  SHELLDONE_QUIET_HOURS="invalid"
+  ! _shelldone_is_quiet_hours
+  unset SHELLDONE_QUIET_HOURS 2>/dev/null || true
 }
 run_test "quiet_hours: invalid format = not quiet" test_quiet_hours_invalid_format
 
 test_quiet_hours_midnight_crossing() {
-  rm -f "$(_cli_alert_state_file)"
+  rm -f "$(_shelldone_state_file)"
   # Set a range that crosses midnight: 22:00-08:00
   # We can't control what "now" is, but we can test the logic by
   # setting a range that covers all 24 hours via two checks
-  _cli_alert_state_write "quiet_start" "00:00"
-  _cli_alert_state_write "quiet_end" "00:01"
+  _shelldone_state_write "quiet_start" "00:00"
+  _shelldone_state_write "quiet_end" "00:01"
   # At midnight this is quiet; at 00:01+ it's not (unless it IS midnight)
   # We test that the function doesn't error on midnight-crossing ranges
-  _cli_alert_state_write "quiet_start" "23:59"
-  _cli_alert_state_write "quiet_end" "23:58"
+  _shelldone_state_write "quiet_start" "23:59"
+  _shelldone_state_write "quiet_end" "23:58"
   # This crosses midnight and covers almost all day
-  _cli_alert_is_quiet_hours
+  _shelldone_is_quiet_hours
 }
 run_test "quiet_hours: midnight-crossing range works" test_quiet_hours_midnight_crossing
 
 test_quiet_hours_off_clears() {
-  _cli_alert_state_write "quiet_start" "22:00"
-  _cli_alert_state_write "quiet_end" "08:00"
-  _cli_alert_state_delete "quiet_start"
-  _cli_alert_state_delete "quiet_end"
-  ! _cli_alert_is_quiet_hours
+  _shelldone_state_write "quiet_start" "22:00"
+  _shelldone_state_write "quiet_end" "08:00"
+  _shelldone_state_delete "quiet_start"
+  _shelldone_state_delete "quiet_end"
+  ! _shelldone_is_quiet_hours
 }
 run_test "quiet_hours: deleting keys clears schedule" test_quiet_hours_off_clears
 
@@ -2699,167 +2699,167 @@ header "Mute / Toggle / Schedule CLI"
 
 test_cli_mute_indefinite() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" mute 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" mute 2>&1)
   [[ "$out" == *"Muted indefinitely"* ]]
 }
-run_test "cli-alert mute: mutes indefinitely" test_cli_mute_indefinite
+run_test "shelldone mute: mutes indefinitely" test_cli_mute_indefinite
 
 test_cli_unmute() {
-  "${SCRIPT_DIR}/bin/cli-alert" mute 2>/dev/null
+  "${SCRIPT_DIR}/bin/shelldone" mute 2>/dev/null
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" unmute 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" unmute 2>&1)
   [[ "$out" == *"Unmuted"* ]]
 }
-run_test "cli-alert unmute: resumes notifications" test_cli_unmute
+run_test "shelldone unmute: resumes notifications" test_cli_unmute
 
 test_cli_mute_duration() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" mute 30m 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" mute 30m 2>&1)
   [[ "$out" == *"Muted for 30m"* ]]
 }
-run_test "cli-alert mute 30m: mutes with duration" test_cli_mute_duration
+run_test "shelldone mute 30m: mutes with duration" test_cli_mute_duration
 
 test_cli_mute_invalid_duration() {
-  ! "${SCRIPT_DIR}/bin/cli-alert" mute "abc" 2>/dev/null
+  ! "${SCRIPT_DIR}/bin/shelldone" mute "abc" 2>/dev/null
 }
-run_test "cli-alert mute abc: rejects invalid duration" test_cli_mute_invalid_duration
+run_test "shelldone mute abc: rejects invalid duration" test_cli_mute_invalid_duration
 
 test_cli_toggle_show() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" toggle 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" toggle 2>&1)
   [[ "$out" == *"desktop:"* ]] && [[ "$out" == *"sound:"* ]]
 }
-run_test "cli-alert toggle: shows all layers" test_cli_toggle_show
+run_test "shelldone toggle: shows all layers" test_cli_toggle_show
 
 test_cli_toggle_sound_off() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" toggle sound off 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" toggle sound off 2>&1)
   [[ "$out" == *"sound: off"* ]]
 }
-run_test "cli-alert toggle sound off: disables sound" test_cli_toggle_sound_off
+run_test "shelldone toggle sound off: disables sound" test_cli_toggle_sound_off
 
 test_cli_toggle_sound_on() {
-  "${SCRIPT_DIR}/bin/cli-alert" toggle sound off 2>/dev/null
+  "${SCRIPT_DIR}/bin/shelldone" toggle sound off 2>/dev/null
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" toggle sound on 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" toggle sound on 2>&1)
   [[ "$out" == *"sound: on"* ]]
 }
-run_test "cli-alert toggle sound on: enables sound" test_cli_toggle_sound_on
+run_test "shelldone toggle sound on: enables sound" test_cli_toggle_sound_on
 
 test_cli_toggle_flip() {
   # Start from clean state
-  rm -f "$(_cli_alert_state_file)"
+  rm -f "$(_shelldone_state_file)"
   # First toggle should turn off (default is on)
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" toggle desktop 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" toggle desktop 2>&1)
   [[ "$out" == *"desktop: off"* ]]
   # Second toggle should turn on
-  out=$("${SCRIPT_DIR}/bin/cli-alert" toggle desktop 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" toggle desktop 2>&1)
   [[ "$out" == *"desktop: on"* ]]
 }
-run_test "cli-alert toggle: flip toggles state" test_cli_toggle_flip
+run_test "shelldone toggle: flip toggles state" test_cli_toggle_flip
 
 test_cli_toggle_external_off() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" toggle external off 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" toggle external off 2>&1)
   [[ "$out" == *"All external channels: off"* ]]
 }
-run_test "cli-alert toggle external off: disables all external" test_cli_toggle_external_off
+run_test "shelldone toggle external off: disables all external" test_cli_toggle_external_off
 
 test_cli_toggle_external_on() {
-  "${SCRIPT_DIR}/bin/cli-alert" toggle external off 2>/dev/null
+  "${SCRIPT_DIR}/bin/shelldone" toggle external off 2>/dev/null
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" toggle external on 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" toggle external on 2>&1)
   [[ "$out" == *"All external channels: on"* ]]
 }
-run_test "cli-alert toggle external on: enables all external" test_cli_toggle_external_on
+run_test "shelldone toggle external on: enables all external" test_cli_toggle_external_on
 
 test_cli_toggle_unknown_layer() {
-  ! "${SCRIPT_DIR}/bin/cli-alert" toggle bogus 2>/dev/null
+  ! "${SCRIPT_DIR}/bin/shelldone" toggle bogus 2>/dev/null
 }
-run_test "cli-alert toggle bogus: rejects unknown layer" test_cli_toggle_unknown_layer
+run_test "shelldone toggle bogus: rejects unknown layer" test_cli_toggle_unknown_layer
 
 test_cli_schedule_set() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" schedule 22:00-08:00 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" schedule 22:00-08:00 2>&1)
   [[ "$out" == *"Quiet hours set: 22:00-08:00"* ]]
 }
-run_test "cli-alert schedule 22:00-08:00: sets quiet hours" test_cli_schedule_set
+run_test "shelldone schedule 22:00-08:00: sets quiet hours" test_cli_schedule_set
 
 test_cli_schedule_show() {
-  "${SCRIPT_DIR}/bin/cli-alert" schedule 22:00-08:00 2>/dev/null
+  "${SCRIPT_DIR}/bin/shelldone" schedule 22:00-08:00 2>/dev/null
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" schedule 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" schedule 2>&1)
   [[ "$out" == *"22:00-08:00"* ]]
 }
-run_test "cli-alert schedule: shows current schedule" test_cli_schedule_show
+run_test "shelldone schedule: shows current schedule" test_cli_schedule_show
 
 test_cli_schedule_off() {
-  "${SCRIPT_DIR}/bin/cli-alert" schedule 22:00-08:00 2>/dev/null
+  "${SCRIPT_DIR}/bin/shelldone" schedule 22:00-08:00 2>/dev/null
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" schedule off 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" schedule off 2>&1)
   [[ "$out" == *"Schedule cleared"* ]]
 }
-run_test "cli-alert schedule off: clears schedule" test_cli_schedule_off
+run_test "shelldone schedule off: clears schedule" test_cli_schedule_off
 
 test_cli_schedule_invalid() {
-  ! "${SCRIPT_DIR}/bin/cli-alert" schedule "bad" 2>/dev/null
+  ! "${SCRIPT_DIR}/bin/shelldone" schedule "bad" 2>/dev/null
 }
-run_test "cli-alert schedule bad: rejects invalid format" test_cli_schedule_invalid
+run_test "shelldone schedule bad: rejects invalid format" test_cli_schedule_invalid
 
 test_cli_schedule_invalid_time() {
-  ! "${SCRIPT_DIR}/bin/cli-alert" schedule "25:00-08:00" 2>/dev/null
+  ! "${SCRIPT_DIR}/bin/shelldone" schedule "25:00-08:00" 2>/dev/null
 }
-run_test "cli-alert schedule 25:00-08:00: rejects invalid time" test_cli_schedule_invalid_time
+run_test "shelldone schedule 25:00-08:00: rejects invalid time" test_cli_schedule_invalid_time
 
 # -- Integration: notification suppressed when muted --
 
 test_mute_suppresses_notification() {
-  rm -f "$(_cli_alert_state_file)"
-  _cli_alert_state_write "mute_until" "0"
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "mute_until" "0"
   # Re-source to pick up state
-  unset _CLI_ALERT_LOADED _CLI_ALERT_STATE_LOADED
+  unset _SHELLDONE_LOADED _SHELLDONE_STATE_LOADED
   source "${LIB_DIR}/state.sh"
-  source "${LIB_DIR}/cli-alert.sh"
+  source "${LIB_DIR}/shelldone.sh"
   # Suppress all output and check that the notify function returns early
-  CLI_ALERT_FOCUS_DETECT=false
+  SHELLDONE_FOCUS_DETECT=false
   local result=0
-  _cli_alert_notify "Test" "suppressed" 0 2>/dev/null || result=$?
+  _shelldone_notify "Test" "suppressed" 0 2>/dev/null || result=$?
   [[ $result -eq 0 ]]
 }
 run_test "mute: notification suppressed when muted" test_mute_suppresses_notification
 
 test_toggle_sound_off_state() {
-  rm -f "$(_cli_alert_state_file)"
-  _cli_alert_state_write "sound" "off"
-  unset _CLI_ALERT_STATE_LOADED
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "sound" "off"
+  unset _SHELLDONE_STATE_LOADED
   source "${LIB_DIR}/state.sh"
-  ! _cli_alert_channel_enabled "sound"
+  ! _shelldone_channel_enabled "sound"
 }
 run_test "toggle: sound off via state is respected" test_toggle_sound_off_state
 
 # -- CLI status shows notification control --
 
 test_cli_status_shows_mute() {
-  rm -f "$(_cli_alert_state_file)"
+  rm -f "$(_shelldone_state_file)"
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
   [[ "$out" == *"Mute:"* ]]
 }
 run_test "CLI status: shows mute state" test_cli_status_shows_mute
 
 test_cli_status_shows_schedule() {
-  rm -f "$(_cli_alert_state_file)"
+  rm -f "$(_shelldone_state_file)"
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
   [[ "$out" == *"Schedule:"* ]]
 }
 run_test "CLI status: shows schedule" test_cli_status_shows_schedule
 
 test_cli_status_shows_toggle_states() {
-  rm -f "$(_cli_alert_state_file)"
+  rm -f "$(_shelldone_state_file)"
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
   [[ "$out" == *"Notification control:"* ]]
 }
 run_test "CLI status: shows notification control section" test_cli_status_shows_toggle_states
@@ -2868,46 +2868,46 @@ run_test "CLI status: shows notification control section" test_cli_status_shows_
 
 test_cli_help_shows_mute() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" help 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>&1)
   [[ "$out" == *"mute"* ]] && [[ "$out" == *"unmute"* ]]
 }
 run_test "CLI help: shows mute/unmute" test_cli_help_shows_mute
 
 test_cli_help_shows_toggle() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" help 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>&1)
   [[ "$out" == *"toggle"* ]]
 }
 run_test "CLI help: shows toggle" test_cli_help_shows_toggle
 
 test_cli_help_shows_schedule() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" help 2>&1)
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>&1)
   [[ "$out" == *"schedule"* ]]
 }
 run_test "CLI help: shows schedule" test_cli_help_shows_schedule
 
 # -- State function existence --
 
-test_state_read_exists() { declare -f _cli_alert_state_read &>/dev/null; }
-test_state_write_exists() { declare -f _cli_alert_state_write &>/dev/null; }
-test_state_delete_exists() { declare -f _cli_alert_state_delete &>/dev/null; }
-test_is_muted_exists() { declare -f _cli_alert_is_muted &>/dev/null; }
-test_channel_enabled_exists() { declare -f _cli_alert_channel_enabled &>/dev/null; }
-test_is_quiet_hours_exists() { declare -f _cli_alert_is_quiet_hours &>/dev/null; }
-test_parse_duration_exists() { declare -f _cli_alert_parse_duration &>/dev/null; }
+test_state_read_exists() { declare -f _shelldone_state_read &>/dev/null; }
+test_state_write_exists() { declare -f _shelldone_state_write &>/dev/null; }
+test_state_delete_exists() { declare -f _shelldone_state_delete &>/dev/null; }
+test_is_muted_exists() { declare -f _shelldone_is_muted &>/dev/null; }
+test_channel_enabled_exists() { declare -f _shelldone_channel_enabled &>/dev/null; }
+test_is_quiet_hours_exists() { declare -f _shelldone_is_quiet_hours &>/dev/null; }
+test_parse_duration_exists() { declare -f _shelldone_parse_duration &>/dev/null; }
 
-run_test "_cli_alert_state_read function exists" test_state_read_exists
-run_test "_cli_alert_state_write function exists" test_state_write_exists
-run_test "_cli_alert_state_delete function exists" test_state_delete_exists
-run_test "_cli_alert_is_muted function exists" test_is_muted_exists
-run_test "_cli_alert_channel_enabled function exists" test_channel_enabled_exists
-run_test "_cli_alert_is_quiet_hours function exists" test_is_quiet_hours_exists
-run_test "_cli_alert_parse_duration function exists" test_parse_duration_exists
+run_test "_shelldone_state_read function exists" test_state_read_exists
+run_test "_shelldone_state_write function exists" test_state_write_exists
+run_test "_shelldone_state_delete function exists" test_state_delete_exists
+run_test "_shelldone_is_muted function exists" test_is_muted_exists
+run_test "_shelldone_channel_enabled function exists" test_channel_enabled_exists
+run_test "_shelldone_is_quiet_hours function exists" test_is_quiet_hours_exists
+run_test "_shelldone_parse_duration function exists" test_parse_duration_exists
 
 # Cleanup temp state dir
 rm -rf "$_TEST_STATE_DIR"
-unset CLI_ALERT_STATE_DIR
+unset SHELLDONE_STATE_DIR
 
 # ── Config: malformed file ────────────────────────────────────────────────────
 
@@ -2920,9 +2920,9 @@ test_config_malformed_no_crash() {
   printf '{{{{GARBAGE\n' > "$config_file"
   # Run in a separate bash process to isolate from set -e
   bash -c "
-    unset _CLI_ALERT_LOADED
-    export CLI_ALERT_CONFIG='$config_file'
-    source '${LIB_DIR}/cli-alert.sh' 2>/dev/null
+    unset _SHELLDONE_LOADED
+    export SHELLDONE_CONFIG='$config_file'
+    source '${LIB_DIR}/shelldone.sh' 2>/dev/null
   " 2>/dev/null
   local rc=$?
   rm -rf "$tmpdir"
@@ -2938,23 +2938,23 @@ test_history_creates_nested_dir() {
   local tmpdir
   tmpdir=$(mktemp -d)
   local nested="${tmpdir}/sub/dir/deep"
-  CLI_ALERT_HISTORY_DIR="$nested"
-  CLI_ALERT_HISTORY=true
-  _cli_alert_log_history "Nested Dir Test" "msg" 0
+  SHELLDONE_HISTORY_DIR="$nested"
+  SHELLDONE_HISTORY=true
+  _shelldone_log_history "Nested Dir Test" "msg" 0
   local result=1
   [[ -d "$nested" ]] && [[ -f "${nested}/history.log" ]] && result=0
   rm -rf "$tmpdir"
-  unset CLI_ALERT_HISTORY_DIR
+  unset SHELLDONE_HISTORY_DIR
   [[ $result -eq 0 ]]
 }
 run_test "History: creates nested directory if missing" test_history_creates_nested_dir
 
 test_history_unwritable_dir_graceful() {
-  CLI_ALERT_HISTORY_DIR="/nonexistent_$$_dir/sub"
-  CLI_ALERT_HISTORY=true
-  _cli_alert_log_history "Unwritable Test" "msg" 0 2>/dev/null
+  SHELLDONE_HISTORY_DIR="/nonexistent_$$_dir/sub"
+  SHELLDONE_HISTORY=true
+  _shelldone_log_history "Unwritable Test" "msg" 0 2>/dev/null
   local rc=$?
-  unset CLI_ALERT_HISTORY_DIR
+  unset SHELLDONE_HISTORY_DIR
   [[ $rc -eq 0 ]]
 }
 run_test "History: unwritable directory handled gracefully" test_history_unwritable_dir_graceful
@@ -3019,8 +3019,8 @@ test_auto_notify_installs_debug_trap() {
   tmpscript=$(mktemp)
   cat > "$tmpscript" << TESTEOF
 #!/bin/bash
-source "${LIB_DIR}/cli-alert.sh"
-unset _CLI_ALERT_AUTO_BASH_LOADED
+source "${LIB_DIR}/shelldone.sh"
+unset _SHELLDONE_AUTO_BASH_LOADED
 source "${LIB_DIR}/auto-notify.bash"
 eval "\$PROMPT_COMMAND" 2>/dev/null
 trap -p DEBUG
@@ -3028,7 +3028,7 @@ TESTEOF
   local out
   out=$(bash "$tmpscript" 2>/dev/null)
   rm -f "$tmpscript"
-  [[ "$out" == *"_cli_alert_debug_trap"* ]]
+  [[ "$out" == *"_shelldone_debug_trap"* ]]
 }
 run_test "auto-notify.bash: installs DEBUG trap" test_auto_notify_installs_debug_trap
 
@@ -3038,8 +3038,8 @@ test_auto_notify_chains_existing_trap() {
   cat > "$tmpscript" << TESTEOF
 #!/bin/bash
 trap "OLD_TRAP_MARKER=1" DEBUG
-source "${LIB_DIR}/cli-alert.sh"
-unset _CLI_ALERT_AUTO_BASH_LOADED
+source "${LIB_DIR}/shelldone.sh"
+unset _SHELLDONE_AUTO_BASH_LOADED
 source "${LIB_DIR}/auto-notify.bash"
 eval "\$PROMPT_COMMAND" 2>/dev/null
 trap -p DEBUG
@@ -3047,7 +3047,7 @@ TESTEOF
   local out
   out=$(bash "$tmpscript" 2>/dev/null)
   rm -f "$tmpscript"
-  [[ "$out" == *"OLD_TRAP_MARKER"* ]] && [[ "$out" == *"_cli_alert_debug_trap"* ]]
+  [[ "$out" == *"OLD_TRAP_MARKER"* ]] && [[ "$out" == *"_shelldone_debug_trap"* ]]
 }
 run_test "auto-notify.bash: chains with existing DEBUG trap" test_auto_notify_chains_existing_trap
 
@@ -3062,40 +3062,40 @@ run_test "ai-hook-common.sh exists" test_ai_hook_common_exists
 
 test_ai_hook_common_source_guard() {
   (
-    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    unset _SHELLDONE_HOOK_COMMON_LOADED
     source "${LIB_DIR}/ai-hook-common.sh"
-    [[ -n "${_CLI_ALERT_HOOK_COMMON_LOADED:-}" ]]
+    [[ -n "${_SHELLDONE_HOOK_COMMON_LOADED:-}" ]]
   )
 }
 run_test "ai-hook-common.sh sets source guard" test_ai_hook_common_source_guard
 
 test_ai_hook_common_double_source() {
   (
-    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    unset _SHELLDONE_HOOK_COMMON_LOADED
     source "${LIB_DIR}/ai-hook-common.sh"
     source "${LIB_DIR}/ai-hook-common.sh"
-    [[ "${_CLI_ALERT_HOOK_COMMON_LOADED}" == "1" ]]
+    [[ "${_SHELLDONE_HOOK_COMMON_LOADED}" == "1" ]]
   )
 }
 run_test "ai-hook-common.sh double-source is safe" test_ai_hook_common_double_source
 
 test_ai_hook_common_functions() {
   (
-    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    unset _SHELLDONE_HOOK_COMMON_LOADED
     source "${LIB_DIR}/ai-hook-common.sh"
-    declare -f _cli_alert_hook_resolve_lib &>/dev/null &&
-    declare -f _cli_alert_hook_read_json_field &>/dev/null &&
-    declare -f _cli_alert_hook_notify &>/dev/null
+    declare -f _shelldone_hook_resolve_lib &>/dev/null &&
+    declare -f _shelldone_hook_read_json_field &>/dev/null &&
+    declare -f _shelldone_hook_notify &>/dev/null
   )
 }
 run_test "ai-hook-common.sh exports expected functions" test_ai_hook_common_functions
 
 test_ai_hook_json_valid() {
   (
-    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    unset _SHELLDONE_HOOK_COMMON_LOADED
     source "${LIB_DIR}/ai-hook-common.sh"
     local result
-    result=$(_cli_alert_hook_read_json_field '{"stop_reason":"end_turn"}' "stop_reason")
+    result=$(_shelldone_hook_read_json_field '{"stop_reason":"end_turn"}' "stop_reason")
     [[ "$result" == "end_turn" ]]
   )
 }
@@ -3103,10 +3103,10 @@ run_test "JSON extraction: valid field" test_ai_hook_json_valid
 
 test_ai_hook_json_missing_field() {
   (
-    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    unset _SHELLDONE_HOOK_COMMON_LOADED
     source "${LIB_DIR}/ai-hook-common.sh"
     local result
-    result=$(_cli_alert_hook_read_json_field '{"other":"value"}' "stop_reason")
+    result=$(_shelldone_hook_read_json_field '{"other":"value"}' "stop_reason")
     [[ -z "$result" ]]
   )
 }
@@ -3114,10 +3114,10 @@ run_test "JSON extraction: missing field returns empty" test_ai_hook_json_missin
 
 test_ai_hook_json_malformed() {
   (
-    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    unset _SHELLDONE_HOOK_COMMON_LOADED
     source "${LIB_DIR}/ai-hook-common.sh"
     local result
-    result=$(_cli_alert_hook_read_json_field '{{bad json}}' "stop_reason")
+    result=$(_shelldone_hook_read_json_field '{{bad json}}' "stop_reason")
     [[ -z "$result" ]]
   )
 }
@@ -3125,10 +3125,10 @@ run_test "JSON extraction: malformed JSON returns empty" test_ai_hook_json_malfo
 
 test_ai_hook_json_empty_input() {
   (
-    unset _CLI_ALERT_HOOK_COMMON_LOADED
+    unset _SHELLDONE_HOOK_COMMON_LOADED
     source "${LIB_DIR}/ai-hook-common.sh"
     local result
-    result=$(_cli_alert_hook_read_json_field '' "stop_reason")
+    result=$(_shelldone_hook_read_json_field '' "stop_reason")
     [[ -z "$result" ]]
   )
 }
@@ -3208,53 +3208,53 @@ header "AI Hook Setup CLI"
 
 test_setup_accepts_ai_hooks() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" setup ai-hooks 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" setup ai-hooks 2>&1) || true
   [[ $? -eq 0 ]] || [[ -n "$out" ]]
 }
 run_test "cmd_setup accepts 'ai-hooks' subcommand" test_setup_accepts_ai_hooks
 
 test_setup_accepts_codex_hook() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" setup codex-hook 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" setup codex-hook 2>&1) || true
   [[ $? -eq 0 ]] || [[ -n "$out" ]]
 }
 run_test "cmd_setup accepts 'codex-hook' subcommand" test_setup_accepts_codex_hook
 
 test_setup_accepts_gemini_hook() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" setup gemini-hook 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" setup gemini-hook 2>&1) || true
   [[ $? -eq 0 ]] || [[ -n "$out" ]]
 }
 run_test "cmd_setup accepts 'gemini-hook' subcommand" test_setup_accepts_gemini_hook
 
 test_setup_accepts_copilot_hook() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" setup copilot-hook 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" setup copilot-hook 2>&1) || true
   [[ $? -eq 0 ]] || [[ -n "$out" ]]
 }
 run_test "cmd_setup accepts 'copilot-hook' subcommand" test_setup_accepts_copilot_hook
 
 test_setup_accepts_cursor_hook() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" setup cursor-hook 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" setup cursor-hook 2>&1) || true
   [[ $? -eq 0 ]] || [[ -n "$out" ]]
 }
 run_test "cmd_setup accepts 'cursor-hook' subcommand" test_setup_accepts_cursor_hook
 
 test_setup_rejects_invalid() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" setup invalid-thing 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" setup invalid-thing 2>&1) || true
   echo "$out" | grep -qi "usage"
 }
 run_test "cmd_setup rejects invalid subcommand" test_setup_rejects_invalid
 
 test_help_mentions_ai_hooks() {
-  "${SCRIPT_DIR}/bin/cli-alert" help 2>/dev/null | grep -q "ai-hooks"
+  "${SCRIPT_DIR}/bin/shelldone" help 2>/dev/null | grep -q "ai-hooks"
 }
 run_test "Help text mentions ai-hooks" test_help_mentions_ai_hooks
 
 test_help_mentions_codex() {
-  "${SCRIPT_DIR}/bin/cli-alert" help 2>/dev/null | grep -q "codex"
+  "${SCRIPT_DIR}/bin/shelldone" help 2>/dev/null | grep -q "codex"
 }
 run_test "Help text mentions codex" test_help_mentions_codex
 
@@ -3283,10 +3283,10 @@ test_claude_setup_preserves_existing_hooks() {
   }
 }
 EOF
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup claude-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.claude/settings.json")
-  # Both the original hook and cli-alert hook must be present
+  # Both the original hook and shelldone hook must be present
   echo "$content" | grep -q "other-tool-hook" && \
   echo "$content" | grep -q "claude-done.sh"
   local rc=$?
@@ -3301,8 +3301,8 @@ test_claude_setup_idempotent() {
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.claude"
   echo '{}' > "$tmpdir/.claude/settings.json"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup claude-hook &>/dev/null
   local count
   count=$(grep -c "claude-done.sh" "$tmpdir/.claude/settings.json")
   rm -rf "$tmpdir"
@@ -3333,7 +3333,7 @@ test_claude_setup_appends_to_stop_array() {
   }
 }
 EOF
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup claude-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.claude/settings.json")
   # All three hooks must be present
@@ -3364,7 +3364,7 @@ test_codex_setup_preserves_existing_hooks() {
   }
 }
 EOF
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup codex-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup codex-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.codex/config.json")
   echo "$content" | grep -q "other-codex-hook" && \
@@ -3387,7 +3387,7 @@ test_gemini_setup_preserves_existing_hooks() {
   ]
 }
 EOF
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup gemini-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup gemini-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.gemini/settings.json")
   echo "$content" | grep -q "other-gemini-hook" && \
@@ -3410,7 +3410,7 @@ test_cursor_setup_preserves_existing_hooks() {
   ]
 }
 EOF
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup cursor-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup cursor-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.cursor/hooks.json")
   echo "$content" | grep -q "other-cursor-hook" && \
@@ -3428,11 +3428,11 @@ test_copilot_setup_preserves_other_hook_files() {
   mkdir -p "$tmpdir/.github/hooks"
   echo '{"event": "sessionEnd", "command": "/usr/bin/other-copilot-hook"}' \
     > "$tmpdir/.github/hooks/other-tool-session-end.json"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup copilot-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup copilot-hook &>/dev/null
   # Other hook file must be unchanged
   grep -q "other-copilot-hook" "$tmpdir/.github/hooks/other-tool-session-end.json" && \
-  # cli-alert's own hook file must exist
-  [[ -f "$tmpdir/.github/hooks/cli-alert-session-end.json" ]]
+  # shelldone's own hook file must exist
+  [[ -f "$tmpdir/.github/hooks/shelldone-session-end.json" ]]
   local rc=$?
   rm -rf "$tmpdir"
   return $rc
@@ -3453,7 +3453,7 @@ test_setup_preserves_non_hook_settings() {
   }
 }
 EOF
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup claude-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.claude/settings.json")
   echo "$content" | grep -q '"model"' && \
@@ -3475,7 +3475,7 @@ test_claude_setup_registers_both_hooks() {
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.claude"
   echo '{}' > "$tmpdir/.claude/settings.json"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup claude-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.claude/settings.json")
   echo "$content" | grep -q "claude-done.sh" && \
@@ -3494,8 +3494,8 @@ test_claude_notify_setup_idempotent() {
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.claude"
   echo '{}' > "$tmpdir/.claude/settings.json"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup claude-hook &>/dev/null
   local count
   count=$(grep -c "claude-notify.sh" "$tmpdir/.claude/settings.json")
   rm -rf "$tmpdir"
@@ -3509,7 +3509,7 @@ test_codex_setup_registers_both_hooks() {
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.codex"
   echo '{}' > "$tmpdir/.codex/config.json"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup codex-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup codex-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.codex/config.json")
   echo "$content" | grep -q "codex-done.sh" && \
@@ -3527,7 +3527,7 @@ test_gemini_setup_registers_both_hooks() {
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.gemini"
   echo '{}' > "$tmpdir/.gemini/settings.json"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup gemini-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup gemini-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.gemini/settings.json")
   echo "$content" | grep -q "gemini-done.sh" && \
@@ -3544,10 +3544,10 @@ test_copilot_setup_creates_both_hook_files() {
   local tmpdir
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.github/hooks"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup copilot-hook &>/dev/null
-  [[ -f "$tmpdir/.github/hooks/cli-alert-session-end.json" ]] && \
-  [[ -f "$tmpdir/.github/hooks/cli-alert-notification.json" ]] && \
-  grep -q "copilot-notify.sh" "$tmpdir/.github/hooks/cli-alert-notification.json"
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup copilot-hook &>/dev/null
+  [[ -f "$tmpdir/.github/hooks/shelldone-session-end.json" ]] && \
+  [[ -f "$tmpdir/.github/hooks/shelldone-notification.json" ]] && \
+  grep -q "copilot-notify.sh" "$tmpdir/.github/hooks/shelldone-notification.json"
   local rc=$?
   rm -rf "$tmpdir"
   return $rc
@@ -3560,7 +3560,7 @@ test_cursor_setup_registers_both_hooks() {
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.cursor"
   echo '{}' > "$tmpdir/.cursor/hooks.json"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup cursor-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup cursor-hook &>/dev/null
   local content
   content=$(cat "$tmpdir/.cursor/hooks.json")
   echo "$content" | grep -q "cursor-done.sh" && \
@@ -3578,11 +3578,11 @@ test_claude_uninstall_removes_both_hooks() {
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.claude"
   echo '{}' > "$tmpdir/.claude/settings.json"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup claude-hook &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup claude-hook &>/dev/null
   # Verify both hooks exist before uninstall
   grep -q "claude-done.sh" "$tmpdir/.claude/settings.json" && \
   grep -q "claude-notify.sh" "$tmpdir/.claude/settings.json" || { rm -rf "$tmpdir"; return 1; }
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" uninstall &>/dev/null
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" uninstall &>/dev/null
   local content
   content=$(cat "$tmpdir/.claude/settings.json")
   # Neither hook should remain
@@ -3599,12 +3599,12 @@ test_copilot_uninstall_removes_both_hook_files() {
   local tmpdir
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.github/hooks"
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" setup copilot-hook &>/dev/null
-  [[ -f "$tmpdir/.github/hooks/cli-alert-session-end.json" ]] && \
-  [[ -f "$tmpdir/.github/hooks/cli-alert-notification.json" ]] || { rm -rf "$tmpdir"; return 1; }
-  HOME="$tmpdir" "${SCRIPT_DIR}/bin/cli-alert" uninstall &>/dev/null
-  ! [[ -f "$tmpdir/.github/hooks/cli-alert-session-end.json" ]] && \
-  ! [[ -f "$tmpdir/.github/hooks/cli-alert-notification.json" ]]
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup copilot-hook &>/dev/null
+  [[ -f "$tmpdir/.github/hooks/shelldone-session-end.json" ]] && \
+  [[ -f "$tmpdir/.github/hooks/shelldone-notification.json" ]] || { rm -rf "$tmpdir"; return 1; }
+  HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" uninstall &>/dev/null
+  ! [[ -f "$tmpdir/.github/hooks/shelldone-session-end.json" ]] && \
+  ! [[ -f "$tmpdir/.github/hooks/shelldone-notification.json" ]]
   local rc=$?
   rm -rf "$tmpdir"
   return $rc
@@ -3617,10 +3617,10 @@ header "AI Hook Toggle"
 
 test_toggle_accepts_claude() {
   (
-    export CLI_ALERT_STATE_DIR=$(mktemp -d)
-    "${SCRIPT_DIR}/bin/cli-alert" toggle claude off 2>/dev/null
+    export SHELLDONE_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/shelldone" toggle claude off 2>/dev/null
     local result=$?
-    rm -rf "$CLI_ALERT_STATE_DIR"
+    rm -rf "$SHELLDONE_STATE_DIR"
     [[ $result -eq 0 ]]
   )
 }
@@ -3628,10 +3628,10 @@ run_test "toggle accepts 'claude' layer" test_toggle_accepts_claude
 
 test_toggle_accepts_codex() {
   (
-    export CLI_ALERT_STATE_DIR=$(mktemp -d)
-    "${SCRIPT_DIR}/bin/cli-alert" toggle codex off 2>/dev/null
+    export SHELLDONE_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/shelldone" toggle codex off 2>/dev/null
     local result=$?
-    rm -rf "$CLI_ALERT_STATE_DIR"
+    rm -rf "$SHELLDONE_STATE_DIR"
     [[ $result -eq 0 ]]
   )
 }
@@ -3639,10 +3639,10 @@ run_test "toggle accepts 'codex' layer" test_toggle_accepts_codex
 
 test_toggle_accepts_gemini() {
   (
-    export CLI_ALERT_STATE_DIR=$(mktemp -d)
-    "${SCRIPT_DIR}/bin/cli-alert" toggle gemini off 2>/dev/null
+    export SHELLDONE_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/shelldone" toggle gemini off 2>/dev/null
     local result=$?
-    rm -rf "$CLI_ALERT_STATE_DIR"
+    rm -rf "$SHELLDONE_STATE_DIR"
     [[ $result -eq 0 ]]
   )
 }
@@ -3650,11 +3650,11 @@ run_test "toggle accepts 'gemini' layer" test_toggle_accepts_gemini
 
 test_toggle_claude_persists() {
   (
-    export CLI_ALERT_STATE_DIR=$(mktemp -d)
-    "${SCRIPT_DIR}/bin/cli-alert" toggle claude off 2>/dev/null
+    export SHELLDONE_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/shelldone" toggle claude off 2>/dev/null
     local out
-    out=$("${SCRIPT_DIR}/bin/cli-alert" toggle 2>/dev/null)
-    rm -rf "$CLI_ALERT_STATE_DIR"
+    out=$("${SCRIPT_DIR}/bin/shelldone" toggle 2>/dev/null)
+    rm -rf "$SHELLDONE_STATE_DIR"
     echo "$out" | grep -q "claude.*off"
   )
 }
@@ -3662,12 +3662,12 @@ run_test "toggle claude off persists in state" test_toggle_claude_persists
 
 test_toggle_claude_on() {
   (
-    export CLI_ALERT_STATE_DIR=$(mktemp -d)
-    "${SCRIPT_DIR}/bin/cli-alert" toggle claude off 2>/dev/null
-    "${SCRIPT_DIR}/bin/cli-alert" toggle claude on 2>/dev/null
+    export SHELLDONE_STATE_DIR=$(mktemp -d)
+    "${SCRIPT_DIR}/bin/shelldone" toggle claude off 2>/dev/null
+    "${SCRIPT_DIR}/bin/shelldone" toggle claude on 2>/dev/null
     local out
-    out=$("${SCRIPT_DIR}/bin/cli-alert" toggle 2>/dev/null)
-    rm -rf "$CLI_ALERT_STATE_DIR"
+    out=$("${SCRIPT_DIR}/bin/shelldone" toggle 2>/dev/null)
+    rm -rf "$SHELLDONE_STATE_DIR"
     echo "$out" | grep "claude" | grep -q "on"
   )
 }
@@ -3675,10 +3675,10 @@ run_test "toggle claude on restores notifications" test_toggle_claude_on
 
 test_toggle_shows_ai_section() {
   (
-    export CLI_ALERT_STATE_DIR=$(mktemp -d)
+    export SHELLDONE_STATE_DIR=$(mktemp -d)
     local out
-    out=$("${SCRIPT_DIR}/bin/cli-alert" toggle 2>/dev/null)
-    rm -rf "$CLI_ALERT_STATE_DIR"
+    out=$("${SCRIPT_DIR}/bin/shelldone" toggle 2>/dev/null)
+    rm -rf "$SHELLDONE_STATE_DIR"
     echo "$out" | grep -q "AI CLI hooks"
   )
 }
@@ -3690,28 +3690,28 @@ header "AI Hook Status"
 
 test_status_shows_ai_section() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>/dev/null) || true
   echo "$out" | grep -q "AI CLI hooks"
 }
 run_test "status shows AI CLI hooks section" test_status_shows_ai_section
 
 test_status_shows_claude() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>/dev/null) || true
   echo "$out" | grep -q "Claude Code"
 }
 run_test "status shows Claude Code entry" test_status_shows_claude
 
 test_status_shows_aider_or_not_detected() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>/dev/null) || true
   echo "$out" | grep -q "Aider"
 }
 run_test "status shows Aider entry" test_status_shows_aider_or_not_detected
 
 test_status_shows_codex_entry() {
   local out
-  out=$("${SCRIPT_DIR}/bin/cli-alert" status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>/dev/null) || true
   echo "$out" | grep -q "Codex CLI"
 }
 run_test "status shows Codex CLI entry" test_status_shows_codex_entry
@@ -3721,41 +3721,41 @@ run_test "status shows Codex CLI entry" test_status_shows_codex_entry
 header "Slack Block Kit Payload"
 
 # Ensure external module is loaded fresh
-unset _CLI_ALERT_EXTERNAL_LOADED
+unset _SHELLDONE_EXTERNAL_LOADED
 source "${LIB_DIR}/external-notify.sh"
 
 test_slack_blocks_header_has_emoji() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_CMD="make build"
-  export _CLI_ALERT_META_DURATION="2m 15s"
-  export _CLI_ALERT_META_SOURCE="shell"
-  _cli_alert_external_slack "make Complete" "✓ make build (2m 15s, exit 0)" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_CMD="make build"
+  export _SHELLDONE_META_DURATION="2m 15s"
+  export _SHELLDONE_META_SOURCE="shell"
+  _shelldone_external_slack "make Complete" "✓ make build (2m 15s, exit 0)" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_CMD _SHELLDONE_META_DURATION _SHELLDONE_META_SOURCE
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   [[ "$captured_payload" == *'"type":"header"'* ]] && [[ "$captured_payload" == *'✅'* ]]
 }
 run_test "Block Kit: header contains status emoji" test_slack_blocks_header_has_emoji
 
 test_slack_blocks_fields_contain_cmd_duration_exit_project() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_CMD="make build"
-  export _CLI_ALERT_META_DURATION="2m 15s"
-  export _CLI_ALERT_META_SOURCE="shell"
-  _cli_alert_external_slack "make Complete" "✓ make build (2m 15s, exit 0)" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_CMD="make build"
+  export _SHELLDONE_META_DURATION="2m 15s"
+  export _SHELLDONE_META_SOURCE="shell"
+  _shelldone_external_slack "make Complete" "✓ make build (2m 15s, exit 0)" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_CMD _SHELLDONE_META_DURATION _SHELLDONE_META_SOURCE
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   [[ "$captured_payload" == *'*Command*'* ]] && \
   [[ "$captured_payload" == *'make build'* ]] && \
   [[ "$captured_payload" == *'*Duration*'* ]] && \
@@ -3767,58 +3767,58 @@ run_test "Block Kit: section fields contain command/duration/exit code/project" 
 
 test_slack_blocks_context_has_hostname() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_SOURCE="shell"
-  export _CLI_ALERT_META_CMD="test"
-  _cli_alert_external_slack "Test" "msg" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_SOURCE _CLI_ALERT_META_CMD
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_SOURCE="shell"
+  export _SHELLDONE_META_CMD="test"
+  _shelldone_external_slack "Test" "msg" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_SOURCE _SHELLDONE_META_CMD
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   [[ "$captured_payload" == *'"type":"context"'* ]] && [[ "$captured_payload" == *'💻'* ]]
 }
 run_test "Block Kit: context block contains hostname" test_slack_blocks_context_has_hostname
 
 test_slack_blocks_legacy_fallback() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="false"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  _cli_alert_external_slack "Test Title" "Test message" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="false"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  _shelldone_external_slack "Test Title" "Test message" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   # Legacy format: no blocks key, has title/text directly
   [[ "$captured_payload" == *'"title":"Test Title"'* ]] && \
   [[ "$captured_payload" == *'"text":"Test message"'* ]] && \
   [[ "$captured_payload" != *'"type":"header"'* ]]
 }
-run_test "Block Kit: CLI_ALERT_SLACK_BLOCKS=false produces legacy format" test_slack_blocks_legacy_fallback
+run_test "Block Kit: SHELLDONE_SLACK_BLOCKS=false produces legacy format" test_slack_blocks_legacy_fallback
 
 test_slack_blocks_no_git_branch_outside_repo() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_SOURCE="shell"
-  export _CLI_ALERT_META_CMD="test"
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_SOURCE="shell"
+  export _SHELLDONE_META_CMD="test"
   # Force no git branch by running in a temp dir outside any repo
   local tmpdir
   tmpdir=$(mktemp -d)
   (
     cd "$tmpdir"
-    GIT_CEILING_DIRECTORIES="$tmpdir" _cli_alert_external_slack "Test" "msg" 0
+    GIT_CEILING_DIRECTORIES="$tmpdir" _shelldone_external_slack "Test" "msg" 0
   )
   rm -rf "$tmpdir"
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_SOURCE _CLI_ALERT_META_CMD
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_SOURCE _SHELLDONE_META_CMD
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   # Should still have context block (hostname/dir), no crash
   true
 }
@@ -3826,18 +3826,18 @@ run_test "Block Kit: missing git branch gracefully omitted" test_slack_blocks_no
 
 test_slack_blocks_json_escape_path_with_spaces() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_CMD="build project"
-  export _CLI_ALERT_META_DURATION="5s"
-  export _CLI_ALERT_META_SOURCE="shell"
-  _cli_alert_external_slack "Test" "msg" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_CMD="build project"
+  export _SHELLDONE_META_DURATION="5s"
+  export _SHELLDONE_META_SOURCE="shell"
+  _shelldone_external_slack "Test" "msg" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_CMD _SHELLDONE_META_DURATION _SHELLDONE_META_SOURCE
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   # Should produce valid-looking JSON (no crash, contains expected text)
   [[ "$captured_payload" == *'build project'* ]]
 }
@@ -3845,18 +3845,18 @@ run_test "Block Kit: JSON escaping works for paths with spaces" test_slack_block
 
 test_slack_blocks_ai_hook_variant() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_SOURCE="ai-hook"
-  export _CLI_ALERT_META_AI_NAME="Claude Code"
-  export _CLI_ALERT_META_STOP_REASON="end_turn"
-  _cli_alert_external_slack "Claude Code" "Task complete (end_turn)" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_SOURCE _CLI_ALERT_META_AI_NAME _CLI_ALERT_META_STOP_REASON
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_SOURCE="ai-hook"
+  export _SHELLDONE_META_AI_NAME="Claude Code"
+  export _SHELLDONE_META_STOP_REASON="end_turn"
+  _shelldone_external_slack "Claude Code" "Task complete (end_turn)" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_SOURCE _SHELLDONE_META_AI_NAME _SHELLDONE_META_STOP_REASON
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   [[ "$captured_payload" == *'*Status*'* ]] && \
   [[ "$captured_payload" == *'end_turn'* ]] && \
   [[ "$captured_payload" == *'Claude Code'* ]]
@@ -3865,18 +3865,18 @@ run_test "Block Kit: AI hook variant shows status/source/stop_reason" test_slack
 
 test_slack_blocks_notification_hook_variant() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_SOURCE="ai-hook"
-  export _CLI_ALERT_META_AI_NAME="Claude Code"
-  export _CLI_ALERT_META_STOP_REASON="Waiting for input"
-  _cli_alert_external_slack "Claude Code" "Waiting for input: Please review the plan" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_SOURCE _CLI_ALERT_META_AI_NAME _CLI_ALERT_META_STOP_REASON
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_SOURCE="ai-hook"
+  export _SHELLDONE_META_AI_NAME="Claude Code"
+  export _SHELLDONE_META_STOP_REASON="Waiting for input"
+  _shelldone_external_slack "Claude Code" "Waiting for input: Please review the plan" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_SOURCE _SHELLDONE_META_AI_NAME _SHELLDONE_META_STOP_REASON
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   [[ "$captured_payload" == *'Waiting for input'* ]] && \
   [[ "$captured_payload" == *'Claude Code'* ]]
 }
@@ -3884,36 +3884,36 @@ run_test "Block Kit: Notification hook payload shows notification title" test_sl
 
 test_slack_blocks_failure_emoji() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_CMD="make build"
-  export _CLI_ALERT_META_DURATION="10s"
-  export _CLI_ALERT_META_SOURCE="shell"
-  _cli_alert_external_slack "make Complete" "✗ make build (10s, exit 1)" 1
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_CMD="make build"
+  export _SHELLDONE_META_DURATION="10s"
+  export _SHELLDONE_META_SOURCE="shell"
+  _shelldone_external_slack "make Complete" "✗ make build (10s, exit 1)" 1
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_CMD _SHELLDONE_META_DURATION _SHELLDONE_META_SOURCE
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   [[ "$captured_payload" == *'❌'* ]] && [[ "$captured_payload" == *'#dc3545'* ]]
 }
 run_test "Block Kit: failure shows red emoji and color" test_slack_blocks_failure_emoji
 
 test_slack_blocks_top_level_structure() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_CMD="make build"
-  export _CLI_ALERT_META_DURATION="5s"
-  export _CLI_ALERT_META_SOURCE="shell"
-  _cli_alert_external_slack "Test Title" "Test message" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_CMD="make build"
+  export _SHELLDONE_META_DURATION="5s"
+  export _SHELLDONE_META_SOURCE="shell"
+  _shelldone_external_slack "Test Title" "Test message" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_CMD _SHELLDONE_META_DURATION _SHELLDONE_META_SOURCE
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   # Blocks at top level, not inside attachments
   [[ "$captured_payload" == *'"blocks":['* ]] && \
   [[ "$captured_payload" == *'"text":"Test Title - Test message"'* ]] && \
@@ -3924,21 +3924,21 @@ run_test "Block Kit: blocks at top level, not inside attachments" test_slack_blo
 
 test_slack_blocks_user_field() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_CMD="make build"
-  export _CLI_ALERT_META_DURATION="5s"
-  export _CLI_ALERT_META_SOURCE="shell"
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_CMD="make build"
+  export _SHELLDONE_META_DURATION="5s"
+  export _SHELLDONE_META_SOURCE="shell"
   local saved_user="$USER"
   export USER="testuser"
-  _cli_alert_external_slack "Test Title" "Test message" 0
+  _shelldone_external_slack "Test Title" "Test message" 0
   export USER="$saved_user"
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_CMD _SHELLDONE_META_DURATION _SHELLDONE_META_SOURCE
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   [[ "$captured_payload" == *'*User*'* ]] && \
   [[ "$captured_payload" == *'testuser'* ]]
 }
@@ -3946,37 +3946,37 @@ run_test "Block Kit: User field appears in shell payload" test_slack_blocks_user
 
 test_slack_blocks_timestamp_in_context() {
   local captured_payload=""
-  _cli_alert_http_post() { captured_payload="$2"; }
-  CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/test"
-  CLI_ALERT_SLACK_BLOCKS="true"
-  rm -f "/tmp/.cli_alert_rate_slack" 2>/dev/null
-  export _CLI_ALERT_META_CMD="make build"
-  export _CLI_ALERT_META_DURATION="5s"
-  export _CLI_ALERT_META_SOURCE="shell"
-  _cli_alert_external_slack "Test Title" "Test message" 0
-  unset CLI_ALERT_SLACK_WEBHOOK CLI_ALERT_SLACK_BLOCKS
-  unset _CLI_ALERT_META_CMD _CLI_ALERT_META_DURATION _CLI_ALERT_META_SOURCE
-  unset -f _cli_alert_http_post
-  _cli_alert_detect_http_transport
+  _shelldone_http_post() { captured_payload="$2"; }
+  SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test"
+  SHELLDONE_SLACK_BLOCKS="true"
+  rm -f "/tmp/.shelldone_rate_slack" 2>/dev/null
+  export _SHELLDONE_META_CMD="make build"
+  export _SHELLDONE_META_DURATION="5s"
+  export _SHELLDONE_META_SOURCE="shell"
+  _shelldone_external_slack "Test Title" "Test message" 0
+  unset SHELLDONE_SLACK_WEBHOOK SHELLDONE_SLACK_BLOCKS
+  unset _SHELLDONE_META_CMD _SHELLDONE_META_DURATION _SHELLDONE_META_SOURCE
+  unset -f _shelldone_http_post
+  _shelldone_detect_http_transport
   [[ "$captured_payload" == *'🕐'* ]]
 }
 run_test "Block Kit: Timestamp appears in context footer" test_slack_blocks_timestamp_in_context
 
 test_metadata_collect_exists() {
-  declare -f _cli_alert_collect_metadata &>/dev/null
+  declare -f _shelldone_collect_metadata &>/dev/null
 }
-run_test "_cli_alert_collect_metadata function exists" test_metadata_collect_exists
+run_test "_shelldone_collect_metadata function exists" test_metadata_collect_exists
 
 test_metadata_clear_exists() {
-  declare -f _cli_alert_clear_metadata &>/dev/null
+  declare -f _shelldone_clear_metadata &>/dev/null
 }
-run_test "_cli_alert_clear_metadata function exists" test_metadata_clear_exists
+run_test "_shelldone_clear_metadata function exists" test_metadata_clear_exists
 
 test_metadata_clear_works() {
-  export _CLI_ALERT_META_CMD="test"
-  export _CLI_ALERT_META_SOURCE="shell"
-  _cli_alert_clear_metadata
-  [[ -z "${_CLI_ALERT_META_CMD:-}" ]] && [[ -z "${_CLI_ALERT_META_SOURCE:-}" ]]
+  export _SHELLDONE_META_CMD="test"
+  export _SHELLDONE_META_SOURCE="shell"
+  _shelldone_clear_metadata
+  [[ -z "${_SHELLDONE_META_CMD:-}" ]] && [[ -z "${_SHELLDONE_META_SOURCE:-}" ]]
 }
 run_test "Metadata cleanup clears all meta vars" test_metadata_clear_works
 
@@ -3985,17 +3985,17 @@ run_test "Metadata cleanup clears all meta vars" test_metadata_clear_works
 header "Current Config"
 
 # Restore user's config for display
-CLI_ALERT_SOUND_SUCCESS="${_SAVED_CLI_ALERT_SOUND_SUCCESS:-Glass}"
-CLI_ALERT_SOUND_FAILURE="${_SAVED_CLI_ALERT_SOUND_FAILURE:-Sosumi}"
-CLI_ALERT_VOICE="${_SAVED_CLI_ALERT_VOICE:-}"
+SHELLDONE_SOUND_SUCCESS="${_SAVED_SHELLDONE_SOUND_SUCCESS:-Glass}"
+SHELLDONE_SOUND_FAILURE="${_SAVED_SHELLDONE_SOUND_FAILURE:-Sosumi}"
+SHELLDONE_VOICE="${_SAVED_SHELLDONE_VOICE:-}"
 
-info "CLI_ALERT_ENABLED=$CLI_ALERT_ENABLED"
-info "CLI_ALERT_SOUND_SUCCESS=$CLI_ALERT_SOUND_SUCCESS"
-info "CLI_ALERT_SOUND_FAILURE=$CLI_ALERT_SOUND_FAILURE"
-info "CLI_ALERT_VOICE=${CLI_ALERT_VOICE:-<off>}"
-info "CLI_ALERT_THRESHOLD=${CLI_ALERT_THRESHOLD:-10}"
-info "CLI_ALERT_FOCUS_DETECT=${CLI_ALERT_FOCUS_DETECT:-true}"
-info "CLI_ALERT_ACTIVATE=${CLI_ALERT_ACTIVATE:-<auto-detect>}"
+info "SHELLDONE_ENABLED=$SHELLDONE_ENABLED"
+info "SHELLDONE_SOUND_SUCCESS=$SHELLDONE_SOUND_SUCCESS"
+info "SHELLDONE_SOUND_FAILURE=$SHELLDONE_SOUND_FAILURE"
+info "SHELLDONE_VOICE=${SHELLDONE_VOICE:-<off>}"
+info "SHELLDONE_THRESHOLD=${SHELLDONE_THRESHOLD:-10}"
+info "SHELLDONE_FOCUS_DETECT=${SHELLDONE_FOCUS_DETECT:-true}"
+info "SHELLDONE_ACTIVATE=${SHELLDONE_ACTIVATE:-<auto-detect>}"
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 

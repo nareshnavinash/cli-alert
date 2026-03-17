@@ -10,18 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Multi-AI CLI hook support: Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor
-- Per-AI toggle system (`cli-alert toggle claude off`, `cli-alert toggle codex off`, etc.)
-- Auto-detect and install all AI hooks (`cli-alert setup ai-hooks`)
+- Per-AI toggle system (`shelldone toggle claude off`, `shelldone toggle codex off`, etc.)
+- Auto-detect and install all AI hooks (`shelldone setup ai-hooks`)
 - Shared hook library (`lib/ai-hook-common.sh`) with JSON extraction and toggle-aware notification
-- Individual setup commands: `cli-alert setup codex-hook`, `gemini-hook`, `copilot-hook`, `cursor-hook`
-- AI CLI hooks section in `cli-alert status` and `cli-alert toggle` output
+- Individual setup commands: `shelldone setup codex-hook`, `gemini-hook`, `copilot-hook`, `cursor-hook`
+- AI CLI hooks section in `shelldone status` and `shelldone toggle` output
 - Aider detection with wrapper guidance in status output
 - Uninstall now removes all AI CLI hooks (Claude, Codex, Gemini, Copilot, Cursor)
 - ~40 new tests covering AI hook library, hook scripts, setup CLI, toggle, and status
 
 ### Changed
 
-- `cli-alert setup` (and `cli-alert setup all`) now installs hooks for all detected AI CLIs, not just Claude
+- `shelldone setup` (and `shelldone setup all`) now installs hooks for all detected AI CLIs, not just Claude
 - Shell completions expanded with new setup and toggle options
 - Homebrew formula installs all hook scripts and shared library
 - Makefile installs new hook scripts and `ai-hook-common.sh`
@@ -45,18 +45,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-layer toggle (desktop, sound, voice, individual channels, `external` group)
 - Daily quiet-hours schedule with cross-midnight support
 - Notification history logging
-- `cli-alert status` diagnostic command
-- `cli-alert webhook status` and `cli-alert webhook test <channel>` commands
+- `shelldone status` diagnostic command
+- `shelldone webhook status` and `shelldone webhook test <channel>` commands
 - Shell completions for bash and zsh
 - `install.sh` interactive installer with platform detection
 - `uninstall.sh` and marker-based RC file cleanup
 - `Makefile` with install/uninstall/test targets
-- Homebrew formula (`Formula/cli-alert.rb`)
+- Homebrew formula (`Formula/shelldone.rb`)
 - Debian packaging (`debian/`)
 - Scoop manifest (`packaging/scoop.json`)
 - Chocolatey manifest (`packaging/chocolatey.nuspec`)
 - GitHub Actions CI: ShellCheck, macOS (bash + zsh), Linux, install round-trip
 - Comprehensive test suite (291 tests)
 
-[0.2.0]: https://github.com/nareshnavinash/cli-alert/releases/tag/v0.2.0
-[0.1.0]: https://github.com/nareshnavinash/cli-alert/releases/tag/v0.1.0
+[0.2.0]: https://github.com/nareshnavinash/shelldone/releases/tag/v0.2.0
+[0.1.0]: https://github.com/nareshnavinash/shelldone/releases/tag/v0.1.0

@@ -6,16 +6,16 @@ labels: bug
 assignees: ''
 ---
 
-**cli-alert version**
+**shelldone version**
 
 ```
-Paste output of: cli-alert version --verbose
+Paste output of: shelldone version --verbose
 ```
 
-**cli-alert status**
+**shelldone status**
 
 ```
-Paste output of: cli-alert status
+Paste output of: shelldone status
 ```
 
 **Shell and OS**
@@ -35,4 +35,4 @@ What you expected to happen.
 
 **Actual behavior**
 
-What actually happened. Include any error messages or debug output (`CLI_ALERT_DEBUG=true`).
+What actually happened. Include any error messages or debug output (`SHELLDONE_DEBUG=true`).

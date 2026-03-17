@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Bash completion for cli-alert
+# Bash completion for shelldone
 
-_cli_alert_completions() {
+_shelldone_completions() {
   local cur prev commands
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
@@ -10,7 +10,7 @@ _cli_alert_completions() {
   commands="init setup uninstall status test-notify sounds exclude webhook history config mute unmute toggle schedule test version help"
 
   case "$prev" in
-    cli-alert)
+    shelldone)
       COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
       return 0
       ;;
@@ -61,4 +61,4 @@ _cli_alert_completions() {
   return 0
 }
 
-complete -F _cli_alert_completions cli-alert
+complete -F _shelldone_completions shelldone

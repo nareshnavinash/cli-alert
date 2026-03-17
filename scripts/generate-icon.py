@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the cli-alert radar-ping icon at all required .iconset sizes.
+"""Generate the shelldone radar-ping icon at all required .iconset sizes.
 
 Design: Dark rounded-square background with an off-center dot and radiating
 concentric arcs that fade from bright cyan to transparent — like a freeze-frame
@@ -100,7 +100,7 @@ def main():
     project_dir = os.path.dirname(script_dir)
 
     iconset_dir = os.path.join(
-        project_dir, "assets", "darwin", "cli-alert.app",
+        project_dir, "assets", "darwin", "shelldone.app",
         "Contents", "Resources", "AppIcon.iconset",
     )
     linux_dir = os.path.join(project_dir, "assets", "linux")
@@ -122,8 +122,8 @@ def main():
 
     # Linux icon (256px)
     linux_icon = draw_icon(256)
-    linux_icon.save(os.path.join(linux_dir, "cli-alert.png"))
-    print(f"  assets/linux/cli-alert.png")
+    linux_icon.save(os.path.join(linux_dir, "shelldone.png"))
+    print(f"  assets/linux/shelldone.png")
 
     print(f"\nIconset at: {iconset_dir}")
     return iconset_dir

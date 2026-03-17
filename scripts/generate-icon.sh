@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# generate-icon.sh — Generate cli-alert icon assets
+# generate-icon.sh — Generate shelldone icon assets
 # Renders the radar-ping icon into .iconset/ sizes, converts to .icns, and exports Linux PNG.
 # Requires: Python 3 + Pillow (pip install Pillow)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "Generating cli-alert icon..."
+echo "Generating shelldone icon..."
 
 # Find a Python with Pillow
 find_python() {

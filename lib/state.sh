@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
-# state.sh — Persistent state management for cli-alert (mute, toggle, schedule)
+# state.sh — Persistent state management for shelldone (mute, toggle, schedule)
 # Loaded lazily on first notification or CLI command.
 
 # Guard against double-sourcing
-[[ -n "${_CLI_ALERT_STATE_LOADED:-}" ]] && return 0
-_CLI_ALERT_STATE_LOADED=1
+[[ -n "${_SHELLDONE_STATE_LOADED:-}" ]] && return 0
+_SHELLDONE_STATE_LOADED=1
 
 # ── State file location ────────────────────────────────────────────────────
 
-_cli_alert_state_dir() {
-  printf '%s' "${CLI_ALERT_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/cli-alert}"
+_shelldone_state_dir() {
+  printf '%s' "${SHELLDONE_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/shelldone}"
 }
 
-_cli_alert_state_file() {
-  printf '%s/state' "$(_cli_alert_state_dir)"
+_shelldone_state_file() {
+  printf '%s/state' "$(_shelldone_state_dir)"
 }
 
 # ── State read/write (bash 3 compatible, no associative arrays) ───────────
 
-_cli_alert_state_read() {
+_shelldone_state_read() {
   local key="$1" state_file
-  state_file="$(_cli_alert_state_file)"
+  state_file="$(_shelldone_state_file)"
   [[ -f "$state_file" ]] || return 1
   local k v
   while IFS='=' read -r k v; do
@@ -34,12 +34,12 @@ _cli_alert_state_read() {
   return 1
 }
 
-_cli_alert_state_write() {
+_shelldone_state_write() {
   local key="$1" val="$2"
   local state_dir state_file tmp_file
 
-  state_dir="$(_cli_alert_state_dir)"
-  state_file="$(_cli_alert_state_file)"
+  state_dir="$(_shelldone_state_dir)"
+  state_file="$(_shelldone_state_file)"
 
   # Ensure state directory exists
   if [[ ! -d "$state_dir" ]]; then
@@ -58,11 +58,11 @@ _cli_alert_state_write() {
   mv "$tmp_file" "$state_file"
 }
 
-_cli_alert_state_delete() {
+_shelldone_state_delete() {
   local key="$1"
   local state_file tmp_file
 
-  state_file="$(_cli_alert_state_file)"
+  state_file="$(_shelldone_state_file)"
   [[ -f "$state_file" ]] || return 0
 
   tmp_file="${state_file}.tmp.$$"
@@ -77,16 +77,16 @@ _cli_alert_state_delete() {
   fi
 }
 
-_cli_alert_state_dump() {
+_shelldone_state_dump() {
   local state_file
-  state_file="$(_cli_alert_state_file)"
+  state_file="$(_shelldone_state_file)"
   [[ -f "$state_file" ]] || return 0
   cat "$state_file"
 }
 
 # ── Duration parsing ──────────────────────────────────────────────────────
 
-_cli_alert_parse_duration() {
+_shelldone_parse_duration() {
   local input="$1"
   local total=0 num="" unit=""
 
@@ -125,9 +125,9 @@ _cli_alert_parse_duration() {
 
 # ── Mute check ────────────────────────────────────────────────────────────
 
-_cli_alert_is_muted() {
+_shelldone_is_muted() {
   local mute_until
-  mute_until="$(_cli_alert_state_read "mute_until")" || return 1
+  mute_until="$(_shelldone_state_read "mute_until")" || return 1
 
   # 0 = muted indefinitely
   if [[ "$mute_until" == "0" ]]; then
@@ -142,16 +142,16 @@ _cli_alert_is_muted() {
   fi
 
   # Expired — clean up
-  _cli_alert_state_delete "mute_until"
+  _shelldone_state_delete "mute_until"
   return 1
 }
 
 # ── Per-channel toggle ────────────────────────────────────────────────────
 
-_cli_alert_channel_enabled() {
+_shelldone_channel_enabled() {
   local channel="$1"
   local val
-  val="$(_cli_alert_state_read "$channel")" || return 0  # Missing = on (default)
+  val="$(_shelldone_state_read "$channel")" || return 0  # Missing = on (default)
   case "$val" in
     off) return 1 ;;
     *)   return 0 ;;
@@ -160,16 +160,16 @@ _cli_alert_channel_enabled() {
 
 # ── Quiet hours ───────────────────────────────────────────────────────────
 
-_cli_alert_is_quiet_hours() {
+_shelldone_is_quiet_hours() {
   local quiet_start quiet_end
 
   # Try state file first, then env var fallback
-  quiet_start="$(_cli_alert_state_read "quiet_start")" 2>/dev/null || true
-  quiet_end="$(_cli_alert_state_read "quiet_end")" 2>/dev/null || true
+  quiet_start="$(_shelldone_state_read "quiet_start")" 2>/dev/null || true
+  quiet_end="$(_shelldone_state_read "quiet_end")" 2>/dev/null || true
 
-  # Env var fallback: CLI_ALERT_QUIET_HOURS="22:00-08:00"
-  if [[ -z "$quiet_start" && -z "$quiet_end" && -n "${CLI_ALERT_QUIET_HOURS:-}" ]]; then
-    if [[ "$CLI_ALERT_QUIET_HOURS" =~ ^([0-9]{2}:[0-9]{2})-([0-9]{2}:[0-9]{2})$ ]]; then
+  # Env var fallback: SHELLDONE_QUIET_HOURS="22:00-08:00"
+  if [[ -z "$quiet_start" && -z "$quiet_end" && -n "${SHELLDONE_QUIET_HOURS:-}" ]]; then
+    if [[ "$SHELLDONE_QUIET_HOURS" =~ ^([0-9]{2}:[0-9]{2})-([0-9]{2}:[0-9]{2})$ ]]; then
       quiet_start="${BASH_REMATCH[1]}"
       quiet_end="${BASH_REMATCH[2]}"
     else

@@ -1,10 +1,10 @@
-# cli-alert
+# shelldone
 
 Cross-platform terminal notification system for long-running commands. Get desktop notifications, sounds, and external alerts (Slack, Discord, Telegram, and more) when your builds, deploys, and tests finish.
 
 > Works with bash and zsh on macOS, Linux, WSL, and Windows. Notify via desktop popup, sound, voice, Slack, Discord, Telegram, Email, WhatsApp, or webhook. Integrates with AI CLIs: Claude Code, Codex, Gemini, Copilot, Cursor, and Aider.
 
-[![CI](https://github.com/nareshnavinash/cli-alert/actions/workflows/ci.yml/badge.svg)](https://github.com/nareshnavinash/cli-alert/actions/workflows/ci.yml)
+[![CI](https://github.com/nareshnavinash/shelldone/actions/workflows/ci.yml/badge.svg)](https://github.com/nareshnavinash/shelldone/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](VERSION)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL%20%7C%20Windows-lightgrey.svg)](#platform-support)
@@ -12,7 +12,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 [![Tests](https://img.shields.io/badge/tests-337%20passing-brightgreen.svg)](#testing)
 
 <!-- TODO: Record with asciinema and embed here -->
-<!-- ![cli-alert demo](assets/demo.gif) -->
+<!-- ![shelldone demo](assets/demo.gif) -->
 
 ## Table of Contents
 
@@ -49,15 +49,15 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 
 ```bash
 # Clone and install
-git clone https://github.com/nareshnavinash/cli-alert.git
-cd cli-alert
+git clone https://github.com/nareshnavinash/shelldone.git
+cd shelldone
 ./install.sh
 
 # Verify your setup
-cli-alert status
+shelldone status
 
 # Send a test notification
-cli-alert test-notify
+shelldone test-notify
 
 # Wrap any command
 alert make build
@@ -70,8 +70,8 @@ After installation, commands running longer than 30 seconds automatically trigge
 ### From Source (recommended)
 
 ```bash
-git clone https://github.com/nareshnavinash/cli-alert.git
-cd cli-alert
+git clone https://github.com/nareshnavinash/shelldone.git
+cd shelldone
 ./install.sh
 ```
 
@@ -89,10 +89,10 @@ make install PREFIX=~/.local     # installs to ~/.local
 No Homebrew tap has been published yet. To install from the local formula using HEAD:
 
 ```bash
-brew install --HEAD ./Formula/cli-alert.rb
+brew install --HEAD ./Formula/shelldone.rb
 ```
 
-A `brew install cli-alert` command will be available once a tap repository and GitHub release are created.
+A `brew install shelldone` command will be available once a tap repository and GitHub release are created.
 
 ### Debian/Ubuntu — Coming Soon
 
@@ -115,14 +115,14 @@ The Chocolatey package is not yet published. Install from source on Windows (Git
 Add to your `.zshrc` or `.bashrc`:
 
 ```bash
-eval "$(cli-alert init zsh)"    # for zsh
-eval "$(cli-alert init bash)"   # for bash
+eval "$(shelldone init zsh)"    # for zsh
+eval "$(shelldone init bash)"   # for bash
 ```
 
 Or auto-configure everything (rc files + AI CLI hooks):
 
 ```bash
-cli-alert setup
+shelldone setup
 ```
 
 ## Usage
@@ -161,25 +161,25 @@ Auto-notify uses `preexec`/`precmd` hooks in zsh and `DEBUG` trap + `PROMPT_COMM
 
 ### AI CLI Integration
 
-cli-alert can notify you when AI coding assistants finish their turn. It supports Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor via native hook systems, plus Aider via the `alert` wrapper.
+shelldone can notify you when AI coding assistants finish their turn. It supports Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor via native hook systems, plus Aider via the `alert` wrapper.
 
 ```bash
 # Install hooks for all detected AI CLIs
-cli-alert setup ai-hooks
+shelldone setup ai-hooks
 
 # Or install individually
-cli-alert setup claude-hook     # Claude Code (~/.claude/settings.json)
-cli-alert setup codex-hook      # Codex CLI (~/.codex/config.json)
-cli-alert setup gemini-hook     # Gemini CLI (~/.gemini/settings.json)
-cli-alert setup copilot-hook    # Copilot CLI (~/.github/hooks/)
-cli-alert setup cursor-hook     # Cursor (~/.cursor/hooks.json)
+shelldone setup claude-hook     # Claude Code (~/.claude/settings.json)
+shelldone setup codex-hook      # Codex CLI (~/.codex/config.json)
+shelldone setup gemini-hook     # Gemini CLI (~/.gemini/settings.json)
+shelldone setup copilot-hook    # Copilot CLI (~/.github/hooks/)
+shelldone setup cursor-hook     # Cursor (~/.cursor/hooks.json)
 ```
 
 Each hook script reads a JSON event from stdin, extracts the relevant metadata, and triggers a notification. You can toggle notifications per AI CLI:
 
 ```bash
-cli-alert toggle claude off     # disable Claude notifications
-cli-alert toggle codex on       # re-enable Codex notifications
+shelldone toggle claude off     # disable Claude notifications
+shelldone toggle codex on       # re-enable Codex notifications
 ```
 
 #### Aider
@@ -195,15 +195,15 @@ alert aider "fix the login bug"
 Commands matching exclusion patterns are silently skipped by auto-notify. Patterns support shell globs:
 
 ```bash
-export CLI_ALERT_EXCLUDE="vim nvim ssh npm* docker*"
+export SHELLDONE_EXCLUDE="vim nvim ssh npm* docker*"
 ```
 
 Manage exclusions interactively:
 
 ```bash
-cli-alert exclude list            # show current exclusions
-cli-alert exclude add docker      # prints export line to add
-cli-alert exclude remove vim      # prints updated export line
+shelldone exclude list            # show current exclusions
+shelldone exclude add docker      # prints export line to add
+shelldone exclude remove vim      # prints updated export line
 ```
 
 Default exclusions: `vim nvim vi nano less more man top htop ssh tmux screen fg bg watch`
@@ -214,21 +214,21 @@ Temporarily mute, toggle notification layers, or schedule quiet hours:
 
 ```bash
 # Mute all notifications
-cli-alert mute           # indefinitely
-cli-alert mute 30m       # for 30 minutes
-cli-alert mute 2h        # for 2 hours
-cli-alert unmute          # resume
+shelldone mute           # indefinitely
+shelldone mute 30m       # for 30 minutes
+shelldone mute 2h        # for 2 hours
+shelldone unmute          # resume
 
 # Toggle individual layers
-cli-alert toggle sound off      # disable sound, keep desktop popups
-cli-alert toggle voice off      # disable TTS
-cli-alert toggle slack off      # disable Slack channel
-cli-alert toggle external off   # disable all external channels
-cli-alert toggle                # show all toggle states
+shelldone toggle sound off      # disable sound, keep desktop popups
+shelldone toggle voice off      # disable TTS
+shelldone toggle slack off      # disable Slack channel
+shelldone toggle external off   # disable all external channels
+shelldone toggle                # show all toggle states
 
 # Schedule daily quiet hours (crosses midnight OK)
-cli-alert schedule 22:00-08:00
-cli-alert schedule off          # clear schedule
+shelldone schedule 22:00-08:00
+shelldone schedule off          # clear schedule
 ```
 
 Supported layers: `desktop`, `sound`, `voice`, `slack`, `discord`, `telegram`, `email`, `whatsapp`, `webhook`, `external` (group toggle), `claude`, `codex`, `gemini`, `copilot`, `cursor` (AI CLIs).
@@ -236,7 +236,7 @@ Supported layers: `desktop`, `sound`, `voice`, `slack`, `discord`, `telegram`, `
 Quiet hours can also be set via environment variable:
 
 ```bash
-export CLI_ALERT_QUIET_HOURS="22:00-08:00"
+export SHELLDONE_QUIET_HOURS="22:00-08:00"
 ```
 
 When muted or in quiet hours, notifications are suppressed but still logged to history.
@@ -247,53 +247,53 @@ All settings are environment variables. Set them before the `eval` line in your 
 
 ```bash
 # Example .zshrc
-export CLI_ALERT_THRESHOLD=60
-export CLI_ALERT_SOUND_SUCCESS=Ping
-export CLI_ALERT_VOICE=true
-eval "$(cli-alert init zsh)"
+export SHELLDONE_THRESHOLD=60
+export SHELLDONE_SOUND_SUCCESS=Ping
+export SHELLDONE_VOICE=true
+eval "$(shelldone init zsh)"
 ```
 
 ### General Settings
 
 | Variable | Default | Description |
 |---|---|---|
-| `CLI_ALERT_ENABLED` | `true` | Master on/off switch |
-| `CLI_ALERT_AUTO` | `true` | Auto-notify on/off |
-| `CLI_ALERT_THRESHOLD` | `10` | Seconds before auto-notify triggers |
-| `CLI_ALERT_DEBUG` | *(off)* | Set to `true` for debug output to stderr |
+| `SHELLDONE_ENABLED` | `true` | Master on/off switch |
+| `SHELLDONE_AUTO` | `true` | Auto-notify on/off |
+| `SHELLDONE_THRESHOLD` | `10` | Seconds before auto-notify triggers |
+| `SHELLDONE_DEBUG` | *(off)* | Set to `true` for debug output to stderr |
 
 ### Sound Settings
 
 | Variable | Default | Description |
 |---|---|---|
-| `CLI_ALERT_SOUND_SUCCESS` | `Glass` (macOS), `complete` (Linux), `Asterisk` (Windows) | Success sound name or file path |
-| `CLI_ALERT_SOUND_FAILURE` | `Sosumi` (macOS), `dialog-error` (Linux), `Hand` (Windows) | Failure sound name or file path |
-| `CLI_ALERT_SOUND_TIMEOUT` | `10` | Max seconds to wait for sound playback |
-| `CLI_ALERT_VOICE` | *(off)* | Set to `true` for TTS announcements |
+| `SHELLDONE_SOUND_SUCCESS` | `Glass` (macOS), `complete` (Linux), `Asterisk` (Windows) | Success sound name or file path |
+| `SHELLDONE_SOUND_FAILURE` | `Sosumi` (macOS), `dialog-error` (Linux), `Hand` (Windows) | Failure sound name or file path |
+| `SHELLDONE_SOUND_TIMEOUT` | `10` | Max seconds to wait for sound playback |
+| `SHELLDONE_VOICE` | *(off)* | Set to `true` for TTS announcements |
 
 Use a system sound name or a file path:
 
 ```bash
-export CLI_ALERT_SOUND_SUCCESS=Ping
-export CLI_ALERT_SOUND_FAILURE=/path/to/custom/error.aiff
+export SHELLDONE_SOUND_SUCCESS=Ping
+export SHELLDONE_SOUND_FAILURE=/path/to/custom/error.aiff
 ```
 
-List available sounds: `cli-alert sounds`
+List available sounds: `shelldone sounds`
 
 ### Focus & Exclusion Settings
 
 | Variable | Default | Description |
 |---|---|---|
-| `CLI_ALERT_FOCUS_DETECT` | `true` | Suppress notifications when terminal is focused |
-| `CLI_ALERT_TERMINALS` | `Terminal iTerm2 Alacritty kitty WezTerm Hyper` | Terminal app names for focus detection (macOS) |
-| `CLI_ALERT_EXCLUDE` | `vim nvim vi nano less more man top htop ssh tmux screen fg bg watch` | Space-separated commands/globs to skip |
+| `SHELLDONE_FOCUS_DETECT` | `true` | Suppress notifications when terminal is focused |
+| `SHELLDONE_TERMINALS` | `Terminal iTerm2 Alacritty kitty WezTerm Hyper` | Terminal app names for focus detection (macOS) |
+| `SHELLDONE_EXCLUDE` | `vim nvim vi nano less more man top htop ssh tmux screen fg bg watch` | Space-separated commands/globs to skip |
 
 ### Notification Control Settings
 
 | Variable | Default | Description |
 |---|---|---|
-| `CLI_ALERT_QUIET_HOURS` | *(off)* | Daily quiet hours (e.g., `22:00-08:00`, crosses midnight OK) |
-| `CLI_ALERT_HISTORY` | `true` | Log notifications to history file |
+| `SHELLDONE_QUIET_HOURS` | *(off)* | Daily quiet hours (e.g., `22:00-08:00`, crosses midnight OK) |
+| `SHELLDONE_HISTORY` | `true` | Log notifications to history file |
 
 ## External Notifications
 
@@ -306,14 +306,14 @@ Get notified on Slack, Discord, Telegram, email, WhatsApp, or any webhook endpoi
 3. Select a channel and copy the webhook URL
 
 ```bash
-export CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
+export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
 ```
 
 Optional:
 
 ```bash
-export CLI_ALERT_SLACK_USERNAME="my-bot"     # default: cli-alert
-export CLI_ALERT_SLACK_CHANNEL="#alerts"      # override channel
+export SHELLDONE_SLACK_USERNAME="my-bot"     # default: shelldone
+export SHELLDONE_SLACK_CHANNEL="#alerts"      # override channel
 ```
 
 ### Discord
@@ -322,13 +322,13 @@ export CLI_ALERT_SLACK_CHANNEL="#alerts"      # override channel
 2. Select a channel, copy the webhook URL
 
 ```bash
-export CLI_ALERT_DISCORD_WEBHOOK="https://discord.com/api/webhooks/..."
+export SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/..."
 ```
 
 Optional:
 
 ```bash
-export CLI_ALERT_DISCORD_USERNAME="my-bot"   # default: cli-alert
+export SHELLDONE_DISCORD_USERNAME="my-bot"   # default: shelldone
 ```
 
 ### Telegram
@@ -340,8 +340,8 @@ export CLI_ALERT_DISCORD_USERNAME="my-bot"   # default: cli-alert
    ```
 
 ```bash
-export CLI_ALERT_TELEGRAM_TOKEN="123456:ABC-DEF..."
-export CLI_ALERT_TELEGRAM_CHAT_ID="your-chat-id"
+export SHELLDONE_TELEGRAM_TOKEN="123456:ABC-DEF..."
+export SHELLDONE_TELEGRAM_CHAT_ID="your-chat-id"
 ```
 
 ### Email
@@ -349,23 +349,23 @@ export CLI_ALERT_TELEGRAM_CHAT_ID="your-chat-id"
 Requires `sendmail` or `mail` command on the system.
 
 ```bash
-export CLI_ALERT_EMAIL_TO="you@example.com"
+export SHELLDONE_EMAIL_TO="you@example.com"
 ```
 
 Optional:
 
 ```bash
-export CLI_ALERT_EMAIL_FROM="alerts@myhost.com"        # default: cli-alert@<hostname>
-export CLI_ALERT_EMAIL_SUBJECT="[deploy] finished"     # default: [cli-alert] <title>
+export SHELLDONE_EMAIL_FROM="alerts@myhost.com"        # default: shelldone@<hostname>
+export SHELLDONE_EMAIL_SUBJECT="[deploy] finished"     # default: [shelldone] <title>
 ```
 
 ### WhatsApp (via Twilio)
 
 ```bash
-export CLI_ALERT_WHATSAPP_API_URL="https://api.twilio.com/2010-04-01/Accounts/.../Messages.json"
-export CLI_ALERT_WHATSAPP_TOKEN="base64-encoded-sid:token"
-export CLI_ALERT_WHATSAPP_FROM="+14155238886"
-export CLI_ALERT_WHATSAPP_TO="+1234567890"
+export SHELLDONE_WHATSAPP_API_URL="https://api.twilio.com/2010-04-01/Accounts/.../Messages.json"
+export SHELLDONE_WHATSAPP_TOKEN="base64-encoded-sid:token"
+export SHELLDONE_WHATSAPP_FROM="+14155238886"
+export SHELLDONE_WHATSAPP_TO="+1234567890"
 ```
 
 All four variables are required.
@@ -373,8 +373,8 @@ All four variables are required.
 ### Generic Webhook
 
 ```bash
-export CLI_ALERT_WEBHOOK_URL="https://your-endpoint.com/hook"
-export CLI_ALERT_WEBHOOK_HEADERS="Authorization: Bearer token123|X-Custom: value"  # optional, pipe-separated
+export SHELLDONE_WEBHOOK_URL="https://your-endpoint.com/hook"
+export SHELLDONE_WEBHOOK_HEADERS="Authorization: Bearer token123|X-Custom: value"  # optional, pipe-separated
 ```
 
 The webhook receives a JSON payload:
@@ -389,18 +389,18 @@ The webhook receives a JSON payload:
 
 ### Persisting Channel Configuration (Important for AI CLI Hooks)
 
-AI CLI hooks (Claude Code, Codex, Gemini, Copilot, Cursor) run as **separate processes** spawned by the AI tool — they do **not** inherit your shell's environment variables. If you only set a webhook via `export` in your terminal, `cli-alert webhook test slack` will work from that shell, but hooks triggered by AI CLIs will not have the variable.
+AI CLI hooks (Claude Code, Codex, Gemini, Copilot, Cursor) run as **separate processes** spawned by the AI tool — they do **not** inherit your shell's environment variables. If you only set a webhook via `export` in your terminal, `shelldone webhook test slack` will work from that shell, but hooks triggered by AI CLIs will not have the variable.
 
 There are two ways to ensure hooks can access your channel configuration:
 
 **Option 1: Config file (recommended)**
 
-Add your webhook URLs to `~/.config/cli-alert/config`. Hooks read this file on every invocation, regardless of environment:
+Add your webhook URLs to `~/.config/shelldone/config`. Hooks read this file on every invocation, regardless of environment:
 
 ```bash
-cli-alert config edit
+shelldone config edit
 # Uncomment and fill in the relevant lines:
-# export CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
+# export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
 ```
 
 **Option 2: Shell profile**
@@ -408,8 +408,8 @@ cli-alert config edit
 Add the `export` to your `.zshrc` or `.bashrc` **before** starting the AI CLI. The AI tool inherits the variable at launch and passes it to hooks:
 
 ```bash
-# In .zshrc or .bashrc (BEFORE eval "$(cli-alert init zsh)")
-export CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
+# In .zshrc or .bashrc (BEFORE eval "$(shelldone init zsh)")
+export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
 ```
 
 > **Why `export` alone doesn't work:** `export` sets a variable in the current shell and its future children. It cannot update already-running processes. If you export a webhook URL after starting Claude Code, Claude Code's process (and its hooks) won't see it. You'd need to restart the AI CLI for it to pick up the new variable.
@@ -418,33 +418,33 @@ export CLI_ALERT_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
 
 | Variable | Default | Description |
 |---|---|---|
-| `CLI_ALERT_RATE_LIMIT` | `10` | Min seconds between notifications per channel |
-| `CLI_ALERT_WEBHOOK_TIMEOUT` | `5` | HTTP timeout in seconds |
-| `CLI_ALERT_EXTERNAL_DEBUG` | `false` | Log external notification attempts to stderr |
+| `SHELLDONE_RATE_LIMIT` | `10` | Min seconds between notifications per channel |
+| `SHELLDONE_WEBHOOK_TIMEOUT` | `5` | HTTP timeout in seconds |
+| `SHELLDONE_EXTERNAL_DEBUG` | `false` | Log external notification attempts to stderr |
 
 ### Testing & Verifying Channels
 
 ```bash
-cli-alert webhook status              # show transport, channels, rate limit
-cli-alert webhook test slack           # send a test message to Slack
-cli-alert webhook test discord         # test Discord
-cli-alert webhook test telegram        # test Telegram
-cli-alert webhook test email           # test Email
-cli-alert webhook test whatsapp        # test WhatsApp
-cli-alert webhook test webhook         # test generic webhook
+shelldone webhook status              # show transport, channels, rate limit
+shelldone webhook test slack           # send a test message to Slack
+shelldone webhook test discord         # test Discord
+shelldone webhook test telegram        # test Telegram
+shelldone webhook test email           # test Email
+shelldone webhook test whatsapp        # test WhatsApp
+shelldone webhook test webhook         # test generic webhook
 ```
 
 The test command validates all required variables upfront, shows success/failure with the HTTP status code, and is not subject to rate limiting:
 
 ```
-$ cli-alert webhook test slack
+$ shelldone webhook test slack
 Sending test to slack...
-[cli-alert] Test sent successfully! (HTTP 200)
+[shelldone] Test sent successfully! (HTTP 200)
 
-$ cli-alert webhook test slack   # with a bad URL
+$ shelldone webhook test slack   # with a bad URL
 Sending test to slack...
-[cli-alert] Test FAILED. (HTTP 403)
-[cli-alert] Run with CLI_ALERT_EXTERNAL_DEBUG=true for details.
+[shelldone] Test FAILED. (HTTP 403)
+[shelldone] Run with SHELLDONE_EXTERNAL_DEBUG=true for details.
 ```
 
 > **Note:** Slack, Discord, Telegram, and WhatsApp require `curl` or `wget` (HTTPS). The generic webhook can use `/dev/tcp` for plain HTTP endpoints if neither is available.
@@ -453,31 +453,31 @@ Sending test to slack...
 
 | Command | Description |
 |---|---|
-| `cli-alert init [bash\|zsh]` | Output shell init code (use with `eval`) |
-| `cli-alert setup [all\|ai-hooks\|<ai>-hook]` | Auto-configure rc files and/or AI CLI hooks |
-| `cli-alert uninstall` | Remove all shell integration and AI CLI hooks |
-| `cli-alert status` | Show diagnostic info — platform, tools, config, integration |
-| `cli-alert test-notify` | Send a test notification (desktop + all configured external channels) |
-| `cli-alert sounds` | List available system sounds for your platform |
-| `cli-alert exclude [list\|add\|remove]` | Manage auto-notify exclusion list |
-| `cli-alert webhook [status\|test <channel>]` | Manage and test external notification channels |
-| `cli-alert mute [duration]` | Mute all notifications (e.g., `30m`, `2h`, `1h30m`) |
-| `cli-alert unmute` | Resume notifications |
-| `cli-alert toggle [layer [on\|off]]` | Toggle notification layers (sound, desktop, voice, channels) |
-| `cli-alert schedule [HH:MM-HH:MM\|off]` | Set or clear daily quiet hours |
-| `cli-alert test` | Run the full verification test suite (337 tests) |
-| `cli-alert version [--verbose]` | Show version (add `--verbose` for platform details) |
-| `cli-alert help` | Show usage help |
+| `shelldone init [bash\|zsh]` | Output shell init code (use with `eval`) |
+| `shelldone setup [all\|ai-hooks\|<ai>-hook]` | Auto-configure rc files and/or AI CLI hooks |
+| `shelldone uninstall` | Remove all shell integration and AI CLI hooks |
+| `shelldone status` | Show diagnostic info — platform, tools, config, integration |
+| `shelldone test-notify` | Send a test notification (desktop + all configured external channels) |
+| `shelldone sounds` | List available system sounds for your platform |
+| `shelldone exclude [list\|add\|remove]` | Manage auto-notify exclusion list |
+| `shelldone webhook [status\|test <channel>]` | Manage and test external notification channels |
+| `shelldone mute [duration]` | Mute all notifications (e.g., `30m`, `2h`, `1h30m`) |
+| `shelldone unmute` | Resume notifications |
+| `shelldone toggle [layer [on\|off]]` | Toggle notification layers (sound, desktop, voice, channels) |
+| `shelldone schedule [HH:MM-HH:MM\|off]` | Set or clear daily quiet hours |
+| `shelldone test` | Run the full verification test suite (337 tests) |
+| `shelldone version [--verbose]` | Show version (add `--verbose` for platform details) |
+| `shelldone help` | Show usage help |
 
 ## Architecture
 
 ### Project Structure
 
 ```
-cli-alert/
-├── bin/cli-alert              # Main CLI executable (dispatch + commands)
+shelldone/
+├── bin/shelldone              # Main CLI executable (dispatch + commands)
 ├── lib/
-│   ├── cli-alert.sh           # Core notification engine + alert() wrapper
+│   ├── shelldone.sh           # Core notification engine + alert() wrapper
 │   ├── auto-notify.zsh        # Zsh preexec/precmd auto-notify hooks
 │   ├── auto-notify.bash       # Bash DEBUG trap auto-notify hooks
 │   ├── external-notify.sh     # External channels (Slack, Discord, etc.)
@@ -490,9 +490,9 @@ cli-alert/
 │   ├── copilot-done.sh        # Copilot CLI sessionEnd hook
 │   └── cursor-done.sh         # Cursor stop hook
 ├── completions/
-│   ├── cli-alert.bash         # Bash completion
-│   └── cli-alert.zsh          # Zsh completion
-├── Formula/cli-alert.rb       # Homebrew formula
+│   ├── shelldone.bash         # Bash completion
+│   └── shelldone.zsh          # Zsh completion
+├── Formula/shelldone.rb       # Homebrew formula
 ├── debian/                    # Debian packaging
 ├── packaging/
 │   ├── chocolatey.nuspec      # Chocolatey manifest
@@ -506,10 +506,10 @@ cli-alert/
 
 ### Design Principles
 
-- **Multi-path resolution** — Works both from source (`./lib/`) and installed (`/usr/lib/cli-alert/`, `/usr/local/lib/cli-alert/`)
+- **Multi-path resolution** — Works both from source (`./lib/`) and installed (`/usr/lib/shelldone/`, `/usr/local/lib/shelldone/`)
 - **Lazy loading** — External notification module loaded at init if a channel env var is set, or on-demand at notification time if configured later
 - **Double-source guards** — All lib files check guard variables to prevent re-initialization
-- **Marker-based uninstall** — RC file cleanup uses `# >>> cli-alert >>>` / `# <<< cli-alert <<<` markers
+- **Marker-based uninstall** — RC file cleanup uses `# >>> shelldone >>>` / `# <<< shelldone <<<` markers
 - **Timeout safety** — Background sound/TTS processes have watchdog timers to prevent hangs
 - **Pure-bash JSON** — JSON escaping without `jq` dependency
 - **Rate limiting** — Per-channel rate limits via shared stamp files in `/tmp/`
@@ -520,7 +520,7 @@ cli-alert/
 ```
 Command completes
   └─> alert() / auto-notify hook
-        └─> _cli_alert_notify()
+        └─> _shelldone_notify()
               ├─> Mute / quiet hours check (suppress if active, still logs)
               ├─> External notifications (background, non-blocking)
               │     └─> Slack, Discord, Telegram, Email, WhatsApp, Webhook
@@ -564,7 +564,7 @@ Command completes
 ### Quick Diagnosis
 
 ```bash
-cli-alert status
+shelldone status
 ```
 
 This shows your platform, available notification tools, current config, shell integration status, Claude Code hook status, and external channel configuration.
@@ -574,7 +574,7 @@ This shows your platform, available notification tools, current config, shell in
 **Desktop notifications:**
 
 ```bash
-export CLI_ALERT_DEBUG=true
+export SHELLDONE_DEBUG=true
 alert echo hello
 ```
 
@@ -583,7 +583,7 @@ Prints detailed debug output to stderr showing platform detection, notification 
 **External notifications:**
 
 ```bash
-export CLI_ALERT_EXTERNAL_DEBUG=true
+export SHELLDONE_EXTERNAL_DEBUG=true
 alert echo hello
 ```
 
@@ -592,59 +592,59 @@ Prints HTTP transport selection, POST targets (URLs redacted), and per-channel s
 ### Common Issues
 
 **No notification appears:**
-- Run `cli-alert status` to check notification tools are available
-- Run `cli-alert test-notify` to send a test notification
+- Run `shelldone status` to check notification tools are available
+- Run `shelldone test-notify` to send a test notification
 - On macOS: check System Settings > Notifications for terminal app permissions
 - On Linux: install `libnotify-bin` (`apt install libnotify-bin`)
 
 **No sound plays:**
-- Run `cli-alert sounds` to see available sounds
+- Run `shelldone sounds` to see available sounds
 - Check that the sound file exists: `ls /System/Library/Sounds/` (macOS)
-- Try a custom path: `export CLI_ALERT_SOUND_SUCCESS=/path/to/sound.aiff`
+- Try a custom path: `export SHELLDONE_SOUND_SUCCESS=/path/to/sound.aiff`
 
 **Auto-notify not working:**
-- Ensure `CLI_ALERT_AUTO=true` (default)
-- Check threshold: `CLI_ALERT_THRESHOLD=10` means commands must run 10+ seconds
-- Check exclusions: `cli-alert exclude list`
-- Ensure shell integration is loaded: `cli-alert status` shows rc file status
+- Ensure `SHELLDONE_AUTO=true` (default)
+- Check threshold: `SHELLDONE_THRESHOLD=10` means commands must run 10+ seconds
+- Check exclusions: `shelldone exclude list`
+- Ensure shell integration is loaded: `shelldone status` shows rc file status
 
 **External notifications not arriving:**
-- Run `cli-alert webhook status` to verify channel config
-- Test a specific channel: `cli-alert webhook test slack`
-- Enable debug output: `export CLI_ALERT_EXTERNAL_DEBUG=true`
+- Run `shelldone webhook status` to verify channel config
+- Test a specific channel: `shelldone webhook test slack`
+- Enable debug output: `export SHELLDONE_EXTERNAL_DEBUG=true`
 - Ensure `curl` or `wget` is installed (required for HTTPS channels)
 - Check for HTTP errors: test output shows the HTTP status code on failure
 - Verify rate limiting isn't blocking: default is 10 seconds between notifications per channel
 
 **External notifications work from shell but not from AI CLI hooks:**
 - AI hooks run as separate processes that don't inherit your shell's `export` variables
-- Persist your webhook URL in the config file: `cli-alert config edit` (uncomment the relevant line)
+- Persist your webhook URL in the config file: `shelldone config edit` (uncomment the relevant line)
 - Or add the `export` to `.zshrc`/`.bashrc` and **restart the AI CLI** so it inherits the variable
 - See [Persisting Channel Configuration](#persisting-channel-configuration-important-for-ai-cli-hooks) for details
 
 **AI CLI hooks not firing:**
-- Run `cli-alert status` to check hook installation for all AI CLIs
-- Re-install a specific hook: `cli-alert setup claude-hook` (or `codex-hook`, `gemini-hook`, etc.)
-- Re-install all: `cli-alert setup ai-hooks`
+- Run `shelldone status` to check hook installation for all AI CLIs
+- Re-install a specific hook: `shelldone setup claude-hook` (or `codex-hook`, `gemini-hook`, etc.)
+- Re-install all: `shelldone setup ai-hooks`
 - Verify the AI CLI's settings file contains the hook entry
 - Requires `python3` for installation (hooks use it for JSON parsing)
-- Check per-AI toggle: `cli-alert toggle` shows if a hook is toggled off
+- Check per-AI toggle: `shelldone toggle` shows if a hook is toggled off
 
 **Focus detection suppressing notifications:**
-- Disable: `export CLI_ALERT_FOCUS_DETECT=false`
-- Or add your terminal to the detection list: `export CLI_ALERT_TERMINALS="Terminal iTerm2 Alacritty MyTerminal"`
+- Disable: `export SHELLDONE_FOCUS_DETECT=false`
+- Or add your terminal to the detection list: `export SHELLDONE_TERMINALS="Terminal iTerm2 Alacritty MyTerminal"`
 - Note: focus detection only works on macOS (AppleScript) and Linux (xdotool)
 
 ## Testing
 
-cli-alert includes a comprehensive test suite with 337 tests covering unit, integration, and end-to-end scenarios.
+shelldone includes a comprehensive test suite with 337 tests covering unit, integration, and end-to-end scenarios.
 
 ```bash
 # Run from project root
 bash test.sh
 
 # Or via the CLI
-cli-alert test
+shelldone test
 ```
 
 ### Test Categories
@@ -701,7 +701,7 @@ The project runs CI via GitHub Actions (`.github/workflows/ci.yml`):
 
 ```bash
 # Via the CLI (recommended)
-cli-alert uninstall
+shelldone uninstall
 
 # Or run the uninstall script
 ./uninstall.sh
@@ -714,7 +714,7 @@ This removes shell integration from `.zshrc` and `.bashrc`, and removes all AI C
 
 ## Alternatives
 
-| Feature | cli-alert | undistract-me | noti | done (fish) |
+| Feature | shelldone | undistract-me | noti | done (fish) |
 |---|---|---|---|---|
 | Auto-notify | Yes | Yes | Partial | Yes |
 | macOS + Linux + WSL + Windows | Yes | No | Yes | No |
@@ -730,17 +730,17 @@ This removes shell integration from `.zshrc` and `.bashrc`, and removes all AI C
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes
 4. Run the test suite: `bash test.sh` (all 337 tests must pass)
-5. Run ShellCheck: `shellcheck bin/cli-alert lib/*.sh hooks/*.sh`
+5. Run ShellCheck: `shellcheck bin/shelldone lib/*.sh hooks/*.sh`
 6. Commit and push
 7. Open a pull request
 
 ### Adding a New External Channel
 
-1. Add the channel function `_cli_alert_external_<name>()` in `lib/external-notify.sh`
-2. Wrap the HTTP call in `if _cli_alert_http_post ...; then ... else ... fi` pattern
-3. Add validation to `_cli_alert_validate_channel()`
-4. Add dispatch line in `_cli_alert_notify_external()`
-5. Add status display in `cmd_webhook` status block (`bin/cli-alert`)
+1. Add the channel function `_shelldone_external_<name>()` in `lib/external-notify.sh`
+2. Wrap the HTTP call in `if _shelldone_http_post ...; then ... else ... fi` pattern
+3. Add validation to `_shelldone_validate_channel()`
+4. Add dispatch line in `_shelldone_notify_external()`
+5. Add status display in `cmd_webhook` status block (`bin/shelldone`)
 6. Add tests (unit, integration, E2E) in `test.sh`
 7. Document in README
 

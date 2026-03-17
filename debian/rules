@@ -4,4 +4,4 @@
 	dh $@
 
 override_dh_auto_install:
-	$(MAKE) install PREFIX=debian/cli-alert/usr
+	$(MAKE) install PREFIX=debian/shelldone/usr
