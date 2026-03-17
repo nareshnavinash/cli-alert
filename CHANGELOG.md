@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-03-17
+
+### Changed
+
+- **BREAKING**: Rebranded from `cli-alert` to `shelldone`
+- Command name changed: `cli-alert` → `shelldone`
+- All environment variables renamed: `CLI_ALERT_*` → `SHELLDONE_*`
+- Config directory moved: `~/.config/cli-alert/` → `~/.config/shelldone/`
+- State directory moved: `~/.local/state/cli-alert/` → `~/.local/state/shelldone/`
+- History directory moved: `~/.local/share/cli-alert/` → `~/.local/share/shelldone/`
+- Shell function prefix changed: `_cli_alert_*` → `_shelldone_*`
+
+### Added
+
+- Backward compatibility shim: auto-migrates `CLI_ALERT_*` env vars to `SHELLDONE_*` with warnings
+- `shelldone setup` detects and replaces old `# >>> cli-alert >>>` blocks in shell rc files
+- `shelldone uninstall` also cleans up old `# >>> cli-alert >>>` blocks
+- Config directory migration from `~/.config/cli-alert/` to `~/.config/shelldone/`
+
 ## [0.2.0] - 2026-03-16
 
 ### Added
@@ -58,5 +77,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI: ShellCheck, macOS (bash + zsh), Linux, install round-trip
 - Comprehensive test suite (291 tests)
 
+[1.0.0]: https://github.com/nareshnavinash/shelldone/releases/tag/v1.0.0
 [0.2.0]: https://github.com/nareshnavinash/shelldone/releases/tag/v0.2.0
 [0.1.0]: https://github.com/nareshnavinash/shelldone/releases/tag/v0.1.0

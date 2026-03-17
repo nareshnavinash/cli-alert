@@ -36,7 +36,7 @@ _shelldone_resolve_version() {
       return
     fi
   done
-  echo "0.3.0"
+  echo "1.0.0"
 }
 
 SHELLDONE_VERSION="$(_shelldone_resolve_version)"

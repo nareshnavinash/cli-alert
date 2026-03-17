@@ -6,7 +6,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 
 [![CI](https://github.com/nareshnavinash/shelldone/actions/workflows/ci.yml/badge.svg)](https://github.com/nareshnavinash/shelldone/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](VERSION)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL%20%7C%20Windows-lightgrey.svg)](#platform-support)
 [![Shell](https://img.shields.io/badge/shell-bash%20%7C%20zsh-89e051.svg)](#installation)
 [![Tests](https://img.shields.io/badge/tests-337%20passing-brightgreen.svg)](#testing)
@@ -501,7 +501,7 @@ shelldone/
 ├── uninstall.sh               # Uninstaller
 ├── test.sh                    # Test suite (337 tests)
 ├── Makefile                   # make install/uninstall/test
-└── VERSION                    # 0.2.0
+└── VERSION                    # 1.0.0
 ```
 
 ### Design Principles
