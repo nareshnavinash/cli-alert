@@ -11,8 +11,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 [![Shell](https://img.shields.io/badge/shell-bash%20%7C%20zsh-89e051.svg)](#installation)
 [![Tests](https://img.shields.io/badge/tests-337%20passing-brightgreen.svg)](#testing)
 
-<!-- TODO: Record with asciinema and embed here -->
-<!-- ![shelldone demo](assets/demo.gif) -->
+![shelldone demo](assets/demo.gif)
 
 ## Table of Contents
 
