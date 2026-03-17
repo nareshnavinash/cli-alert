@@ -1738,7 +1738,7 @@ run_test "CLI webhook test: unknown channel shows error" test_cli_webhook_test_u
 
 test_cli_webhook_test_slack_missing_var() {
   local out
-  out=$(unset SHELLDONE_SLACK_WEBHOOK; SHELLDONE_CONFIG=/dev/null "${SCRIPT_DIR}/bin/shelldone" webhook test slack 2>&1) || true
+  out=$(unset SHELLDONE_SLACK_WEBHOOK CLI_ALERT_SLACK_WEBHOOK; SHELLDONE_CONFIG=/dev/null "${SCRIPT_DIR}/bin/shelldone" webhook test slack 2>&1) || true
   [[ "$out" == *"SHELLDONE_SLACK_WEBHOOK not set"* ]]
 }
 run_test "CLI webhook test: slack missing var shows specific error" test_cli_webhook_test_slack_missing_var
