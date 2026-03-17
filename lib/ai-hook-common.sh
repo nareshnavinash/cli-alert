@@ -48,6 +48,24 @@ except:
 " "$input" "$field" 2>/dev/null || true
 }
 
+# ── Exit code mapping for stop reasons ────────────────────────────────────
+
+_shelldone_hook_exit_code_for_reason() {
+  local reason="$1"
+  case "$reason" in
+    error|max_turns_reached|context_window_full|timeout)
+      printf '1'
+      ;;
+    end_turn|stop_sequence|max_tokens|user_interrupt|"")
+      printf '0'
+      ;;
+    *)
+      # Unknown reason — default to success (safe fallback)
+      printf '0'
+      ;;
+  esac
+}
+
 # ── Toggle-aware notification ─────────────────────────────────────────────
 
 _shelldone_hook_notify() {

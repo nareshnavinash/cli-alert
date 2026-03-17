@@ -82,6 +82,26 @@ img {
   border: 0;
 }
 
+/* Skip-nav link — visible only on focus */
+.skip-nav {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 200;
+  padding: 8px 16px;
+  background: var(--green);
+  color: var(--bg);
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: var(--radius);
+  transition: top 0.2s ease;
+}
+
+.skip-nav:focus {
+  top: 8px;
+  color: var(--bg);
+}
+
 /* --- Fade-in on scroll --- */
 .fade-in {
   opacity: 0;

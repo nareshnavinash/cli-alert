@@ -56,9 +56,15 @@ if [[ -n "$stop_reason" ]]; then
   export _SHELLDONE_META_STOP_REASON="$stop_reason"
 fi
 
+# Determine exit code from stop reason
+hook_exit=0
+if declare -f _shelldone_hook_exit_code_for_reason &>/dev/null; then
+  hook_exit=$(_shelldone_hook_exit_code_for_reason "$stop_reason")
+fi
+
 # Send notification (toggle-aware if available)
 if declare -f _shelldone_hook_notify &>/dev/null; then
-  _shelldone_hook_notify "Claude Code" "$message" 0
+  _shelldone_hook_notify "Claude Code" "$message" "$hook_exit"
 else
-  _shelldone_notify "Claude Code" "$message" 0
+  _shelldone_notify "Claude Code" "$message" "$hook_exit"
 fi

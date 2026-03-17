@@ -21,6 +21,7 @@ SHELLDONE_EXCLUDE="${SHELLDONE_EXCLUDE:-vim nvim vi nano less more man top htop 
 # ── State variables ──────────────────────────────────────────────────────────
 
 typeset -g _shelldone_cmd_name=""
+typeset -g _shelldone_cmd_full=""
 typeset -g _shelldone_cmd_start=0
 
 # ── Load epoch time ──────────────────────────────────────────────────────────
@@ -36,6 +37,11 @@ _shelldone_preexec() {
   _shelldone_cmd_name="${1%% *}"
   # Remove leading env vars, sudo, etc.
   _shelldone_cmd_name="${_shelldone_cmd_name##*/}"
+  # Store full command (truncated to 50 chars)
+  _shelldone_cmd_full="$1"
+  if [[ ${#_shelldone_cmd_full} -gt 50 ]]; then
+    _shelldone_cmd_full="${_shelldone_cmd_full:0:47}..."
+  fi
 
   _shelldone_cmd_start=$EPOCHSECONDS
 }
@@ -53,7 +59,9 @@ _shelldone_precmd() {
 
   # Reset state
   local cmd_name="$_shelldone_cmd_name"
+  local cmd_full="${_shelldone_cmd_full:-$cmd_name}"
   _shelldone_cmd_name=""
+  _shelldone_cmd_full=""
   _shelldone_cmd_start=0
 
   # Check threshold
@@ -77,14 +85,14 @@ _shelldone_precmd() {
   local status_icon
   status_icon="$(_shelldone_status_icon "$last_exit")"
 
-  # Set metadata for enriched Slack messages
-  export _SHELLDONE_META_CMD="$cmd_name"
+  # Set metadata for enriched channel messages
+  export _SHELLDONE_META_CMD="$cmd_full"
   export _SHELLDONE_META_DURATION="$duration"
   export _SHELLDONE_META_SOURCE="shell"
 
   _shelldone_notify \
     "${cmd_name} Complete" \
-    "${status_icon} ${cmd_name} (${duration}, exit ${last_exit})" \
+    "${status_icon} ${cmd_full} (${duration}, exit ${last_exit})" \
     "$last_exit"
 }
 

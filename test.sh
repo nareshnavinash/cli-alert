@@ -691,7 +691,7 @@ test_discord_payload() {
   unset -f _shelldone_http_post
   _shelldone_detect_http_transport
   # Verify payload contains expected JSON fields and failure color
-  [[ "$captured_payload" == *'"title":"Test Title"'* ]] && [[ "$captured_payload" == *'"color":14431557'* ]]
+  [[ "$captured_payload" == *'Test Title"'* ]] && [[ "$captured_payload" == *'"color":14431557'* ]] && [[ "$captured_payload" == *'"fields":'* ]]
 }
 run_test "Discord payload has correct structure" test_discord_payload
 
@@ -1443,7 +1443,7 @@ test_telegram_payload_structure() {
   _test_restore_http_post
   [[ "$captured_url" == *"api.telegram.org/botfake-token/sendMessage"* ]] &&
   [[ "$captured_payload" == *'"chat_id":"12345"'* ]] &&
-  [[ "$captured_payload" == *'"parse_mode":"Markdown"'* ]]
+  [[ "$captured_payload" == *'"parse_mode":"HTML"'* ]]
 }
 run_test "Telegram payload: correct URL, chat_id, parse_mode" test_telegram_payload_structure
 

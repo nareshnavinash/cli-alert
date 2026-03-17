@@ -9,7 +9,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](VERSION)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL%20%7C%20Windows-lightgrey.svg)](#platform-support)
 [![Shell](https://img.shields.io/badge/shell-bash%20%7C%20zsh-89e051.svg)](#installation)
-[![Tests](https://img.shields.io/badge/tests-337%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-374%20passing-brightgreen.svg)](#testing)
 
 ![shelldone demo](assets/demo.gif)
 
@@ -33,7 +33,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 ## Features
 
 - **Desktop notifications** on macOS, Linux, WSL, and Windows (Git Bash/MSYS2/Cygwin)
-- **Auto-notify** for any command that runs longer than a configurable threshold (default: 30s)
+- **Auto-notify** for any command that runs longer than a configurable threshold (default: 10s)
 - **Sound alerts** with customizable success/failure sounds (system sounds or custom file paths)
 - **Text-to-speech** announcements (optional)
 - **External notifications** via Slack, Discord, Telegram, Email, WhatsApp, or generic webhooks
@@ -62,7 +62,7 @@ shelldone test-notify
 alert make build
 ```
 
-After installation, commands running longer than 30 seconds automatically trigger notifications — no wrapper needed.
+After installation, commands running longer than 10 seconds automatically trigger notifications — no wrapper needed.
 
 ## Installation
 
@@ -146,7 +146,7 @@ echo $?   # prints 1
 
 ### Automatic Notifications
 
-After shell integration, any command running longer than the threshold (default: 30 seconds) triggers a notification automatically. No `alert` wrapper needed.
+After shell integration, any command running longer than the threshold (default: 10 seconds) triggers a notification automatically. No `alert` wrapper needed.
 
 ```bash
 # Just run your command normally
@@ -464,7 +464,7 @@ Sending test to slack...
 | `shelldone unmute` | Resume notifications |
 | `shelldone toggle [layer [on\|off]]` | Toggle notification layers (sound, desktop, voice, channels) |
 | `shelldone schedule [HH:MM-HH:MM\|off]` | Set or clear daily quiet hours |
-| `shelldone test` | Run the full verification test suite (337 tests) |
+| `shelldone test` | Run the full verification test suite (374 tests) |
 | `shelldone version [--verbose]` | Show version (add `--verbose` for platform details) |
 | `shelldone help` | Show usage help |
 
@@ -498,7 +498,7 @@ shelldone/
 │   └── scoop.json             # Scoop manifest
 ├── install.sh                 # Interactive installer
 ├── uninstall.sh               # Uninstaller
-├── test.sh                    # Test suite (337 tests)
+├── test.sh                    # Test suite (374 tests)
 ├── Makefile                   # make install/uninstall/test
 └── VERSION                    # 1.0.0
 ```
@@ -636,7 +636,7 @@ Prints HTTP transport selection, POST targets (URLs redacted), and per-channel s
 
 ## Testing
 
-shelldone includes a comprehensive test suite with 337 tests covering unit, integration, and end-to-end scenarios.
+shelldone includes a comprehensive test suite with 374 tests covering unit, integration, and end-to-end scenarios.
 
 ```bash
 # Run from project root
@@ -728,7 +728,7 @@ This removes shell integration from `.zshrc` and `.bashrc`, and removes all AI C
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes
-4. Run the test suite: `bash test.sh` (all 337 tests must pass)
+4. Run the test suite: `bash test.sh` (all 374 tests must pass)
 5. Run ShellCheck: `shellcheck bin/shelldone lib/*.sh hooks/*.sh`
 6. Commit and push
 7. Open a pull request

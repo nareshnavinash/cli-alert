@@ -7,8 +7,9 @@ class Shelldone < Formula
   homepage "https://github.com/nareshnavinash/shelldone"
   # Stable release URL and sha256 are populated by the release workflow.
   # Until a release tarball exists, use `brew install --HEAD` to install from git.
-  url "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 ""
+  # To update after release: brew fetch --force shelldone && brew reinstall shelldone
+  url "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v1.1.0.tar.gz"
+  sha256 "PLACEHOLDER_POPULATED_BY_RELEASE_WORKFLOW"
   license "MIT"
   head "https://github.com/nareshnavinash/shelldone.git", branch: "main"
 

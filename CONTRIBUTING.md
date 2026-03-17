@@ -7,7 +7,7 @@ Thank you for your interest in contributing! This document explains how to get s
 ```bash
 git clone https://github.com/nareshnavinash/shelldone.git
 cd shelldone
-bash test.sh   # run the full test suite (291 tests)
+bash test.sh   # run the full test suite (374 tests)
 ```
 
 No build step is required — shelldone is pure shell script.
@@ -16,7 +16,8 @@ No build step is required — shelldone is pure shell script.
 
 - All shell scripts must pass **ShellCheck** with zero warnings:
   ```bash
-  shellcheck bin/shelldone lib/*.sh hooks/*.sh install.sh uninstall.sh test.sh
+  shellcheck bin/shelldone lib/*.sh hooks/*.sh install.sh uninstall.sh test.sh completions/shelldone.bash
+  shellcheck -s bash completions/shelldone.zsh
   ```
 - Target **bash 4.0+** compatibility. Avoid bashisms that require 5.x.
 - Use `local` for all function variables.
@@ -39,7 +40,7 @@ No build step is required — shelldone is pure shell script.
 bash test.sh
 ```
 
-All 291 tests must pass before submitting a PR. Tests cover unit, integration, and end-to-end scenarios including mock HTTP servers.
+All 374 tests must pass before submitting a PR. Tests cover unit, integration, and end-to-end scenarios including mock HTTP servers.
 
 ## Pull Request Guidelines
 

@@ -40,13 +40,13 @@ jobs:
           cp debian/control "${PKG_DIR}/DEBIAN/control"
           cp bin/shelldone "${PKG_DIR}/usr/bin/"
           cp lib/*.sh lib/*.bash lib/*.zsh "${PKG_DIR}/usr/lib/shelldone/"
-          cp hooks/*-done.sh "${PKG_DIR}/usr/share/shelldone/hooks/"
+          cp hooks/*.sh "${PKG_DIR}/usr/share/shelldone/hooks/"
           cp VERSION "${PKG_DIR}/usr/share/shelldone/"
           cp completions/shelldone.bash "${PKG_DIR}/usr/share/bash-completion/completions/shelldone"
           cp completions/shelldone.zsh "${PKG_DIR}/usr/share/zsh/site-functions/_shelldone"
 
           chmod 755 "${PKG_DIR}/usr/bin/shelldone"
-          chmod 755 "${PKG_DIR}/usr/share/shelldone/hooks/claude-done.sh"
+          chmod 755 "${PKG_DIR}/usr/share/shelldone/hooks/"*.sh
 
           dpkg-deb --build "${PKG_DIR}"
 

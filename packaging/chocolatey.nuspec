@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>shelldone</id>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <title>shelldone</title>
     <authors>Naresh Sekar</authors>
     <projectUrl>https://github.com/nareshnavinash/shelldone</projectUrl>
@@ -11,4 +11,14 @@
     <description>Terminal process completion notifier. Sends OS-native desktop notifications and sounds when long-running terminal commands complete. Cross-platform: macOS, Linux, WSL, Windows (Git Bash).</description>
     <tags>cli notification terminal bash zsh productivity alert sound desktop-notification slack discord telegram webhook cross-platform wsl automation devtools</tags>
   </metadata>
+  <files>
+    <file src="bin\shelldone" target="tools\bin\shelldone" />
+    <file src="lib\*.sh" target="tools\lib" />
+    <file src="lib\*.bash" target="tools\lib" />
+    <file src="lib\*.zsh" target="tools\lib" />
+    <file src="hooks\*.sh" target="tools\hooks" />
+    <file src="completions\shelldone.bash" target="tools\completions\shelldone.bash" />
+    <file src="completions\shelldone.zsh" target="tools\completions\shelldone.zsh" />
+    <file src="VERSION" target="tools\VERSION" />
+  </files>
 </package>

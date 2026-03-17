@@ -157,7 +157,9 @@ _shelldone_status_icon() {
 
 _shelldone_format_duration() {
   local seconds="$1"
-  if (( seconds < 60 )); then
+  if (( seconds == 0 )); then
+    printf '<1s'
+  elif (( seconds < 60 )); then
     printf '%ds' "$seconds"
   elif (( seconds < 3600 )); then
     printf '%dm %ds' $((seconds / 60)) $((seconds % 60))
@@ -538,9 +540,14 @@ alert() {
   fi
 
   local cmd_display="$*"
-  # Truncate display name for notification
+  # Truncate display name for notification (word-boundary aware)
   if [[ ${#cmd_display} -gt 50 ]]; then
-    cmd_display="${cmd_display:0:47}..."
+    local truncated="${cmd_display:0:47}"
+    # Try to break at a word boundary (last space before position 47)
+    if [[ "$truncated" == *" "* ]]; then
+      truncated="${truncated% *}"
+    fi
+    cmd_display="${truncated}..."
   fi
 
   local start_seconds=$SECONDS
@@ -640,16 +647,29 @@ alert-bg() {
   local duration
   duration=$(_shelldone_format_duration "$elapsed")
 
+  # Set metadata for enriched channel messages
+  export _SHELLDONE_META_CMD="$job_name"
+  export _SHELLDONE_META_DURATION="$duration"
+  export _SHELLDONE_META_SOURCE="shell"
+
+  local bg_title="Background: ${job_name} Complete"
+
   if [[ "$exit_code" == "unknown" ]]; then
+    local has_utf8=0
+    case "${LC_ALL:-}${LC_CTYPE:-}${LANG:-}" in
+      *[Uu][Tt][Ff]-8*|*[Uu][Tt][Ff]8*) has_utf8=1 ;;
+    esac
+    local unknown_icon
+    if [[ "$has_utf8" -eq 1 ]]; then unknown_icon="⚠"; else unknown_icon="[??]"; fi
     _shelldone_notify \
-      "Background Job Complete" \
-      "? ${job_name} (${duration}, exit unknown)" \
-      0
+      "$bg_title" \
+      "${unknown_icon} ${job_name} (${duration}, exit unknown)" \
+      2
   else
     local status_icon
     status_icon="$(_shelldone_status_icon "$exit_code")"
     _shelldone_notify \
-      "Background Job Complete" \
+      "$bg_title" \
       "${status_icon} ${job_name} (${duration}, exit ${exit_code})" \
       "$exit_code"
   fi

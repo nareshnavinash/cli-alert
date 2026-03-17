@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-03-17
+
+### Added
+
+- Enriched Discord embeds with structured fields (Command, Duration, Exit Code, Project), footer, and ISO 8601 timestamp
+- Status emoji prefix (`✅`/`❌`) in Discord embed titles for color-blind accessibility
+- Enriched Telegram messages with HTML formatting, structured fields, and context footer
+- Enriched email body with key=value metadata (Command, Duration, Exit Code, Project, Host, Directory, Branch, Time)
+- WhatsApp context line with project, hostname, and git branch
+- Generic webhook payload now includes `hostname`, `command`, `duration`, `project`, `directory`, `git_branch`, `source`, `timestamp`, `success` fields
+- AI hook exit code mapping: error stop reasons (`error`, `max_turns_reached`, `context_window_full`, `timeout`) now produce exit code 1 instead of always 0
+- `alert-bg` now sets `_SHELLDONE_META_*` variables for enriched channel messages
+
+### Changed
+
+- Auto-notify captures full command with arguments (truncated to 50 chars) instead of just the basename — notification body now shows `✓ make deploy-production (2m 5s, exit 0)` instead of `✓ make (2m 5s, exit 0)`
+- `alert-bg` title now includes job name: `Background: PID 1234 Complete` instead of `Background Job Complete`
+- `alert-bg` unknown exit code path now passes exit code 2 with `⚠` icon instead of false-green exit code 0
+- Duration formatting shows `<1s` instead of `0s` for sub-second commands
+- Word-boundary-aware command truncation in `alert` (breaks at last space before limit)
+- Timestamp format changed to locale-independent 24-hour format (`%Y-%m-%d %H:%M`)
+- Telegram parse mode changed from Markdown to HTML for better formatting support
+- Copilot hook message standardized from "Session complete" to "Task complete"
+
+### Fixed
+
+- AI hook error stop reasons no longer show false-green success indicators
+- `alert-bg` no longer reports success for unknown exit codes
+
 ## [1.0.0] - 2026-03-17
 
 ### Changed
@@ -75,8 +104,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scoop manifest (`packaging/scoop.json`)
 - Chocolatey manifest (`packaging/chocolatey.nuspec`)
 - GitHub Actions CI: ShellCheck, macOS (bash + zsh), Linux, install round-trip
-- Comprehensive test suite (291 tests)
+- Comprehensive test suite (374 tests)
 
-[1.0.0]: https://github.com/nareshnavinash/shelldone/releases/tag/v1.0.0
-[0.2.0]: https://github.com/nareshnavinash/shelldone/releases/tag/v0.2.0
+[1.1.0]: https://github.com/nareshnavinash/shelldone/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/nareshnavinash/shelldone/compare/v0.2.0...v1.0.0
+[0.2.0]: https://github.com/nareshnavinash/shelldone/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/nareshnavinash/shelldone/releases/tag/v0.1.0

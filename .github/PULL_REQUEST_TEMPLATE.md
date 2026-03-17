@@ -8,7 +8,7 @@
 
 ## Checklist
 
-- [ ] All tests pass (`bash test.sh` — 291 tests)
+- [ ] All tests pass (`bash test.sh` — 374 tests)
 - [ ] ShellCheck reports no warnings
 - [ ] README updated (if adding user-facing functionality)
 - [ ] CHANGELOG updated (if applicable)

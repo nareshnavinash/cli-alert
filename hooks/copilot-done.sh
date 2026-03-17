@@ -20,10 +20,16 @@ if [[ -n "$input" ]]; then
 fi
 
 # Build notification message
-message="Session complete"
+message="Task complete"
 if [[ -n "$reason" ]]; then
-  message="Session complete (${reason})"
+  message="Task complete (${reason})"
   export _SHELLDONE_META_STOP_REASON="$reason"
 fi
 
-_shelldone_hook_notify "Copilot CLI" "$message" 0
+# Determine exit code from stop reason
+hook_exit=0
+if declare -f _shelldone_hook_exit_code_for_reason &>/dev/null; then
+  hook_exit=$(_shelldone_hook_exit_code_for_reason "$reason")
+fi
+
+_shelldone_hook_notify "Copilot CLI" "$message" "$hook_exit"

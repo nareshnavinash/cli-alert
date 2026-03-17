@@ -22,6 +22,7 @@ SHELLDONE_EXCLUDE="${SHELLDONE_EXCLUDE:-vim nvim vi nano less more man top htop 
 # ── State variables ──────────────────────────────────────────────────────────
 
 _shelldone_cmd_name=""
+_shelldone_cmd_full=""
 _shelldone_cmd_start=""
 _shelldone_in_prompt_command=0
 
@@ -37,6 +38,10 @@ _shelldone_debug_trap() {
   if [[ -z "$_shelldone_cmd_start" ]]; then
     _shelldone_cmd_name="${BASH_COMMAND%% *}"
     _shelldone_cmd_name="${_shelldone_cmd_name##*/}"
+    _shelldone_cmd_full="$BASH_COMMAND"
+    if [[ ${#_shelldone_cmd_full} -gt 50 ]]; then
+      _shelldone_cmd_full="${_shelldone_cmd_full:0:47}..."
+    fi
     _shelldone_cmd_start=$SECONDS
   fi
 }
@@ -55,9 +60,11 @@ _shelldone_prompt_command() {
     local elapsed=$(( SECONDS - _shelldone_cmd_start ))
 
     local cmd_name="$_shelldone_cmd_name"
+    local cmd_full="${_shelldone_cmd_full:-$cmd_name}"
 
     # Reset state
     _shelldone_cmd_name=""
+    _shelldone_cmd_full=""
     _shelldone_cmd_start=""
 
     if (( elapsed >= SHELLDONE_THRESHOLD )); then
@@ -87,20 +94,21 @@ _shelldone_prompt_command() {
         local status_icon
         status_icon="$(_shelldone_status_icon "$last_exit")"
 
-        # Set metadata for enriched Slack messages
-        export _SHELLDONE_META_CMD="$cmd_name"
+        # Set metadata for enriched channel messages
+        export _SHELLDONE_META_CMD="$cmd_full"
         export _SHELLDONE_META_DURATION="$duration"
         export _SHELLDONE_META_SOURCE="shell"
 
         _shelldone_notify \
           "${cmd_name} Complete" \
-          "${status_icon} ${cmd_name} (${duration}, exit ${last_exit})" \
+          "${status_icon} ${cmd_full} (${duration}, exit ${last_exit})" \
           "$last_exit"
       fi
     fi
   else
     # No command was run (empty prompt), just reset
     _shelldone_cmd_name=""
+    _shelldone_cmd_full=""
     _shelldone_cmd_start=""
   fi
 

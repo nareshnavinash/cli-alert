@@ -26,4 +26,10 @@ if [[ -n "$event_type" ]]; then
   export _SHELLDONE_META_STOP_REASON="$event_type"
 fi
 
-_shelldone_hook_notify "Gemini CLI" "$message" 0
+# Determine exit code from stop reason
+hook_exit=0
+if declare -f _shelldone_hook_exit_code_for_reason &>/dev/null; then
+  hook_exit=$(_shelldone_hook_exit_code_for_reason "$event_type")
+fi
+
+_shelldone_hook_notify "Gemini CLI" "$message" "$hook_exit"

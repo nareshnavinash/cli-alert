@@ -6,7 +6,7 @@ BASH_COMPDIR = $(PREFIX)/share/bash-completion/completions
 ZSH_COMPDIR = $(PREFIX)/share/zsh/site-functions
 VERSION = $(shell cat VERSION)
 
-.PHONY: install uninstall test
+.PHONY: install uninstall test help
 
 install:
 	@echo "Installing shelldone $(VERSION) to $(PREFIX)..."
@@ -48,3 +48,15 @@ uninstall:
 
 test:
 	@bash test.sh
+
+help:
+	@echo "shelldone $(VERSION)"
+	@echo ""
+	@echo "Targets:"
+	@echo "  install     Install shelldone to PREFIX (default: /usr/local)"
+	@echo "  uninstall   Remove shelldone from PREFIX"
+	@echo "  test        Run the test suite"
+	@echo "  help        Show this help message"
+	@echo ""
+	@echo "Options:"
+	@echo "  PREFIX=path  Installation prefix (default: /usr/local)"

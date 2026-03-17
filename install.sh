@@ -83,6 +83,14 @@ case "$PLATFORM" in
     ;;
 esac
 
+# ── Check for HTTP tools (needed for external notification channels) ──────────
+
+if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
+  warn "Neither curl nor wget found."
+  warn "  External notification channels (Slack, Discord, Telegram, etc.) require curl or wget."
+  warn "  Install with: sudo apt install curl  (or: brew install curl)"
+fi
+
 echo ""
 ok "Installation complete!"
 info "Restart your shell or run: exec $(basename "$SHELL")"

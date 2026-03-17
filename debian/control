@@ -9,7 +9,7 @@ Homepage: https://github.com/nareshnavinash/shelldone
 Package: shelldone
 Architecture: all
 Depends: bash (>= 4.0)
-Recommends: libnotify-bin, pulseaudio-utils
+Recommends: libnotify-bin, pulseaudio-utils | alsa-utils
 Suggests: espeak
 Description: Terminal process completion notifier
  Sends OS-native desktop notifications and sounds when long-running

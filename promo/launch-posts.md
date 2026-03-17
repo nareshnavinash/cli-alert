@@ -28,7 +28,7 @@ shelldone is a different approach:
 
 Some things I'm happy with technically: pure-bash JSON escaping (no jq dependency), background sound playback with watchdog timers to prevent hangs, and marker-based RC file management for clean uninstall.
 
-337 tests, CI on macOS and Linux. MIT licensed. Feedback welcome — especially on design, feature gaps, or better patterns for shell hook integration.
+374 tests, CI on macOS and Linux. MIT licensed. Feedback welcome — especially on design, feature gaps, or better patterns for shell hook integration.
 
 ---
 
@@ -103,7 +103,7 @@ The whole thing runs on macOS (osascript + afplay + say), Linux (notify-send + p
 
 External channels (Slack, Discord, Telegram, Email, WhatsApp, webhook) only need `curl` or `wget`.
 
-337 tests run in CI on both macOS and Linux. ShellCheck clean.
+374 tests run in CI on both macOS and Linux. ShellCheck clean.
 
 ```bash
 git clone https://github.com/nareshnavinash/shelldone.git
@@ -192,7 +192,7 @@ Desktop popups, sound alerts, text-to-speech, plus 6 external channels — Slack
 
 Native hooks for Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor. Each AI tool has a different hook mechanism — shelldone adapts to each, reading JSON events from stdin and dispatching notifications through the same channel infrastructure.
 
-337 tests, CI on macOS + Linux, ShellCheck clean.
+374 tests, CI on macOS + Linux, ShellCheck clean.
 
 GitHub: https://github.com/nareshnavinash/shelldone
 
@@ -335,7 +335,7 @@ The technical bits:
 - HTTP fallback: curl -> wget -> /dev/tcp
 - Shell hooks: zsh preexec/precmd, bash DEBUG trap
 - Focus detection: skips if you're looking at the terminal
-- 337 tests, ShellCheck clean
+- 374 tests, ShellCheck clean
 
 **Tweet 6:**
 Install in 30 seconds:
@@ -375,7 +375,7 @@ What makes it different:
 
 For teams, the Slack integration sends structured messages with command, duration, exit code, project, git branch, and hostname. It closes the feedback loop between starting a job and knowing it's done.
 
-MIT licensed, 337 tests, CI on macOS and Linux.
+MIT licensed, 374 tests, CI on macOS and Linux.
 
 https://github.com/nareshnavinash/shelldone
 
@@ -505,7 +505,7 @@ shelldone toggle slack off       # disable Slack, keep everything else
 
 ### Testing
 
-The project has 337 tests covering unit, integration, and end-to-end scenarios. Tests run in CI on both macOS and Linux via GitHub Actions. ShellCheck lints all scripts.
+The project has 374 tests covering unit, integration, and end-to-end scenarios. Tests run in CI on both macOS and Linux via GitHub Actions. ShellCheck lints all scripts.
 
 ### Getting started
 
@@ -601,7 +601,7 @@ cd shelldone
 
 The installer handles everything: platform detection, shell integration, and AI CLI hook setup. Run `shelldone test-notify` to verify it works.
 
-shelldone is open source under the MIT license. It has 337 tests and runs CI on macOS and Linux. Contributions, feedback, and bug reports are welcome.
+shelldone is open source under the MIT license. It has 374 tests and runs CI on macOS and Linux. Contributions, feedback, and bug reports are welcome.
 
 GitHub: [https://github.com/nareshnavinash/shelldone](https://github.com/nareshnavinash/shelldone)
 

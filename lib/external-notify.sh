@@ -389,7 +389,7 @@ _shelldone_slack_blocks_payload() {
     context_parts+="🌿 ${safe_branch}"
   fi
   local timestamp
-  timestamp="$(date '+%b %d, %I:%M %p' 2>/dev/null || true)"
+  timestamp="$(date '+%Y-%m-%d %H:%M' 2>/dev/null || true)"
   if [[ -n "$timestamp" ]]; then
     local safe_ts
     safe_ts="$(_shelldone_json_escape "$timestamp")"
@@ -438,8 +438,12 @@ _shelldone_external_discord() {
 
   _shelldone_rate_limit_check "discord" || return 0
 
+  # Status emoji prefix
+  local emoji
+  if [[ "$exit_code" -eq 0 ]]; then emoji="✅"; else emoji="❌"; fi
+
   local safe_title safe_message
-  safe_title="$(_shelldone_json_escape "$title")"
+  safe_title="$(_shelldone_json_escape "${emoji} ${title}")"
   safe_message="$(_shelldone_json_escape "$message")"
 
   local color
@@ -453,7 +457,84 @@ _shelldone_external_discord() {
   local safe_username
   safe_username="$(_shelldone_json_escape "$username")"
 
-  local payload="{\"username\":\"${safe_username}\",\"embeds\":[{\"title\":\"${safe_title}\",\"description\":\"${safe_message}\",\"color\":${color}}]}"
+  # Collect metadata for fields
+  _shelldone_collect_metadata
+
+  # Build fields array
+  local fields=""
+  if [[ "${_SHELLDONE_META_SOURCE:-}" == "ai-hook" ]]; then
+    local status_text="Task complete"
+    if [[ -n "${_SHELLDONE_META_STOP_REASON:-}" ]]; then
+      local safe_reason
+      safe_reason="$(_shelldone_json_escape "${_SHELLDONE_META_STOP_REASON}")"
+      status_text="Task complete (${safe_reason})"
+    fi
+    fields="{\"name\":\"Status\",\"value\":\"${status_text}\",\"inline\":true}"
+    local ai_source="AI Hook"
+    if [[ -n "${_SHELLDONE_META_AI_NAME:-}" ]]; then
+      ai_source="$(_shelldone_json_escape "${_SHELLDONE_META_AI_NAME}")"
+    fi
+    fields+=",{\"name\":\"Source\",\"value\":\"🤖 ${ai_source}\",\"inline\":true}"
+  else
+    if [[ -n "${_SHELLDONE_META_CMD:-}" ]]; then
+      local safe_cmd
+      safe_cmd="$(_shelldone_json_escape "${_SHELLDONE_META_CMD}")"
+      fields="{\"name\":\"Command\",\"value\":\"${safe_cmd}\",\"inline\":true}"
+    fi
+    if [[ -n "${_SHELLDONE_META_DURATION:-}" ]]; then
+      local safe_dur
+      safe_dur="$(_shelldone_json_escape "${_SHELLDONE_META_DURATION}")"
+      [[ -n "$fields" ]] && fields+=","
+      fields+="{\"name\":\"Duration\",\"value\":\"${safe_dur}\",\"inline\":true}"
+    fi
+    local safe_exit
+    safe_exit="$(_shelldone_json_escape "$exit_code")"
+    [[ -n "$fields" ]] && fields+=","
+    fields+="{\"name\":\"Exit Code\",\"value\":\"${safe_exit}\",\"inline\":true}"
+    if [[ -n "${_SHELLDONE_META_PROJECT:-}" ]]; then
+      local safe_proj
+      safe_proj="$(_shelldone_json_escape "${_SHELLDONE_META_PROJECT}")"
+      [[ -n "$fields" ]] && fields+=","
+      fields+="{\"name\":\"Project\",\"value\":\"${safe_proj}\",\"inline\":true}"
+    fi
+  fi
+
+  # Build footer
+  local footer_parts=""
+  [[ -n "${_SHELLDONE_META_HOSTNAME:-}" ]] && footer_parts="${_SHELLDONE_META_HOSTNAME}"
+  if [[ -n "${_SHELLDONE_META_PWD:-}" ]]; then
+    local display_pwd="${_SHELLDONE_META_PWD}"
+    if [[ -n "${HOME:-}" && "$display_pwd" == "${HOME}"* ]]; then
+      display_pwd="~${display_pwd#"${HOME}"}"
+    fi
+    [[ -n "$footer_parts" ]] && footer_parts+=" | "
+    footer_parts+="$display_pwd"
+  fi
+  if [[ -n "${_SHELLDONE_META_GIT_BRANCH:-}" ]]; then
+    [[ -n "$footer_parts" ]] && footer_parts+=" | "
+    footer_parts+="${_SHELLDONE_META_GIT_BRANCH}"
+  fi
+  local safe_footer
+  safe_footer="$(_shelldone_json_escape "$footer_parts")"
+
+  # ISO 8601 timestamp (Discord renders in user's timezone)
+  local iso_ts
+  iso_ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || true)"
+
+  # Build embed
+  local embed="{\"title\":\"${safe_title}\",\"description\":\"${safe_message}\",\"color\":${color}"
+  if [[ -n "$fields" ]]; then
+    embed+=",\"fields\":[${fields}]"
+  fi
+  if [[ -n "$safe_footer" ]]; then
+    embed+=",\"footer\":{\"text\":\"${safe_footer}\"}"
+  fi
+  if [[ -n "$iso_ts" ]]; then
+    embed+=",\"timestamp\":\"${iso_ts}\""
+  fi
+  embed+="}"
+
+  local payload="{\"username\":\"${safe_username}\",\"embeds\":[${embed}]}"
 
   if _shelldone_http_post "$SHELLDONE_DISCORD_WEBHOOK" "$payload"; then
     _shelldone_rate_limit_update "discord"
@@ -476,16 +557,69 @@ _shelldone_external_telegram() {
 
   _shelldone_rate_limit_check "telegram" || return 0
 
-  local safe_title safe_message safe_chat_id
-  safe_title="$(_shelldone_json_escape "$title")"
-  safe_message="$(_shelldone_json_escape "$message")"
+  local safe_chat_id
   safe_chat_id="$(_shelldone_json_escape "$SHELLDONE_TELEGRAM_CHAT_ID")"
 
   local icon
   if [[ "$exit_code" -eq 0 ]]; then icon="✅"; else icon="❌"; fi
 
-  local text="${icon} *${safe_title}*\n${safe_message}"
-  local payload="{\"chat_id\":\"${safe_chat_id}\",\"text\":\"${text}\",\"parse_mode\":\"Markdown\"}"
+  # Collect metadata for structured lines
+  _shelldone_collect_metadata
+
+  # Build HTML-formatted text
+  local safe_title
+  safe_title="$(_shelldone_json_escape "$title")"
+  local text="${icon} <b>${safe_title}</b>"
+
+  # Add structured fields
+  if [[ "${_SHELLDONE_META_SOURCE:-}" == "ai-hook" ]]; then
+    local status_text="Task complete"
+    if [[ -n "${_SHELLDONE_META_STOP_REASON:-}" ]]; then
+      local safe_reason
+      safe_reason="$(_shelldone_json_escape "${_SHELLDONE_META_STOP_REASON}")"
+      status_text="Task complete (${safe_reason})"
+    fi
+    text+="\\n\\n<b>Status:</b> ${status_text}"
+    local ai_source="AI Hook"
+    if [[ -n "${_SHELLDONE_META_AI_NAME:-}" ]]; then
+      ai_source="$(_shelldone_json_escape "${_SHELLDONE_META_AI_NAME}")"
+    fi
+    text+="\\n<b>Source:</b> 🤖 ${ai_source}"
+  else
+    if [[ -n "${_SHELLDONE_META_CMD:-}" ]]; then
+      local safe_cmd
+      safe_cmd="$(_shelldone_json_escape "${_SHELLDONE_META_CMD}")"
+      text+="\\n\\n<b>Command:</b> ${safe_cmd}"
+    fi
+    if [[ -n "${_SHELLDONE_META_DURATION:-}" ]]; then
+      local safe_dur
+      safe_dur="$(_shelldone_json_escape "${_SHELLDONE_META_DURATION}")"
+      text+="\\n<b>Duration:</b> ${safe_dur}"
+    fi
+    local safe_exit
+    safe_exit="$(_shelldone_json_escape "$exit_code")"
+    text+="\\n<b>Exit Code:</b> ${safe_exit}"
+    if [[ -n "${_SHELLDONE_META_PROJECT:-}" ]]; then
+      local safe_proj
+      safe_proj="$(_shelldone_json_escape "${_SHELLDONE_META_PROJECT}")"
+      text+="\\n<b>Project:</b> ${safe_proj}"
+    fi
+  fi
+
+  # Context footer
+  local ctx_parts=""
+  [[ -n "${_SHELLDONE_META_HOSTNAME:-}" ]] && ctx_parts="${_SHELLDONE_META_HOSTNAME}"
+  if [[ -n "${_SHELLDONE_META_GIT_BRANCH:-}" ]]; then
+    [[ -n "$ctx_parts" ]] && ctx_parts+=" | "
+    ctx_parts+="${_SHELLDONE_META_GIT_BRANCH}"
+  fi
+  if [[ -n "$ctx_parts" ]]; then
+    local safe_ctx
+    safe_ctx="$(_shelldone_json_escape "$ctx_parts")"
+    text+="\\n\\n<i>${safe_ctx}</i>"
+  fi
+
+  local payload="{\"chat_id\":\"${safe_chat_id}\",\"text\":\"${text}\",\"parse_mode\":\"HTML\"}"
 
   local url="https://api.telegram.org/bot${SHELLDONE_TELEGRAM_TOKEN}/sendMessage"
   if _shelldone_http_post "$url" "$payload"; then
@@ -515,10 +649,35 @@ _shelldone_external_email() {
   local icon
   if [[ "$exit_code" -eq 0 ]]; then icon="SUCCESS"; else icon="FAILURE"; fi
 
+  # Collect metadata
+  _shelldone_collect_metadata
+
   local body="${icon}: ${title}
 
-${message}
+${message}"
 
+  # Add structured metadata fields (only include fields that have values)
+  local details=""
+  [[ -n "${_SHELLDONE_META_CMD:-}" ]]        && details+="Command:   ${_SHELLDONE_META_CMD}"$'\n'
+  [[ -n "${_SHELLDONE_META_DURATION:-}" ]]   && details+="Duration:  ${_SHELLDONE_META_DURATION}"$'\n'
+  details+="Exit Code: ${exit_code}"$'\n'
+  [[ -n "${_SHELLDONE_META_PROJECT:-}" ]]    && details+="Project:   ${_SHELLDONE_META_PROJECT}"$'\n'
+  [[ -n "${_SHELLDONE_META_HOSTNAME:-}" ]]   && details+="Host:      ${_SHELLDONE_META_HOSTNAME}"$'\n'
+  if [[ -n "${_SHELLDONE_META_PWD:-}" ]]; then
+    local display_pwd="${_SHELLDONE_META_PWD}"
+    if [[ -n "${HOME:-}" && "$display_pwd" == "${HOME}"* ]]; then
+      display_pwd="~${display_pwd#"${HOME}"}"
+    fi
+    details+="Directory: ${display_pwd}"$'\n'
+  fi
+  [[ -n "${_SHELLDONE_META_GIT_BRANCH:-}" ]] && details+="Branch:    ${_SHELLDONE_META_GIT_BRANCH}"$'\n'
+  local ts
+  ts="$(date '+%Y-%m-%d %H:%M' 2>/dev/null || true)"
+  [[ -n "$ts" ]] && details+="Time:      ${ts}"$'\n'
+
+  body+="
+
+${details}
 --
 Sent by shelldone"
 
@@ -551,7 +710,21 @@ _shelldone_external_whatsapp() {
   local icon
   if [[ "$exit_code" -eq 0 ]]; then icon="✅"; else icon="❌"; fi
 
+  # Collect metadata for context line
+  _shelldone_collect_metadata
+  local ctx_parts=""
+  [[ -n "${_SHELLDONE_META_PROJECT:-}" ]]    && ctx_parts="${_SHELLDONE_META_PROJECT}"
+  if [[ -n "${_SHELLDONE_META_HOSTNAME:-}" ]]; then
+    [[ -n "$ctx_parts" ]] && ctx_parts+=" | "
+    ctx_parts+="${_SHELLDONE_META_HOSTNAME}"
+  fi
+  if [[ -n "${_SHELLDONE_META_GIT_BRANCH:-}" ]]; then
+    [[ -n "$ctx_parts" ]] && ctx_parts+=" | "
+    ctx_parts+="${_SHELLDONE_META_GIT_BRANCH}"
+  fi
+
   local body_text="${icon} ${title}: ${message}"
+  [[ -n "$ctx_parts" ]] && body_text+=$'\n'"${ctx_parts}"
   local safe_body safe_from safe_to
   safe_body="$(_shelldone_json_escape "$body_text")"
   safe_from="$(_shelldone_json_escape "whatsapp:${SHELLDONE_WHATSAPP_FROM}")"
@@ -576,11 +749,60 @@ _shelldone_external_webhook() {
 
   _shelldone_rate_limit_check "webhook" || return 0
 
+  # Collect metadata
+  _shelldone_collect_metadata
+
   local safe_title safe_message
   safe_title="$(_shelldone_json_escape "$title")"
   safe_message="$(_shelldone_json_escape "$message")"
 
-  local payload="{\"title\":\"${safe_title}\",\"message\":\"${safe_message}\",\"exit_code\":${exit_code}}"
+  local success="true"
+  [[ "$exit_code" -ne 0 ]] && success="false"
+
+  local payload="{\"title\":\"${safe_title}\",\"message\":\"${safe_message}\",\"exit_code\":${exit_code},\"success\":${success}"
+
+  # Add optional metadata fields
+  if [[ -n "${_SHELLDONE_META_CMD:-}" ]]; then
+    local safe_cmd
+    safe_cmd="$(_shelldone_json_escape "${_SHELLDONE_META_CMD}")"
+    payload+=",\"command\":\"${safe_cmd}\""
+  fi
+  if [[ -n "${_SHELLDONE_META_DURATION:-}" ]]; then
+    local safe_dur
+    safe_dur="$(_shelldone_json_escape "${_SHELLDONE_META_DURATION}")"
+    payload+=",\"duration\":\"${safe_dur}\""
+  fi
+  if [[ -n "${_SHELLDONE_META_HOSTNAME:-}" ]]; then
+    local safe_host
+    safe_host="$(_shelldone_json_escape "${_SHELLDONE_META_HOSTNAME}")"
+    payload+=",\"hostname\":\"${safe_host}\""
+  fi
+  if [[ -n "${_SHELLDONE_META_PROJECT:-}" ]]; then
+    local safe_proj
+    safe_proj="$(_shelldone_json_escape "${_SHELLDONE_META_PROJECT}")"
+    payload+=",\"project\":\"${safe_proj}\""
+  fi
+  if [[ -n "${_SHELLDONE_META_PWD:-}" ]]; then
+    local safe_dir
+    safe_dir="$(_shelldone_json_escape "${_SHELLDONE_META_PWD}")"
+    payload+=",\"directory\":\"${safe_dir}\""
+  fi
+  if [[ -n "${_SHELLDONE_META_GIT_BRANCH:-}" ]]; then
+    local safe_branch
+    safe_branch="$(_shelldone_json_escape "${_SHELLDONE_META_GIT_BRANCH}")"
+    payload+=",\"git_branch\":\"${safe_branch}\""
+  fi
+  local source="${_SHELLDONE_META_SOURCE:-shell}"
+  local safe_source
+  safe_source="$(_shelldone_json_escape "$source")"
+  payload+=",\"source\":\"${safe_source}\""
+  local iso_ts
+  iso_ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || true)"
+  if [[ -n "$iso_ts" ]]; then
+    payload+=",\"timestamp\":\"${iso_ts}\""
+  fi
+
+  payload+="}"
 
   if _shelldone_http_post "$SHELLDONE_WEBHOOK_URL" "$payload" "${SHELLDONE_WEBHOOK_HEADERS:-}"; then
     _shelldone_rate_limit_update "webhook"

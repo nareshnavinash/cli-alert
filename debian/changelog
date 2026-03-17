@@ -1,3 +1,20 @@
+shelldone (1.1.0-1) unstable; urgency=medium
+
+  * Enriched notification messages across all channels
+  * Auto-notify now captures full command with arguments
+  * Discord embeds with structured fields, footer, and timestamp
+  * Telegram messages with HTML formatting and metadata
+  * Email body with structured key=value metadata
+  * WhatsApp context line with project, host, and branch
+  * Generic webhook payload with full metadata fields
+  * AI hook exit code mapping for error stop reasons
+  * alert-bg sets metadata and fixes false-green unknown status
+  * Duration formatting shows <1s instead of 0s
+  * Word-boundary-aware command truncation
+  * Locale-independent 24-hour timestamp format
+
+ -- Naresh Sekar <nareshnavinash@gmail.com>  Tue, 17 Mar 2026 00:00:00 +0000
+
 shelldone (1.0.0-1) unstable; urgency=medium
 
   * BREAKING: Rebranded from cli-alert to shelldone

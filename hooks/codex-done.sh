@@ -26,4 +26,10 @@ if [[ -n "$stop_reason" ]]; then
   export _SHELLDONE_META_STOP_REASON="$stop_reason"
 fi
 
-_shelldone_hook_notify "Codex CLI" "$message" 0
+# Determine exit code from stop reason
+hook_exit=0
+if declare -f _shelldone_hook_exit_code_for_reason &>/dev/null; then
+  hook_exit=$(_shelldone_hook_exit_code_for_reason "$stop_reason")
+fi
+
+_shelldone_hook_notify "Codex CLI" "$message" "$hook_exit"
