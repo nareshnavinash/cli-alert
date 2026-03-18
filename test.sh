@@ -495,13 +495,21 @@ test_cli_exclude_list() {
 }
 test_cli_exclude_add() {
   local out
+  export SHELLDONE_CONFIG="$(mktemp)"
+  "${SCRIPT_DIR}/bin/shelldone" config init > "$SHELLDONE_CONFIG"
   out=$("${SCRIPT_DIR}/bin/shelldone" exclude add docker 2>/dev/null) || true
-  echo "$out" | grep -q "export SHELLDONE_EXCLUDE"
+  rm -f "$SHELLDONE_CONFIG"
+  unset SHELLDONE_CONFIG
+  echo "$out" | grep -q "Added"
 }
 test_cli_exclude_remove() {
   local out
+  export SHELLDONE_CONFIG="$(mktemp)"
+  "${SCRIPT_DIR}/bin/shelldone" config init > "$SHELLDONE_CONFIG"
   out=$("${SCRIPT_DIR}/bin/shelldone" exclude remove vim 2>/dev/null) || true
-  echo "$out" | grep -q "export SHELLDONE_EXCLUDE"
+  rm -f "$SHELLDONE_CONFIG"
+  unset SHELLDONE_CONFIG
+  echo "$out" | grep -q "Removed"
 }
 test_cli_version_verbose() {
   local out
@@ -1917,6 +1925,28 @@ test_cli_webhook_test_whatsapp_e2e() {
 }
 run_test "CLI webhook test E2E: whatsapp with full config succeeds" test_cli_webhook_test_whatsapp_e2e
 
+test_cli_webhook_test_http_000_hint() {
+  # Mock curl that returns 000 and writes an error to stderr
+  local mock_dir
+  mock_dir=$(mktemp -d)
+  cat > "${mock_dir}/curl" <<'MOCK'
+#!/bin/bash
+printf '000'
+echo "curl: (6) Could not resolve host: xn--hooks.slack.com" >&2
+exit 0
+MOCK
+  chmod +x "${mock_dir}/curl"
+  local out
+  out=$(
+    PATH="${mock_dir}:$PATH" \
+    SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/test" \
+    "${SCRIPT_DIR}/bin/shelldone" webhook test slack 2>&1
+  ) || true
+  rm -rf "$mock_dir"
+  [[ "$out" == *"connection failed"* ]] && [[ "$out" == *"Could not resolve host"* ]]
+}
+run_test "CLI webhook test E2E: HTTP 000 shows connection failed hint + curl error" test_cli_webhook_test_http_000_hint
+
 # ── Background Dispatch (Integration) ────────────────────────────────────────
 
 header "Background Dispatch"
@@ -2397,28 +2427,28 @@ run_test "CLI help: mentions alert-bg" test_cli_help_shows_alert_bg
 
 test_cli_status_shows_notify_on() {
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>&1) || true
   [[ "$out" == *"SHELLDONE_NOTIFY_ON"* ]]
 }
 run_test "CLI status: shows SHELLDONE_NOTIFY_ON" test_cli_status_shows_notify_on
 
 test_cli_status_shows_config_file() {
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>&1) || true
   [[ "$out" == *"Config file:"* ]]
 }
 run_test "CLI status: shows config file info" test_cli_status_shows_config_file
 
 test_cli_status_shows_history() {
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>&1) || true
   [[ "$out" == *"History:"* ]]
 }
 run_test "CLI status: shows history info" test_cli_status_shows_history
 
 test_cli_status_shows_activate() {
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>&1) || true
   [[ "$out" == *"SHELLDONE_ACTIVATE"* ]]
 }
 run_test "CLI status: shows SHELLDONE_ACTIVATE" test_cli_status_shows_activate
@@ -2859,7 +2889,7 @@ run_test "CLI status: shows schedule" test_cli_status_shows_schedule
 test_cli_status_shows_toggle_states() {
   rm -f "$(_shelldone_state_file)"
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>&1) || true
   [[ "$out" == *"Notification control:"* ]]
 }
 run_test "CLI status: shows notification control section" test_cli_status_shows_toggle_states
@@ -3690,28 +3720,28 @@ header "AI Hook Status"
 
 test_status_shows_ai_section() {
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>/dev/null) || true
   echo "$out" | grep -q "AI CLI hooks"
 }
 run_test "status shows AI CLI hooks section" test_status_shows_ai_section
 
 test_status_shows_claude() {
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>/dev/null) || true
   echo "$out" | grep -q "Claude Code"
 }
 run_test "status shows Claude Code entry" test_status_shows_claude
 
 test_status_shows_aider_or_not_detected() {
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>/dev/null) || true
   echo "$out" | grep -q "Aider"
 }
 run_test "status shows Aider entry" test_status_shows_aider_or_not_detected
 
 test_status_shows_codex_entry() {
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>/dev/null) || true
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>/dev/null) || true
   echo "$out" | grep -q "Codex CLI"
 }
 run_test "status shows Codex CLI entry" test_status_shows_codex_entry
@@ -3979,6 +4009,593 @@ test_metadata_clear_works() {
   [[ -z "${_SHELLDONE_META_CMD:-}" ]] && [[ -z "${_SHELLDONE_META_SOURCE:-}" ]]
 }
 run_test "Metadata cleanup clears all meta vars" test_metadata_clear_works
+
+# ── TUI Library ──────────────────────────────────────────────────────────────
+
+header "TUI Library"
+
+test_tui_loads() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    [[ "${_SHELLDONE_TUI_LOADED}" == "1" ]]
+  )
+}
+run_test "TUI library loads" test_tui_loads
+
+test_tui_double_source() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    source "${LIB_DIR}/tui.sh"
+    [[ "${_SHELLDONE_TUI_LOADED}" == "1" ]]
+  )
+}
+run_test "TUI double-source is safe" test_tui_double_source
+
+test_tui_colors_with_no_color() {
+  (
+    unset _SHELLDONE_TUI_LOADED
+    NO_COLOR=1 source "${LIB_DIR}/tui.sh"
+    [[ -z "$_TUI_GREEN" ]]
+  )
+}
+run_test "TUI colors disabled with NO_COLOR" test_tui_colors_with_no_color
+
+test_tui_ok_output() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local out
+    out=$(_tui_ok "test message")
+    [[ "$out" == *"test message"* ]]
+  )
+}
+run_test "TUI _tui_ok produces output" test_tui_ok_output
+
+test_tui_warn_output() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local out
+    out=$(_tui_warn "warning message")
+    [[ "$out" == *"warning message"* ]]
+  )
+}
+run_test "TUI _tui_warn produces output" test_tui_warn_output
+
+test_tui_err_output() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local out
+    out=$(_tui_err "error message")
+    [[ "$out" == *"error message"* ]]
+  )
+}
+run_test "TUI _tui_err produces output" test_tui_err_output
+
+test_tui_info_output() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local out
+    out=$(_tui_info "info message")
+    [[ "$out" == *"info message"* ]]
+  )
+}
+run_test "TUI _tui_info produces output" test_tui_info_output
+
+test_tui_header_output() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local out
+    out=$(_tui_header "Section Title")
+    [[ "$out" == *"Section Title"* ]]
+  )
+}
+run_test "TUI _tui_header produces output" test_tui_header_output
+
+test_tui_step_output() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local out
+    out=$(_tui_step 1 3 "step desc")
+    [[ "$out" == *"1/3"* ]] && [[ "$out" == *"step desc"* ]]
+  )
+}
+run_test "TUI _tui_step produces numbered output" test_tui_step_output
+
+test_tui_noninteractive_confirm_default_yes() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    SHELLDONE_NONINTERACTIVE=true
+    _tui_confirm "test" "default_yes"
+  )
+}
+run_test "TUI confirm in non-interactive: default_yes returns 0" test_tui_noninteractive_confirm_default_yes
+
+test_tui_noninteractive_confirm_default_no() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    SHELLDONE_NONINTERACTIVE=true
+    ! _tui_confirm "test" "default_no"
+  )
+}
+run_test "TUI confirm in non-interactive: default_no returns 1" test_tui_noninteractive_confirm_default_no
+
+test_tui_noninteractive_prompt_default() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    SHELLDONE_NONINTERACTIVE=true
+    local val
+    val=$(_tui_prompt "enter value" "my_default")
+    [[ "$val" == "my_default" ]]
+  )
+}
+run_test "TUI prompt in non-interactive returns default" test_tui_noninteractive_prompt_default
+
+test_tui_noninteractive_select_first() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    SHELLDONE_NONINTERACTIVE=true
+    _tui_select "choose" "option_a" "option_b"
+    [[ "$_TUI_SELECTED" == "option_a" ]]
+  )
+}
+run_test "TUI select in non-interactive returns first option" test_tui_noninteractive_select_first
+
+test_tui_validate_url_valid() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    _tui_validate_url "https://example.com/hook"
+  )
+}
+run_test "TUI validate_url accepts https URL" test_tui_validate_url_valid
+
+test_tui_validate_url_invalid() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    ! _tui_validate_url "not-a-url"
+  )
+}
+run_test "TUI validate_url rejects non-URL" test_tui_validate_url_invalid
+
+test_tui_validate_not_empty() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    _tui_validate_not_empty "value" && ! _tui_validate_not_empty ""
+  )
+}
+run_test "TUI validate_not_empty works" test_tui_validate_not_empty
+
+test_tui_validate_number() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    _tui_validate_number "42" && ! _tui_validate_number "abc"
+  )
+}
+run_test "TUI validate_number works" test_tui_validate_number
+
+# ── TUI URL sanitization ─────────────────────────────────────────────────────
+
+header "TUI URL Sanitization"
+
+test_tui_sanitize_url_clean_passthrough() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local result
+    result=$(_tui_sanitize_url "https://hooks.slack.com/services/T00/B00/xxx")
+    [[ "$result" == "https://hooks.slack.com/services/T00/B00/xxx" ]]
+  )
+}
+run_test "sanitize_url: clean URL passes through unchanged" test_tui_sanitize_url_clean_passthrough
+
+test_tui_sanitize_url_strips_zwsp() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    # U+200B zero-width space = \xe2\x80\x8b
+    local dirty
+    dirty=$(printf '\xe2\x80\x8bhttps://example.com')
+    local result
+    result=$(_tui_sanitize_url "$dirty")
+    [[ "$result" == "https://example.com" ]]
+  )
+}
+run_test "sanitize_url: strips zero-width space (U+200B)" test_tui_sanitize_url_strips_zwsp
+
+test_tui_sanitize_url_strips_nbsp() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    # U+00A0 non-breaking space = \xc2\xa0
+    local dirty
+    dirty=$(printf 'https://example.com\xc2\xa0')
+    local result
+    result=$(_tui_sanitize_url "$dirty")
+    [[ "$result" == "https://example.com" ]]
+  )
+}
+run_test "sanitize_url: strips non-breaking space (U+00A0)" test_tui_sanitize_url_strips_nbsp
+
+test_tui_sanitize_url_strips_bom() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    # U+FEFF BOM = \xef\xbb\xbf
+    local dirty
+    dirty=$(printf '\xef\xbb\xbfhttps://example.com')
+    local result
+    result=$(_tui_sanitize_url "$dirty")
+    [[ "$result" == "https://example.com" ]]
+  )
+}
+run_test "sanitize_url: strips BOM (U+FEFF)" test_tui_sanitize_url_strips_bom
+
+test_tui_sanitize_url_strips_mixed() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    # Leading whitespace + BOM + trailing NBSP
+    local dirty
+    dirty=$(printf '  \xef\xbb\xbfhttps://example.com\xc2\xa0  ')
+    local result
+    result=$(_tui_sanitize_url "$dirty")
+    [[ "$result" == "https://example.com" ]]
+  )
+}
+run_test "sanitize_url: strips mixed whitespace + invisible chars" test_tui_sanitize_url_strips_mixed
+
+test_tui_sanitize_url_empty_input() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local result
+    result=$(_tui_sanitize_url "")
+    [[ -z "$result" ]]
+  )
+}
+run_test "sanitize_url: empty input returns empty" test_tui_sanitize_url_empty_input
+
+# Sanitize + validate combo tests
+
+test_tui_sanitize_then_validate_slack() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local dirty
+    dirty=$(printf '\xe2\x80\x8bhttps://hooks.slack.com/services/T00/B00/xxx')
+    local clean
+    clean=$(_tui_sanitize_url "$dirty")
+    [[ "$clean" =~ ^https://hooks\.slack\.com/ ]]
+  )
+}
+run_test "sanitize+validate: dirty Slack URL passes regex after sanitize" test_tui_sanitize_then_validate_slack
+
+test_tui_sanitize_then_validate_discord() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local dirty
+    dirty=$(printf '\xef\xbb\xbfhttps://discord.com/api/webhooks/123/abc\xc2\xa0')
+    local clean
+    clean=$(_tui_sanitize_url "$dirty")
+    [[ "$clean" =~ ^https://discord\.com/api/webhooks/ ]]
+  )
+}
+run_test "sanitize+validate: dirty Discord URL passes regex after sanitize" test_tui_sanitize_then_validate_discord
+
+test_tui_sanitize_then_validate_generic() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    local dirty
+    dirty=$(printf '\xe2\x80\x8bhttps://my-server.com/hook\xc2\xa0')
+    local clean
+    clean=$(_tui_sanitize_url "$dirty")
+    _tui_validate_url "$clean"
+  )
+}
+run_test "sanitize+validate: dirty generic URL passes _tui_validate_url after sanitize" test_tui_sanitize_then_validate_generic
+
+test_tui_prompt_no_stdout_leak() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    # Simulate interactive input by feeding a URL through /dev/tty via a pty
+    # Since we can't easily mock /dev/tty, test the non-interactive path
+    # and also verify the prompt printf targets /dev/tty by checking that
+    # command substitution captures only the return value.
+    SHELLDONE_NONINTERACTIVE=true
+    local result
+    result=$(_tui_prompt "Webhook URL" "https://hooks.slack.com/services/T00/B00/xxx")
+    # The captured output must be ONLY the default value, not "Webhook URL: <default>"
+    [[ "$result" == "https://hooks.slack.com/services/T00/B00/xxx" ]]
+  )
+}
+run_test "TUI prompt does not leak prompt text into stdout" test_tui_prompt_no_stdout_leak
+
+test_tui_prompt_secret_no_stdout_leak() {
+  (
+    source "${LIB_DIR}/tui.sh"
+    SHELLDONE_NONINTERACTIVE=true
+    local result
+    result=$(_tui_prompt_secret "API Key")
+    # Non-interactive returns empty string and exit 1
+    [[ "$result" == "" ]]
+  )
+}
+run_test "TUI prompt_secret does not leak prompt text into stdout" test_tui_prompt_secret_no_stdout_leak
+
+# ── Doctor Command ───────────────────────────────────────────────────────────
+
+header "Doctor Command"
+
+test_doctor_runs() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" doctor 2>&1) || true
+  [[ "$out" == *"Summary"* ]]
+}
+run_test "doctor command runs and shows Summary" test_doctor_runs
+
+test_doctor_shows_shell_section() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" doctor 2>&1) || true
+  [[ "$out" == *"Shell Integration"* ]]
+}
+run_test "doctor shows Shell Integration section" test_doctor_shows_shell_section
+
+test_doctor_shows_notification_tools() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" doctor 2>&1) || true
+  [[ "$out" == *"Notification Tools"* ]]
+}
+run_test "doctor shows Notification Tools section" test_doctor_shows_notification_tools
+
+test_doctor_shows_config_section() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" doctor 2>&1) || true
+  [[ "$out" == *"Configuration"* ]]
+}
+run_test "doctor shows Configuration section" test_doctor_shows_config_section
+
+test_doctor_shows_http_section() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" doctor 2>&1) || true
+  [[ "$out" == *"HTTP Transport"* ]]
+}
+run_test "doctor shows HTTP Transport section" test_doctor_shows_http_section
+
+test_doctor_shows_permissions() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" doctor 2>&1) || true
+  [[ "$out" == *"Permissions"* ]]
+}
+run_test "doctor shows Permissions section" test_doctor_shows_permissions
+
+test_doctor_shows_passed_count() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" doctor 2>&1) || true
+  [[ "$out" == *"passed"* ]]
+}
+run_test "doctor shows passed count" test_doctor_shows_passed_count
+
+# ── Config Set/Get ───────────────────────────────────────────────────────────
+
+header "Config Set/Get"
+
+test_config_set_and_get() {
+  local tmp_config
+  tmp_config=$(mktemp)
+  SHELLDONE_CONFIG="$tmp_config" "${SCRIPT_DIR}/bin/shelldone" config init > "$tmp_config"
+  SHELLDONE_CONFIG="$tmp_config" "${SCRIPT_DIR}/bin/shelldone" config set SHELLDONE_THRESHOLD 30 2>/dev/null
+  local out
+  out=$(SHELLDONE_CONFIG="$tmp_config" "${SCRIPT_DIR}/bin/shelldone" config get SHELLDONE_THRESHOLD 2>/dev/null)
+  rm -f "$tmp_config"
+  [[ "$out" == *"30"* ]]
+}
+run_test "config set/get round-trip works" test_config_set_and_get
+
+test_config_set_creates_file() {
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
+  local tmp_config="${tmp_dir}/config"
+  SHELLDONE_CONFIG="$tmp_config" "${SCRIPT_DIR}/bin/shelldone" config set SHELLDONE_THRESHOLD 20 2>/dev/null
+  [[ -f "$tmp_config" ]]
+  local result=$?
+  rm -rf "$tmp_dir"
+  return $result
+}
+run_test "config set auto-creates config file" test_config_set_creates_file
+
+test_config_set_rejects_invalid_key() {
+  local out
+  out=$(SHELLDONE_CONFIG="/dev/null" "${SCRIPT_DIR}/bin/shelldone" config set INVALID_KEY value 2>&1) || true
+  [[ "$out" == *"unknown config key"* ]]
+}
+run_test "config set rejects invalid key" test_config_set_rejects_invalid_key
+
+test_config_list_works() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" config list 2>/dev/null) || true
+  [[ "$out" == *"SHELLDONE_THRESHOLD"* ]]
+}
+run_test "config list shows settings" test_config_list_works
+
+test_config_get_env_source() {
+  local out
+  out=$(SHELLDONE_THRESHOLD=99 "${SCRIPT_DIR}/bin/shelldone" config get SHELLDONE_THRESHOLD 2>/dev/null)
+  [[ "$out" == *"99"* ]] && [[ "$out" == *"env"* ]]
+}
+run_test "config get shows env source" test_config_get_env_source
+
+# ── Channel Command ──────────────────────────────────────────────────────────
+
+header "Channel Command"
+
+test_channel_list_runs() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" channel list 2>/dev/null) || true
+  [[ "$out" == *"slack"* ]]
+}
+run_test "channel list shows channels" test_channel_list_runs
+
+test_channel_list_shows_all() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" channel list 2>/dev/null) || true
+  [[ "$out" == *"discord"* ]] && [[ "$out" == *"telegram"* ]] && [[ "$out" == *"email"* ]]
+}
+run_test "channel list shows all channel names" test_channel_list_shows_all
+
+test_channel_add_no_channel() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" channel add 2>&1) || true
+  [[ "$out" == *"Usage"* ]]
+}
+run_test "channel add without name shows usage" test_channel_add_no_channel
+
+test_channel_unknown_channel() {
+  local out
+  out=$(SHELLDONE_NONINTERACTIVE=true "${SCRIPT_DIR}/bin/shelldone" channel add badchannel 2>&1) || true
+  [[ "$out" == *"Unknown channel"* ]]
+}
+run_test "channel add with unknown name shows error" test_channel_unknown_channel
+
+# ── Compact Status ───────────────────────────────────────────────────────────
+
+header "Compact Status"
+
+test_compact_status_runs() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  [[ "$out" == *"shelldone"* ]]
+}
+run_test "compact status runs" test_compact_status_runs
+
+test_compact_status_shows_version() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  [[ "$out" == *"shelldone"* ]]
+}
+run_test "compact status shows version line" test_compact_status_shows_version
+
+test_compact_status_shows_shell() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  [[ "$out" == *"Shell:"* ]]
+}
+run_test "compact status shows Shell line" test_compact_status_shows_shell
+
+test_compact_status_shows_channels() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  [[ "$out" == *"Channels:"* ]]
+}
+run_test "compact status shows Channels line" test_compact_status_shows_channels
+
+test_compact_status_shows_ai_hooks() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  [[ "$out" == *"AI Hooks:"* ]]
+}
+run_test "compact status shows AI Hooks line" test_compact_status_shows_ai_hooks
+
+test_compact_status_shows_tip() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
+  [[ "$out" == *"doctor"* ]]
+}
+run_test "compact status shows doctor tip" test_compact_status_shows_tip
+
+test_full_status_works() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" status --full 2>&1) || true
+  [[ "$out" == *"Config:"* ]] && [[ "$out" == *"History:"* ]]
+}
+run_test "full status (--full) shows Config and History" test_full_status_works
+
+# ── "Did You Mean?" ─────────────────────────────────────────────────────────
+
+header "Did You Mean?"
+
+test_did_you_mean_prefix() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" stat 2>&1) || true
+  [[ "$out" == *"Did you mean"* ]] && [[ "$out" == *"status"* ]]
+}
+run_test "\"Did you mean?\" for prefix match" test_did_you_mean_prefix
+
+test_did_you_mean_typo() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" statsu 2>&1) || true
+  [[ "$out" == *"Did you mean"* ]] && [[ "$out" == *"status"* ]]
+}
+run_test "\"Did you mean?\" for 3-char match" test_did_you_mean_typo
+
+test_unknown_cmd_no_suggestion() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" zzzzz 2>&1) || true
+  [[ "$out" == *"unknown command"* ]] && [[ "$out" != *"Did you mean"* ]]
+}
+run_test "unknown command with no match shows command list" test_unknown_cmd_no_suggestion
+
+# ── Setup Quick Mode ─────────────────────────────────────────────────────────
+
+header "Setup Quick Mode"
+
+test_setup_quick_runs() {
+  local out
+  out=$(SHELLDONE_NONINTERACTIVE=true "${SCRIPT_DIR}/bin/shelldone" setup --quick 2>&1) || true
+  [[ "$out" == *"Setup complete"* ]]
+}
+run_test "setup --quick runs non-interactively" test_setup_quick_runs
+
+# ── Confirmation Prompts ─────────────────────────────────────────────────────
+
+header "Confirmation Prompts"
+
+test_uninstall_noninteractive() {
+  local out
+  out=$(SHELLDONE_NONINTERACTIVE=true "${SCRIPT_DIR}/bin/shelldone" uninstall --yes 2>&1) || true
+  [[ "$out" == *"Uninstalled"* ]] || [[ "$out" == *"Removed"* ]] || [[ "$out" == *"Not in"* ]]
+}
+run_test "uninstall --yes skips confirmation" test_uninstall_noninteractive
+
+test_history_clear_creates_and_clears() {
+  local tmp_log_dir
+  tmp_log_dir=$(mktemp -d)
+  echo -e "2024-01-01\ttest\tmsg\t0\tdesktop" > "${tmp_log_dir}/history.log"
+  local out
+  out=$(SHELLDONE_NONINTERACTIVE=true SHELLDONE_HISTORY_DIR="$tmp_log_dir" "${SCRIPT_DIR}/bin/shelldone" history --clear 2>&1) || true
+  rm -rf "$tmp_log_dir"
+  [[ "$out" == *"History cleared"* ]]
+}
+run_test "history --clear works in non-interactive mode" test_history_clear_creates_and_clears
+
+# ── Help Text ────────────────────────────────────────────────────────────────
+
+header "Help Text Revamp"
+
+test_help_shows_getting_started() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>/dev/null)
+  [[ "$out" == *"Getting Started:"* ]]
+}
+run_test "help shows Getting Started section" test_help_shows_getting_started
+
+test_help_shows_doctor() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>/dev/null)
+  [[ "$out" == *"doctor"* ]]
+}
+run_test "help shows doctor command" test_help_shows_doctor
+
+test_help_shows_channel() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>/dev/null)
+  [[ "$out" == *"channel"* ]]
+}
+run_test "help shows channel command" test_help_shows_channel
+
+test_help_shows_config_set() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>/dev/null)
+  [[ "$out" == *"config set"* ]]
+}
+run_test "help shows config set subcommand" test_help_shows_config_set
+
+test_help_shows_status_full() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" help 2>/dev/null)
+  [[ "$out" == *"--full"* ]]
+}
+run_test "help shows --full flag" test_help_shows_status_full
 
 # ── Config ───────────────────────────────────────────────────────────────────
 

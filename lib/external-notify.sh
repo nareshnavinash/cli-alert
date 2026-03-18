@@ -115,7 +115,15 @@ _shelldone_http_post_curl() {
 
   cmd+=(-d "$payload" "$url")
   local http_code
-  http_code=$("${cmd[@]}" 2>/dev/null) || true
+  local _curl_err_file
+  _curl_err_file=$(mktemp 2>/dev/null || echo "/tmp/.shelldone_curl_err_$$")
+  http_code=$("${cmd[@]}" 2>"$_curl_err_file") || true
+  _SHELLDONE_LAST_CURL_ERROR=""
+  if [[ -f "$_curl_err_file" ]]; then
+    _SHELLDONE_LAST_CURL_ERROR=$(cat "$_curl_err_file" 2>/dev/null)
+    rm -f "$_curl_err_file" 2>/dev/null
+  fi
+  [[ -n "$_SHELLDONE_LAST_CURL_ERROR" ]] && _shelldone_external_debug "curl stderr: $_SHELLDONE_LAST_CURL_ERROR"
   _SHELLDONE_LAST_HTTP_STATUS="$http_code"
   [[ "$http_code" =~ ^2[0-9][0-9]$ ]]
 }
@@ -818,23 +826,23 @@ _shelldone_external_webhook() {
 _shelldone_validate_channel() {
   local channel="$1"
   case "$channel" in
-    slack)    [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}" ]]    || { echo "SHELLDONE_SLACK_WEBHOOK not set"; return 1; } ;;
-    discord)  [[ -n "${SHELLDONE_DISCORD_WEBHOOK:-}" ]]  || { echo "SHELLDONE_DISCORD_WEBHOOK not set"; return 1; } ;;
+    slack)    [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}" ]]    || { echo "SHELLDONE_SLACK_WEBHOOK not set. Set up with: shelldone channel add slack"; return 1; } ;;
+    discord)  [[ -n "${SHELLDONE_DISCORD_WEBHOOK:-}" ]]  || { echo "SHELLDONE_DISCORD_WEBHOOK not set. Set up with: shelldone channel add discord"; return 1; } ;;
     telegram)
-      [[ -n "${SHELLDONE_TELEGRAM_TOKEN:-}" ]]   || { echo "SHELLDONE_TELEGRAM_TOKEN not set"; return 1; }
-      [[ -n "${SHELLDONE_TELEGRAM_CHAT_ID:-}" ]] || { echo "SHELLDONE_TELEGRAM_CHAT_ID not set"; return 1; }
+      [[ -n "${SHELLDONE_TELEGRAM_TOKEN:-}" ]]   || { echo "SHELLDONE_TELEGRAM_TOKEN not set. Set up with: shelldone channel add telegram"; return 1; }
+      [[ -n "${SHELLDONE_TELEGRAM_CHAT_ID:-}" ]] || { echo "SHELLDONE_TELEGRAM_CHAT_ID not set. Set up with: shelldone channel add telegram"; return 1; }
       ;;
     email)
-      [[ -n "${SHELLDONE_EMAIL_TO:-}" ]] || { echo "SHELLDONE_EMAIL_TO not set"; return 1; }
+      [[ -n "${SHELLDONE_EMAIL_TO:-}" ]] || { echo "SHELLDONE_EMAIL_TO not set. Set up with: shelldone channel add email"; return 1; }
       command -v sendmail &>/dev/null || command -v mail &>/dev/null || { echo "sendmail or mail command required"; return 1; }
       ;;
     whatsapp)
-      [[ -n "${SHELLDONE_WHATSAPP_TOKEN:-}" ]]   || { echo "SHELLDONE_WHATSAPP_TOKEN not set"; return 1; }
-      [[ -n "${SHELLDONE_WHATSAPP_API_URL:-}" ]] || { echo "SHELLDONE_WHATSAPP_API_URL not set"; return 1; }
-      [[ -n "${SHELLDONE_WHATSAPP_FROM:-}" ]]    || { echo "SHELLDONE_WHATSAPP_FROM not set"; return 1; }
-      [[ -n "${SHELLDONE_WHATSAPP_TO:-}" ]]      || { echo "SHELLDONE_WHATSAPP_TO not set"; return 1; }
+      [[ -n "${SHELLDONE_WHATSAPP_TOKEN:-}" ]]   || { echo "SHELLDONE_WHATSAPP_TOKEN not set. Set up with: shelldone channel add whatsapp"; return 1; }
+      [[ -n "${SHELLDONE_WHATSAPP_API_URL:-}" ]] || { echo "SHELLDONE_WHATSAPP_API_URL not set. Set up with: shelldone channel add whatsapp"; return 1; }
+      [[ -n "${SHELLDONE_WHATSAPP_FROM:-}" ]]    || { echo "SHELLDONE_WHATSAPP_FROM not set. Set up with: shelldone channel add whatsapp"; return 1; }
+      [[ -n "${SHELLDONE_WHATSAPP_TO:-}" ]]      || { echo "SHELLDONE_WHATSAPP_TO not set. Set up with: shelldone channel add whatsapp"; return 1; }
       ;;
-    webhook)  [[ -n "${SHELLDONE_WEBHOOK_URL:-}" ]] || { echo "SHELLDONE_WEBHOOK_URL not set"; return 1; } ;;
+    webhook)  [[ -n "${SHELLDONE_WEBHOOK_URL:-}" ]] || { echo "SHELLDONE_WEBHOOK_URL not set. Set up with: shelldone channel add webhook"; return 1; } ;;
     *)        echo "unknown channel: $channel"; return 1 ;;
   esac
 }

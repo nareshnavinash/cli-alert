@@ -5,15 +5,17 @@ _shelldone() {
   local -a commands
   commands=(
     'init:Output shell init code (use with eval)'
-    'setup:Configure shell rc files and AI CLI hooks'
+    'setup:Interactive setup wizard'
     'uninstall:Remove shell integration and AI CLI hooks'
-    'status:Show diagnostic info and verify setup'
+    'status:Quick status overview'
     'test-notify:Send a test notification'
     'sounds:List available system sounds'
     'exclude:Manage auto-notify exclusion list'
     'webhook:Manage external notification channels'
+    'channel:Guided channel setup and management'
     'history:View notification history'
-    'config:Manage config file'
+    'config:Manage config file and settings'
+    'doctor:Check configuration for issues'
     'mute:Mute all notifications'
     'unmute:Resume notifications'
     'toggle:Toggle notification layers'
@@ -37,7 +39,7 @@ _shelldone() {
           _describe -t shells 'shell' '(bash zsh)'
           ;;
         setup)
-          _describe -t actions 'action' '(all ai-hooks claude-hook codex-hook gemini-hook copilot-hook cursor-hook)'
+          _describe -t actions 'action' '(--quick --full all ai-hooks claude-hook codex-hook gemini-hook copilot-hook cursor-hook)'
           ;;
         exclude)
           _describe -t actions 'action' '(list add remove)'
@@ -49,11 +51,28 @@ _shelldone() {
             _describe -t channels 'channel' '(slack discord telegram email whatsapp webhook)'
           fi
           ;;
+        channel)
+          if (( CURRENT == 2 )); then
+            _describe -t actions 'action' '(list add remove test)'
+          elif (( CURRENT == 3 )); then
+            _describe -t channels 'channel' '(slack discord telegram email whatsapp webhook)'
+          fi
+          ;;
         history)
           _describe -t actions 'action' '(show --clear --path)'
           ;;
         config)
-          _describe -t actions 'action' '(show init edit path)'
+          if (( CURRENT == 2 )); then
+            _describe -t actions 'action' '(show init edit path set get list)'
+          elif [[ "${words[2]}" == "set" || "${words[2]}" == "get" ]] && (( CURRENT == 3 )); then
+            _describe -t keys 'config key' '(SHELLDONE_ENABLED SHELLDONE_AUTO SHELLDONE_THRESHOLD SHELLDONE_NOTIFY_ON SHELLDONE_SOUND_SUCCESS SHELLDONE_SOUND_FAILURE SHELLDONE_VOICE SHELLDONE_FOCUS_DETECT SHELLDONE_HISTORY SHELLDONE_EXCLUDE SHELLDONE_QUIET_HOURS SHELLDONE_RATE_LIMIT SHELLDONE_WEBHOOK_TIMEOUT)'
+          fi
+          ;;
+        status)
+          _describe -t flags 'flag' '(--full -v)'
+          ;;
+        uninstall)
+          _describe -t flags 'flag' '(--yes -y)'
           ;;
         toggle)
           if (( CURRENT == 2 )); then

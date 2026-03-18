@@ -65,6 +65,34 @@ _shelldone_resolve_lib() {
 
 SHELLDONE_LIB="$(_shelldone_resolve_lib)"
 
+# Resolve the hooks directory (works whether installed or run from source)
+_shelldone_resolve_hooks() {
+  local bin_path="$0"
+  if command -v readlink &>/dev/null; then
+    bin_path="$(readlink -f "$bin_path" 2>/dev/null || readlink "$bin_path" 2>/dev/null || echo "$bin_path")"
+  fi
+  local prefix
+  prefix="$(cd "$(dirname "$bin_path")/.." && pwd)"
+
+  # Try: <prefix>/share/shelldone/hooks/ (package manager install)
+  if [[ -d "${prefix}/share/shelldone/hooks" ]]; then
+    echo "${prefix}/share/shelldone/hooks"
+  # Try: <repo>/hooks/ (running from source)
+  elif [[ -d "${prefix}/hooks" ]]; then
+    echo "${prefix}/hooks"
+  else
+    echo >&2 "shelldone: cannot find hooks directory"
+    return 1
+  fi
+}
+
+SHELLDONE_HOOKS="$(_shelldone_resolve_hooks)"
+
+# ── TUI library ─────────────────────────────────────────────────────────────
+if [[ -f "${SHELLDONE_LIB}/tui.sh" ]]; then
+  source "${SHELLDONE_LIB}/tui.sh"
+fi
+
 # ── AI CLI Registry ──────────────────────────────────────────────────────────
 # Parallel arrays (bash 3.2 compatible — no associative arrays)
 # Index: 0=claude 1=codex 2=gemini 3=copilot 4=cursor 5=aider
@@ -133,36 +161,199 @@ cmd_setup() {
   local action="${1:-}"
 
   case "$action" in
-    claude-hook)
-      _setup_claude_hook
-      ;;
-    codex-hook)
-      _setup_codex_hook
-      ;;
-    gemini-hook)
-      _setup_gemini_hook
-      ;;
-    copilot-hook)
-      _setup_copilot_hook
-      ;;
-    cursor-hook)
-      _setup_cursor_hook
-      ;;
-    ai-hooks)
-      _setup_ai_hooks
-      ;;
-    ""|all)
+    claude-hook)  _setup_claude_hook ;;
+    codex-hook)   _setup_codex_hook ;;
+    gemini-hook)  _setup_gemini_hook ;;
+    copilot-hook) _setup_copilot_hook ;;
+    cursor-hook)  _setup_cursor_hook ;;
+    ai-hooks)     _setup_ai_hooks ;;
+    --quick|all)
+      # Non-interactive: sensible defaults (original behavior)
       _setup_shell_init
       _setup_ai_hooks
       echo ""
       printf '\033[1;32m[shelldone]\033[0m Setup complete!\n'
       printf '\033[1;34m[shelldone]\033[0m Restart your shell or run: exec %s\n' "$(basename "$SHELL")"
       ;;
+    --full)
+      # Interactive, all phases shown
+      SHELLDONE_NONINTERACTIVE="" _setup_wizard "advanced"
+      ;;
+    "")
+      # Default: interactive wizard if tty, otherwise quick
+      if _tui_is_interactive; then
+        _setup_wizard ""
+      else
+        _setup_shell_init
+        _setup_ai_hooks
+        echo ""
+        printf '\033[1;32m[shelldone]\033[0m Setup complete!\n'
+        printf '\033[1;34m[shelldone]\033[0m Restart your shell or run: exec %s\n' "$(basename "$SHELL")"
+      fi
+      ;;
     *)
-      echo >&2 "Usage: shelldone setup [all|ai-hooks|claude-hook|codex-hook|gemini-hook|copilot-hook|cursor-hook]"
+      echo >&2 "Usage: shelldone setup [--quick|--full|all|ai-hooks|<ai>-hook]"
       exit 1
       ;;
   esac
+}
+
+_setup_wizard() {
+  local forced_mode="${1:-}"
+  local mode="quick"
+  local total_phases=4
+
+  # Phase 1: Welcome & Mode
+  _setup_phase_welcome
+  if [[ -n "$forced_mode" ]]; then
+    mode="$forced_mode"
+  fi
+
+  if [[ "$mode" == "advanced" ]]; then
+    total_phases=7
+  fi
+
+  local phase=1
+
+  # Phase 2: Shell Integration
+  phase=$((phase + 1))
+  _tui_step "$phase" "$total_phases" "Shell integration"
+  _setup_shell_init
+
+  # Phase 3 (advanced): Notification Preferences
+  if [[ "$mode" == "advanced" ]]; then
+    phase=$((phase + 1))
+    _tui_step "$phase" "$total_phases" "Notification preferences"
+    _setup_phase_preferences
+  fi
+
+  # Phase 4 (advanced): External Channels
+  if [[ "$mode" == "advanced" ]]; then
+    phase=$((phase + 1))
+    _tui_step "$phase" "$total_phases" "External channels"
+    _setup_phase_channels
+  fi
+
+  # Phase N-2: AI Hooks
+  phase=$((phase + 1))
+  _tui_step "$phase" "$total_phases" "AI CLI hooks"
+  if [[ "$mode" == "advanced" ]]; then
+    _setup_phase_ai_hooks_interactive
+  else
+    _setup_ai_hooks
+  fi
+
+  # Phase N-1: Health Check
+  phase=$((phase + 1))
+  _tui_step "$phase" "$total_phases" "Health check"
+  echo ""
+  cmd_doctor 2>/dev/null || true
+
+  # Summary
+  _setup_phase_summary
+}
+
+_setup_phase_welcome() {
+  (
+    unset _SHELLDONE_LOADED
+    source "${SHELLDONE_LIB}/shelldone.sh"
+    printf '\n%sshelldone %s%s setup\n' "${_TUI_BOLD}" "$SHELLDONE_VERSION" "${_TUI_RESET}"
+    printf '%sPlatform: %s | Shell: %s%s\n\n' "${_TUI_DIM}" "$_SHELLDONE_PLATFORM" "$(basename "${SHELL:-unknown}")" "${_TUI_RESET}"
+  )
+
+  if [[ -z "${1:-}" ]] && _tui_is_interactive; then
+    _tui_select "Choose setup mode:" "Quick (sensible defaults)" "Advanced (configure everything)"
+    if [[ $_TUI_SELECTED_INDEX -eq 1 ]]; then
+      mode="advanced"
+    fi
+    echo ""
+  fi
+}
+
+_setup_phase_preferences() {
+  echo ""
+  _tui_select "Auto-notify threshold:" "5 seconds" "10 seconds (default)" "30 seconds" "60 seconds"
+  local threshold
+  case $_TUI_SELECTED_INDEX in
+    0) threshold=5 ;;
+    1) threshold=10 ;;
+    2) threshold=30 ;;
+    3) threshold=60 ;;
+  esac
+  _config_set_value "SHELLDONE_THRESHOLD" "$threshold"
+  _tui_ok "Threshold set to ${threshold}s"
+
+  _tui_select "Notify on:" "All commands (default)" "Failures only" "Successes only"
+  local filter
+  case $_TUI_SELECTED_INDEX in
+    0) filter="all" ;;
+    1) filter="failure" ;;
+    2) filter="success" ;;
+  esac
+  _config_set_value "SHELLDONE_NOTIFY_ON" "$filter"
+  _tui_ok "Filter set to ${filter}"
+
+  if _tui_confirm "Enable voice announcements (TTS)?" "default_no"; then
+    _config_set_value "SHELLDONE_VOICE" "true"
+    _tui_ok "Voice enabled"
+  fi
+
+  if _tui_confirm "Enable focus detection (suppress when terminal focused)?" "default_yes"; then
+    _config_set_value "SHELLDONE_FOCUS_DETECT" "true"
+  else
+    _config_set_value "SHELLDONE_FOCUS_DETECT" "false"
+  fi
+  echo ""
+}
+
+_setup_phase_channels() {
+  echo ""
+  if _tui_confirm "Set up external notification channels (Slack, Discord, etc.)?" "default_no"; then
+    local -a available=("slack" "discord" "telegram" "email" "whatsapp" "webhook")
+    local ch
+    for ch in "${available[@]}"; do
+      if _tui_confirm "  Configure ${ch}?" "default_no"; then
+        _channel_setup "$ch"
+      fi
+    done
+  else
+    printf '  Tip: Run %sshelldone channel add slack%s later\n' "${_TUI_BOLD}" "${_TUI_RESET}"
+  fi
+  echo ""
+}
+
+_setup_phase_ai_hooks_interactive() {
+  local i installed=0
+
+  for i in "${!_SHELLDONE_AI_NAMES[@]}"; do
+    local name="${_SHELLDONE_AI_NAMES[$i]}"
+    local label="${_SHELLDONE_AI_LABELS[$i]}"
+    local hook="${_SHELLDONE_AI_HOOKS[$i]}"
+    local cmd="${_SHELLDONE_AI_CMDS[$i]}"
+    local config_dir="${_SHELLDONE_AI_CONFIGDIRS[$i]}"
+
+    [[ -z "$hook" ]] && continue
+
+    if command -v "$cmd" &>/dev/null || [[ -n "$config_dir" && -d "$config_dir" ]]; then
+      if _tui_confirm "  Install ${label} hook?" "default_yes"; then
+        "_setup_${name}_hook" && installed=$((installed + 1)) || true
+      fi
+    fi
+  done
+
+  if [[ $installed -gt 0 ]]; then
+    _tui_ok "$installed AI hook(s) installed"
+  fi
+}
+
+_setup_phase_summary() {
+  _tui_header "Setup complete!"
+  echo ""
+  echo "  Next steps:"
+  printf '    1. Restart your shell: %sexec %s%s\n' "${_TUI_BOLD}" "$(basename "$SHELL")" "${_TUI_RESET}"
+  printf '    2. Try it out:         %salert sleep 2%s\n' "${_TUI_BOLD}" "${_TUI_RESET}"
+  printf '    3. Check status:       %sshelldone status%s\n' "${_TUI_BOLD}" "${_TUI_RESET}"
+  echo ""
 }
 
 _setup_shell_init() {
@@ -239,10 +430,8 @@ _setup_shell_init() {
 }
 
 _setup_claude_hook() {
-  local base_dir
-  base_dir="$(cd "$(dirname "$0")/.." && pwd)"
-  local done_cmd="${base_dir}/hooks/claude-done.sh"
-  local notify_cmd="${base_dir}/hooks/claude-notify.sh"
+  local done_cmd="${SHELLDONE_HOOKS}/claude-done.sh"
+  local notify_cmd="${SHELLDONE_HOOKS}/claude-notify.sh"
   local claude_settings="$HOME/.claude/settings.json"
 
   if [[ ! -f "$done_cmd" ]]; then
@@ -315,10 +504,8 @@ PYEOF
 }
 
 _setup_codex_hook() {
-  local base_dir
-  base_dir="$(cd "$(dirname "$0")/.." && pwd)"
-  local done_cmd="${base_dir}/hooks/codex-done.sh"
-  local notify_cmd="${base_dir}/hooks/codex-notify.sh"
+  local done_cmd="${SHELLDONE_HOOKS}/codex-done.sh"
+  local notify_cmd="${SHELLDONE_HOOKS}/codex-notify.sh"
   local codex_settings="$HOME/.codex/config.json"
 
   if [[ ! -f "$done_cmd" ]]; then
@@ -391,10 +578,8 @@ PYEOF
 }
 
 _setup_gemini_hook() {
-  local base_dir
-  base_dir="$(cd "$(dirname "$0")/.." && pwd)"
-  local done_cmd="${base_dir}/hooks/gemini-done.sh"
-  local notify_cmd="${base_dir}/hooks/gemini-notify.sh"
+  local done_cmd="${SHELLDONE_HOOKS}/gemini-done.sh"
+  local notify_cmd="${SHELLDONE_HOOKS}/gemini-notify.sh"
   local gemini_settings="$HOME/.gemini/settings.json"
 
   if [[ ! -f "$done_cmd" ]]; then
@@ -463,10 +648,8 @@ PYEOF
 }
 
 _setup_copilot_hook() {
-  local base_dir
-  base_dir="$(cd "$(dirname "$0")/.." && pwd)"
-  local done_cmd="${base_dir}/hooks/copilot-done.sh"
-  local notify_cmd="${base_dir}/hooks/copilot-notify.sh"
+  local done_cmd="${SHELLDONE_HOOKS}/copilot-done.sh"
+  local notify_cmd="${SHELLDONE_HOOKS}/copilot-notify.sh"
   local hooks_dir="$HOME/.github/hooks"
   local done_file="${hooks_dir}/shelldone-session-end.json"
   local notify_file="${hooks_dir}/shelldone-notification.json"
@@ -506,10 +689,8 @@ JSONEOF
 }
 
 _setup_cursor_hook() {
-  local base_dir
-  base_dir="$(cd "$(dirname "$0")/.." && pwd)"
-  local done_cmd="${base_dir}/hooks/cursor-done.sh"
-  local notify_cmd="${base_dir}/hooks/cursor-notify.sh"
+  local done_cmd="${SHELLDONE_HOOKS}/cursor-done.sh"
+  local notify_cmd="${SHELLDONE_HOOKS}/cursor-notify.sh"
   local cursor_hooks="$HOME/.cursor/hooks.json"
 
   if [[ ! -f "$done_cmd" ]]; then
@@ -620,6 +801,19 @@ cmd_test() {
 }
 
 cmd_uninstall() {
+  # Check for --yes/-y flag
+  local skip_confirm=false
+  case "${1:-}" in
+    --yes|-y) skip_confirm=true ;;
+  esac
+
+  if ! $skip_confirm && _tui_is_interactive; then
+    if ! _tui_confirm "This will remove shelldone from .zshrc, .bashrc, and all AI CLI hooks. Continue?"; then
+      echo "Cancelled."
+      return 0
+    fi
+  fi
+
   # Legacy marker constants (for cleaning up old cli-alert blocks)
   local _OLD_MARKER_BEGIN="# >>> cli-alert >>>"
   local _OLD_MARKER_END="# <<< cli-alert <<<"
@@ -661,9 +855,6 @@ cmd_uninstall() {
 
   _remove_from_rc "$HOME/.zshrc"
   _remove_from_rc "$HOME/.bashrc"
-
-  local base_dir
-  base_dir="$(cd "$(dirname "$0")/.." && pwd)"
 
   # Remove Claude hook from ~/.claude/settings.json
   _uninstall_json_hook() {
@@ -725,16 +916,16 @@ PYEOF
   }
 
   # Remove Claude Code hooks
-  _uninstall_json_hook "$HOME/.claude/settings.json" "${base_dir}/hooks/claude-done.sh" "Claude Code" "Stop"
-  _uninstall_json_hook "$HOME/.claude/settings.json" "${base_dir}/hooks/claude-notify.sh" "Claude Code" "Notification"
+  _uninstall_json_hook "$HOME/.claude/settings.json" "${SHELLDONE_HOOKS}/claude-done.sh" "Claude Code" "Stop"
+  _uninstall_json_hook "$HOME/.claude/settings.json" "${SHELLDONE_HOOKS}/claude-notify.sh" "Claude Code" "Notification"
 
   # Remove Codex CLI hooks
-  _uninstall_json_hook "$HOME/.codex/config.json" "${base_dir}/hooks/codex-done.sh" "Codex CLI" "Stop"
-  _uninstall_json_hook "$HOME/.codex/config.json" "${base_dir}/hooks/codex-notify.sh" "Codex CLI" "Notification"
+  _uninstall_json_hook "$HOME/.codex/config.json" "${SHELLDONE_HOOKS}/codex-done.sh" "Codex CLI" "Stop"
+  _uninstall_json_hook "$HOME/.codex/config.json" "${SHELLDONE_HOOKS}/codex-notify.sh" "Codex CLI" "Notification"
 
   # Remove Gemini CLI hooks
-  _uninstall_json_hook "$HOME/.gemini/settings.json" "${base_dir}/hooks/gemini-done.sh" "Gemini CLI" "hooks"
-  _uninstall_json_hook "$HOME/.gemini/settings.json" "${base_dir}/hooks/gemini-notify.sh" "Gemini CLI" "hooks"
+  _uninstall_json_hook "$HOME/.gemini/settings.json" "${SHELLDONE_HOOKS}/gemini-done.sh" "Gemini CLI" "hooks"
+  _uninstall_json_hook "$HOME/.gemini/settings.json" "${SHELLDONE_HOOKS}/gemini-notify.sh" "Gemini CLI" "hooks"
 
   # Remove Copilot CLI hooks
   local copilot_hook_file="$HOME/.github/hooks/shelldone-session-end.json"
@@ -749,8 +940,8 @@ PYEOF
   fi
 
   # Remove Cursor hooks
-  _uninstall_json_hook "$HOME/.cursor/hooks.json" "${base_dir}/hooks/cursor-done.sh" "Cursor" "stop"
-  _uninstall_json_hook "$HOME/.cursor/hooks.json" "${base_dir}/hooks/cursor-notify.sh" "Cursor" "notification"
+  _uninstall_json_hook "$HOME/.cursor/hooks.json" "${SHELLDONE_HOOKS}/cursor-done.sh" "Cursor" "stop"
+  _uninstall_json_hook "$HOME/.cursor/hooks.json" "${SHELLDONE_HOOKS}/cursor-notify.sh" "Cursor" "notification"
 
   echo ""
   printf '\033[1;32m[shelldone]\033[0m Uninstalled! Restart your shell to apply.\n'
@@ -770,6 +961,165 @@ cmd_version() {
 }
 
 cmd_status() {
+  local mode="compact"
+  case "${1:-}" in
+    --full|-v) mode="full" ;;
+  esac
+
+  if [[ "$mode" == "full" ]]; then
+    _status_full
+  else
+    _status_compact
+  fi
+}
+
+_status_compact() {
+  (
+    unset _SHELLDONE_LOADED
+    source "${SHELLDONE_LIB}/shelldone.sh"
+
+    local check_mark="${_TUI_GREEN}✓${_TUI_RESET}" dash="${_TUI_DIM}--${_TUI_RESET}"
+
+    printf '\n%sshelldone %s%s (%s, %s)\n\n' "${_TUI_BOLD}" "$SHELLDONE_VERSION" "${_TUI_RESET}" "$_SHELLDONE_PLATFORM" "$(basename "${SHELL:-unknown}")"
+
+    # Shell integration
+    local zsh_status="$dash" bash_status="$dash"
+    [[ -f "$HOME/.zshrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.zshrc" 2>/dev/null && zsh_status="$check_mark"
+    [[ -f "$HOME/.bashrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.bashrc" 2>/dev/null && bash_status="$check_mark"
+    printf '  Shell:      .zshrc %b  .bashrc %b\n' "$zsh_status" "$bash_status"
+
+    # Desktop notification tool
+    local desktop_tool="--"
+    case "$_SHELLDONE_PLATFORM" in
+      darwin) command -v terminal-notifier &>/dev/null && desktop_tool="terminal-notifier" || { command -v osascript &>/dev/null && desktop_tool="osascript"; } ;;
+      linux)  command -v notify-send &>/dev/null && desktop_tool="notify-send" ;;
+      wsl|windows) command -v powershell.exe &>/dev/null && desktop_tool="powershell.exe" ;;
+    esac
+    if [[ "$desktop_tool" != "--" ]]; then
+      printf '  Desktop:    %s %b\n' "$desktop_tool" "$check_mark"
+    else
+      printf '  Desktop:    %b\n' "$dash"
+    fi
+
+    # Sound
+    printf '  Sound:      %s / %s\n' "${SHELLDONE_SOUND_SUCCESS:-Glass}" "${SHELLDONE_SOUND_FAILURE:-Sosumi}"
+
+    # Config file
+    local config_file="${SHELLDONE_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/shelldone/config}"
+    if [[ -f "$config_file" ]]; then
+      printf '  Config:     %s %b\n' "$config_file" "$check_mark"
+    else
+      printf '  Config:     not created\n'
+    fi
+    echo ""
+
+    # Load state module
+    local _state_lib="${SHELLDONE_LIB}/state.sh"
+    if [[ -f "$_state_lib" ]]; then
+      unset _SHELLDONE_STATE_LOADED
+      source "$_state_lib"
+    fi
+
+    # Settings summary
+    printf '  Auto-notify: %s (threshold: %ss, filter: %s)\n' \
+      "${SHELLDONE_AUTO:-true}" "${SHELLDONE_THRESHOLD:-10}" "${SHELLDONE_NOTIFY_ON:-all}"
+    printf '  Focus:       %s\n' "${SHELLDONE_FOCUS_DETECT:-true}"
+
+    # Mute
+    local mute_str="off"
+    local mute_until
+    if mute_until="$(_shelldone_state_read "mute_until" 2>/dev/null)"; then
+      if [[ "$mute_until" == "0" ]]; then
+        mute_str="on (indefinite)"
+      else
+        local now; now=$(date +%s)
+        if (( mute_until > now )); then
+          local remaining=$(( mute_until - now ))
+          if (( remaining >= 3600 )); then
+            mute_str="on ($(( remaining / 3600 ))h $(( (remaining % 3600) / 60 ))m left)"
+          elif (( remaining >= 60 )); then
+            mute_str="on ($(( remaining / 60 ))m left)"
+          else
+            mute_str="on (${remaining}s left)"
+          fi
+        fi
+      fi
+    fi
+    printf '  Mute:        %s\n' "$mute_str"
+
+    # Schedule
+    local quiet_start quiet_end
+    quiet_start="$(_shelldone_state_read "quiet_start" 2>/dev/null)" || quiet_start=""
+    quiet_end="$(_shelldone_state_read "quiet_end" 2>/dev/null)" || quiet_end=""
+    if [[ -n "$quiet_start" && -n "$quiet_end" ]]; then
+      printf '  Schedule:    %s-%s\n' "$quiet_start" "$quiet_end"
+    elif [[ -n "${SHELLDONE_QUIET_HOURS:-}" ]]; then
+      printf '  Schedule:    %s\n' "$SHELLDONE_QUIET_HOURS"
+    else
+      printf '  Schedule:    none\n'
+    fi
+    echo ""
+
+    # Channels compact line
+    local -a ch_names=("slack" "discord" "telegram" "email" "whatsapp" "webhook")
+    local -a ch_envs=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
+    printf '  Channels:   '
+    local ci
+    for ci in "${!ch_names[@]}"; do
+      local cname="${ch_names[$ci]}" cenv="${ch_envs[$ci]}"
+      if [[ -n "${!cenv:-}" ]]; then
+        printf ' %s %b' "$cname" "$check_mark"
+      else
+        printf ' %s %b' "$cname" "$dash"
+      fi
+    done
+    echo ""
+
+    # AI hooks compact line
+    printf '  AI Hooks:   '
+    local ai_i
+    for ai_i in "${!_SHELLDONE_AI_NAMES[@]}"; do
+      local ai_name="${_SHELLDONE_AI_NAMES[$ai_i]}"
+      local ai_hook="${_SHELLDONE_AI_HOOKS[$ai_i]}"
+      local ai_cmd="${_SHELLDONE_AI_CMDS[$ai_i]}"
+      local ai_settings="${_SHELLDONE_AI_SETTINGS[$ai_i]}"
+      local ai_config_dir="${_SHELLDONE_AI_CONFIGDIRS[$ai_i]}"
+
+      [[ -z "$ai_hook" ]] && continue
+
+      local ai_detected=false
+      if command -v "$ai_cmd" &>/dev/null || [[ -n "$ai_config_dir" && -d "$ai_config_dir" ]]; then
+        ai_detected=true
+      fi
+
+      if ! $ai_detected; then
+        printf ' %s %b' "$ai_name" "$dash"
+        continue
+      fi
+
+      local hook_file="${SHELLDONE_HOOKS}/${ai_hook}"
+      local hook_installed=false
+      if [[ "$ai_name" == "copilot" ]]; then
+        local copilot_hook="$HOME/.github/hooks/shelldone-session-end.json"
+        [[ -f "$copilot_hook" ]] && grep -q "copilot-done" "$copilot_hook" 2>/dev/null && hook_installed=true
+      elif [[ -n "$ai_settings" && -f "$ai_settings" ]]; then
+        local hook_basename; hook_basename=$(basename "$hook_file")
+        grep -q "${hook_basename%.sh}" "$ai_settings" 2>/dev/null && hook_installed=true
+      fi
+
+      if $hook_installed; then
+        printf ' %s %b' "$ai_name" "$check_mark"
+      else
+        printf ' %s %b' "$ai_name" "$dash"
+      fi
+    done
+    echo ""
+
+    printf '\n  Tip: Run %sshelldone doctor%s to diagnose issues\n\n' "${_TUI_BOLD}" "${_TUI_RESET}"
+  )
+}
+
+_status_full() {
   (
     unset _SHELLDONE_LOADED
     source "${SHELLDONE_LIB}/shelldone.sh"
@@ -877,8 +1227,6 @@ cmd_status() {
 
     # AI CLI hooks
     echo "AI CLI hooks:"
-    local base_dir
-    base_dir="$(cd "$(dirname "$0")/.." && pwd)"
     local ai_i
     for ai_i in "${!_SHELLDONE_AI_NAMES[@]}"; do
       local ai_name="${_SHELLDONE_AI_NAMES[$ai_i]}"
@@ -905,7 +1253,7 @@ cmd_status() {
       fi
 
       # Check hook installation
-      local hook_file="${base_dir}/hooks/${ai_hook}"
+      local hook_file="${SHELLDONE_HOOKS}/${ai_hook}"
       local hook_installed=false
 
       # Copilot uses a file-based approach
@@ -957,7 +1305,7 @@ cmd_status() {
       printf '  HTTP transport:  %s\n' "$transport"
       printf '  Rate limit:      %ss\n' "${SHELLDONE_RATE_LIMIT:-10}"
     else
-      printf '  %s no channels configured (run "shelldone webhook status" for details)\n' "$cross_mark"
+      printf '  - no channels configured (run "shelldone webhook status" for details)\n'
     fi
     echo ""
 
@@ -1119,8 +1467,11 @@ cmd_exclude() {
           echo >&2 "Usage: shelldone exclude add <pattern>"
           exit 1
         fi
-        printf 'Add to your shell config:\n\n'
-        printf '  export SHELLDONE_EXCLUDE="%s %s"\n\n' "$current" "$pattern"
+        local new_list="${current} ${pattern}"
+        _config_set_value "SHELLDONE_EXCLUDE" "$new_list"
+        _tui_ok "Added '${pattern}' to exclusion list"
+        printf '  Current: %s\n' "$new_list"
+        printf '  Active in new shell sessions\n'
         ;;
       remove)
         local pattern="${2:-}"
@@ -1135,8 +1486,10 @@ cmd_exclude() {
             new_list="${new_list:+$new_list }$item"
           fi
         done
-        printf 'Add to your shell config:\n\n'
-        printf '  export SHELLDONE_EXCLUDE="%s"\n\n' "$new_list"
+        _config_set_value "SHELLDONE_EXCLUDE" "$new_list"
+        _tui_ok "Removed '${pattern}' from exclusion list"
+        printf '  Current: %s\n' "$new_list"
+        printf '  Active in new shell sessions\n'
         ;;
       *)
         echo >&2 "Usage: shelldone exclude [list|add <pattern>|remove <pattern>]"
@@ -1155,6 +1508,7 @@ cmd_webhook() {
     case "$action" in
       status)
         echo "External notifications:"
+        printf '  %sTip: try "shelldone channel" for guided setup%s\n\n' "${_TUI_DIM}" "${_TUI_RESET}"
 
         # Transport
         local transport="none"
@@ -1257,6 +1611,11 @@ cmd_webhook() {
           printf '\033[1;31m[shelldone]\033[0m Test FAILED.'
           [[ -n "${_SHELLDONE_LAST_HTTP_STATUS:-}" && "${_SHELLDONE_LAST_HTTP_STATUS:-}" != "unknown" ]] && printf ' (HTTP %s)' "$_SHELLDONE_LAST_HTTP_STATUS"
           printf '\n'
+          if [[ "${_SHELLDONE_LAST_HTTP_STATUS:-}" == "000" ]]; then
+            printf '\033[1;33m[shelldone]\033[0m HTTP 000 = connection failed (DNS or network error).\n'
+            [[ -n "${_SHELLDONE_LAST_CURL_ERROR:-}" ]] && printf '\033[1;33m[shelldone]\033[0m curl: %s\n' "$_SHELLDONE_LAST_CURL_ERROR"
+            printf '\033[1;33m[shelldone]\033[0m Tip: check for invisible characters in the URL (re-type manually instead of pasting).\n'
+          fi
           printf '\033[1;33m[shelldone]\033[0m Run with SHELLDONE_EXTERNAL_DEBUG=true for details.\n'
           exit 1
         fi
@@ -1294,6 +1653,14 @@ cmd_history() {
       ;;
     --clear)
       if [[ -f "$log_file" ]]; then
+        local entry_count
+        entry_count=$(wc -l < "$log_file" | tr -d ' ')
+        if _tui_is_interactive; then
+          if ! _tui_confirm "Clear all notification history (${entry_count} entries)?"; then
+            echo "Cancelled."
+            return 0
+          fi
+        fi
         rm -f "$log_file"
         echo "History cleared."
       else
@@ -1382,17 +1749,67 @@ CONFIGEOF
       ;;
     edit)
       if [[ ! -f "$config_file" ]]; then
-        echo >&2 "Config file does not exist. Create it first:"
-        echo >&2 "  mkdir -p \"$config_dir\" && shelldone config init > \"$config_file\""
-        exit 1
+        if _tui_is_interactive; then
+          if _tui_confirm "Config file doesn't exist. Create it?"; then
+            mkdir -p "$config_dir"
+            cmd_config init > "$config_file"
+            _tui_ok "Created $config_file"
+          else
+            return 0
+          fi
+        else
+          echo >&2 "Config file does not exist. Create it first:"
+          echo >&2 "  mkdir -p \"$config_dir\" && shelldone config init > \"$config_file\""
+          exit 1
+        fi
       fi
       "${EDITOR:-${VISUAL:-vi}}" "$config_file"
       ;;
     path)
       echo "$config_file"
       ;;
+    set)
+      local key="${2:-}" value="${3:-}"
+      if [[ -z "$key" ]] || [[ -z "$value" ]]; then
+        echo >&2 "Usage: shelldone config set KEY VALUE"
+        echo >&2 "Example: shelldone config set SHELLDONE_THRESHOLD 30"
+        exit 1
+      fi
+      # Validate key
+      local valid=false k
+      for k in $_SHELLDONE_VALID_KEYS; do
+        [[ "$k" == "$key" ]] && valid=true && break
+      done
+      if ! $valid; then
+        echo >&2 "shelldone: unknown config key '$key'"
+        echo >&2 "Valid keys: $_SHELLDONE_VALID_KEYS" | fold -s -w 80
+        exit 1
+      fi
+      _config_set_value "$key" "$value"
+      _tui_ok "${key}=${value} (saved to config)"
+      ;;
+    get)
+      local key="${2:-}"
+      if [[ -z "$key" ]]; then
+        echo >&2 "Usage: shelldone config get KEY"
+        exit 1
+      fi
+      printf '%s = %s\n' "$key" "$(_config_get_value "$key")"
+      ;;
+    list)
+      (
+        unset _SHELLDONE_LOADED
+        source "${SHELLDONE_LIB}/shelldone.sh"
+        printf '%s%-30s %s%s\n' "${_TUI_BOLD}" "KEY" "VALUE" "${_TUI_RESET}"
+        printf '%-30s %s\n' "------------------------------" "-----"
+        local k
+        for k in $_SHELLDONE_VALID_KEYS; do
+          printf '%-30s %s\n' "$k" "$(_config_get_value "$k")"
+        done
+      )
+      ;;
     *)
-      echo >&2 "Usage: shelldone config [show|init|edit|path]"
+      echo >&2 "Usage: shelldone config [show|init|edit|path|set KEY VALUE|get KEY|list]"
       exit 1
       ;;
   esac
@@ -1628,97 +2045,752 @@ cmd_help() {
   cat <<'HELP'
 shelldone — Terminal process completion notifier
 
-Usage:
-  shelldone init [bash|zsh]     Output shell init code (use with eval)
-  shelldone setup [all|ai-hooks|<ai>-hook]  Configure shell + AI CLI hooks
-  shelldone uninstall           Remove shell integration + all AI hooks
-  shelldone status              Show diagnostic info and verify setup
-  shelldone test-notify         Send a test notification
-  shelldone sounds              List available system sounds
-  shelldone exclude [list|add|remove]  Manage auto-notify exclusion list
-  shelldone webhook [status|test <channel>]  External notification channels
-  shelldone history [show [N]|--clear|--path]  View notification history
-  shelldone config [show|init|edit|path]  Manage config file
-  shelldone mute [duration]     Mute all notifications (e.g., 30m, 2h)
-  shelldone unmute              Resume notifications
+Getting Started:
+  shelldone setup                Interactive setup wizard
+  shelldone setup --quick        Non-interactive, sensible defaults
+  shelldone doctor               Check configuration for issues
+  shelldone test-notify          Send a test notification
+  shelldone status               Quick status overview
+  shelldone status --full        Detailed diagnostic info
+
+Configuration:
+  shelldone config show          View current config file
+  shelldone config set K V       Set a config value
+  shelldone config get K         Get a config value with source
+  shelldone config list          List all settings with sources
+  shelldone config init          Output default config template
+  shelldone config edit          Open config in editor
+  shelldone channel add <name>   Guided channel setup
+  shelldone channel list         Show all channel statuses
+  shelldone channel test <name>  Test a channel
+  shelldone exclude [list|add|remove]  Manage auto-notify exclusions
+
+Daily Use:
+  alert <command>                Wrap command with notifications
+  alert --on-failure <command>   Notify only on failure
+  alert-bg [PID|%jobspec]       Monitor background job
+  (auto-notify)                  Commands >10s auto-notify on completion
+
+Notification Control:
+  shelldone mute [duration]      Mute all notifications (e.g., 30m, 2h)
+  shelldone unmute               Resume notifications
   shelldone toggle [layer [on|off]]  Toggle notification layers
   shelldone schedule [HH:MM-HH:MM|off]  Set daily quiet hours
-  shelldone test                Run verification tests
-  shelldone version [--verbose] Show version (--verbose for details)
-  shelldone help                Show this help
-
-Quick start:
-  # Add to your .zshrc or .bashrc:
-  eval "$(shelldone init zsh)"
-
-  # Or auto-configure everything:
-  shelldone setup
-
-After init, you get:
-  alert [--on-failure|--on-success] <command>   Wrap command with notifications
-  alert-bg [PID|%jobspec]       Monitor background job and notify on completion
-  (auto-notify)                 Commands >30s auto-notify on completion
-
-AI CLI hooks:
-  shelldone setup ai-hooks         Install hooks for all detected AI CLIs
-  shelldone setup claude-hook      Install Claude Code Stop hook
-  shelldone setup codex-hook       Install Codex CLI hook
-  shelldone setup gemini-hook      Install Gemini CLI hook
-  shelldone setup copilot-hook     Install Copilot CLI hook
-  shelldone setup cursor-hook      Install Cursor hook
-  shelldone toggle claude off      Disable notifications from Claude
-  shelldone toggle codex off       Disable notifications from Codex
-
-  Aider: no native hooks — use: alert aider <prompt>
-
-Config file:
-  Create with: shelldone config init > ~/.config/shelldone/config
-
-Config (env vars, set before eval):
-  SHELLDONE_ENABLED=true        Master on/off switch
-  SHELLDONE_AUTO=true           Auto-notify on/off
-  SHELLDONE_THRESHOLD=10        Seconds before auto-notify triggers
-  SHELLDONE_NOTIFY_ON=all       Notify filter: all, failure, success
-  SHELLDONE_SOUND_SUCCESS=Glass Success sound name or file path
-  SHELLDONE_SOUND_FAILURE=Sosumi Failure sound name or file path
-  SHELLDONE_VOICE=true          Enable TTS announcements
-  SHELLDONE_EXCLUDE="vim ssh"   Commands to skip (supports globs like npm*)
-  SHELLDONE_DEBUG=true          Enable debug output to stderr
-  SHELLDONE_SOUND_TIMEOUT=10    Max seconds to wait for sound playback
-  SHELLDONE_FOCUS_DETECT=true   Suppress notifications when terminal focused
-  SHELLDONE_ACTIVATE=...        macOS: bundle ID to activate on notification click (auto-detect)
-  SHELLDONE_TERMINALS="..."     Custom terminal app names for focus detection
-  SHELLDONE_HISTORY=true        Log notifications to history file
-
-Notification control:
-  shelldone mute 30m            Mute all for 30 minutes
-  shelldone mute                Mute indefinitely
-  shelldone unmute              Resume notifications
-  shelldone toggle sound off    Disable sound, keep desktop popups
-  shelldone toggle slack off    Disable Slack channel
-  shelldone toggle external off Disable all external channels
-  shelldone toggle claude off   Disable Claude Code notifications
-  shelldone schedule 22:00-08:00  Set quiet hours (crosses midnight OK)
-  shelldone schedule off        Clear quiet hours
-  SHELLDONE_QUIET_HOURS=22:00-08:00  Env var fallback for quiet hours
 
   Layers: desktop, sound, voice, slack, discord, telegram, email,
           whatsapp, webhook, external (group),
           claude, codex, gemini, copilot, cursor (AI CLIs)
 
-External notifications (env vars):
-  SHELLDONE_SLACK_WEBHOOK=...   Slack incoming webhook URL
-  SHELLDONE_DISCORD_WEBHOOK=... Discord webhook URL
-  SHELLDONE_TELEGRAM_TOKEN=...  Telegram bot token (also set _CHAT_ID)
-  SHELLDONE_EMAIL_TO=...        Email recipient (requires sendmail/mail)
-  SHELLDONE_WHATSAPP_TOKEN=...  Twilio auth (also set _API_URL, _FROM, _TO)
-  SHELLDONE_WEBHOOK_URL=...     Generic webhook endpoint
-  SHELLDONE_RATE_LIMIT=10       Min seconds between external notifications
-  SHELLDONE_WEBHOOK_TIMEOUT=5   HTTP timeout in seconds
+AI CLI Hooks:
+  shelldone setup ai-hooks       Install hooks for all detected AI CLIs
+  shelldone setup <ai>-hook      Install a specific AI CLI hook
+  shelldone toggle claude off    Disable notifications from Claude
+  Available: claude, codex, gemini, copilot, cursor
+  Aider: no native hooks — use: alert aider <prompt>
+
+Other:
+  shelldone init [bash|zsh]      Output shell init code (use with eval)
+  shelldone webhook [status|test]  Manage external channels (legacy)
+  shelldone history [show|--clear] View notification history
+  shelldone sounds               List available system sounds
+  shelldone uninstall [--yes]    Remove shell integration + hooks
+  shelldone version [--verbose]  Show version
+  shelldone help                 Show this help
+
+Config (env vars, set before eval):
+  SHELLDONE_ENABLED=true         Master on/off switch
+  SHELLDONE_AUTO=true            Auto-notify on/off
+  SHELLDONE_THRESHOLD=10         Seconds before auto-notify triggers
+  SHELLDONE_NOTIFY_ON=all        Notify filter: all, failure, success
+  SHELLDONE_SOUND_SUCCESS=Glass  Success sound name or file path
+  SHELLDONE_SOUND_FAILURE=Sosumi Failure sound name or file path
+  SHELLDONE_VOICE=true           Enable TTS announcements
+  SHELLDONE_EXCLUDE="vim ssh"    Commands to skip (supports globs)
+  SHELLDONE_FOCUS_DETECT=true    Suppress when terminal focused
+  SHELLDONE_HISTORY=true         Log notifications to history file
+
+External channels (env vars or shelldone channel add):
+  SHELLDONE_SLACK_WEBHOOK=...    Slack incoming webhook URL
+  SHELLDONE_DISCORD_WEBHOOK=...  Discord webhook URL
+  SHELLDONE_TELEGRAM_TOKEN=...   Telegram bot token (also set _CHAT_ID)
+  SHELLDONE_EMAIL_TO=...         Email recipient (requires sendmail/mail)
+  SHELLDONE_WHATSAPP_TOKEN=...   Twilio auth (also set _API_URL, _FROM, _TO)
+  SHELLDONE_WEBHOOK_URL=...      Generic webhook endpoint
 HELP
 }
 
+# ── Config set/get helpers (Step 4) ──────────────────────────────────────────
+
+_SHELLDONE_VALID_KEYS="SHELLDONE_ENABLED SHELLDONE_AUTO SHELLDONE_THRESHOLD SHELLDONE_NOTIFY_ON SHELLDONE_SOUND_SUCCESS SHELLDONE_SOUND_FAILURE SHELLDONE_VOICE SHELLDONE_FOCUS_DETECT SHELLDONE_HISTORY SHELLDONE_EXCLUDE SHELLDONE_ACTIVATE SHELLDONE_QUIET_HOURS SHELLDONE_SOUND_TIMEOUT SHELLDONE_DEBUG SHELLDONE_TERMINALS SHELLDONE_RATE_LIMIT SHELLDONE_WEBHOOK_TIMEOUT SHELLDONE_SLACK_WEBHOOK SHELLDONE_DISCORD_WEBHOOK SHELLDONE_TELEGRAM_TOKEN SHELLDONE_TELEGRAM_CHAT_ID SHELLDONE_EMAIL_TO SHELLDONE_WHATSAPP_TOKEN SHELLDONE_WHATSAPP_API_URL SHELLDONE_WHATSAPP_FROM SHELLDONE_WHATSAPP_TO SHELLDONE_WEBHOOK_URL"
+
+_config_ensure_file() {
+  local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/shelldone"
+  local config_file="${SHELLDONE_CONFIG:-${config_dir}/config}"
+  if [[ ! -f "$config_file" ]]; then
+    mkdir -p "$config_dir"
+    cmd_config init > "$config_file"
+  fi
+  echo "$config_file"
+}
+
+_config_is_export_key() {
+  local key="$1"
+  case "$key" in
+    SHELLDONE_SLACK_WEBHOOK|SHELLDONE_DISCORD_WEBHOOK|SHELLDONE_TELEGRAM_TOKEN|\
+    SHELLDONE_TELEGRAM_CHAT_ID|SHELLDONE_EMAIL_TO|SHELLDONE_WHATSAPP_TOKEN|\
+    SHELLDONE_WHATSAPP_API_URL|SHELLDONE_WHATSAPP_FROM|SHELLDONE_WHATSAPP_TO|\
+    SHELLDONE_WEBHOOK_URL)
+      return 0 ;;
+    *)
+      return 1 ;;
+  esac
+}
+
+_config_set_value() {
+  local key="$1" value="$2"
+  local config_file
+  config_file="$(_config_ensure_file)"
+
+  # Build the line to write
+  local new_line
+  if _config_is_export_key "$key"; then
+    new_line="export ${key}=\"${value}\""
+  else
+    new_line=": \"\${${key}:=${value}}\""
+  fi
+
+  local tmp_file
+  tmp_file=$(mktemp)
+  _SHELLDONE_TMPFILES+=("$tmp_file")
+
+  local found=false
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # Match lines containing this key (commented or uncommented)
+    local match=false
+    case "$line" in
+      *"${key}"*) match=true ;;
+    esac
+    # Only match if it's a config line (: "${KEY:=...}" or export KEY=...)
+    if $match; then
+      case "$line" in
+        *": \"\${"*|*"export ${key}="*|*"# : \"\${"*|*"# export ${key}="*)
+          printf '%s\n' "$new_line" >> "$tmp_file"
+          found=true
+          continue
+          ;;
+      esac
+    fi
+    printf '%s\n' "$line" >> "$tmp_file"
+  done < "$config_file"
+
+  if ! $found; then
+    # Append at end
+    printf '%s\n' "$new_line" >> "$tmp_file"
+  fi
+
+  mv "$tmp_file" "$config_file"
+}
+
+_config_get_value() {
+  local key="$1"
+  local config_file="${SHELLDONE_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/shelldone/config}"
+
+  # Check env first
+  local env_val="${!key:-}"
+  if [[ -n "$env_val" ]]; then
+    printf '%s (env)\n' "$env_val"
+    return 0
+  fi
+
+  # Check config file
+  if [[ -f "$config_file" ]]; then
+    local line
+    while IFS= read -r line; do
+      # Skip comments
+      [[ "$line" =~ ^[[:space:]]*# ]] && continue
+      # Match : "${KEY:=value}" pattern
+      if [[ "$line" =~ ${key}:=([^\}\"]*) ]]; then
+        printf '%s (config)\n' "${BASH_REMATCH[1]}"
+        return 0
+      fi
+      # Match export KEY="value" pattern
+      if [[ "$line" =~ ^export[[:space:]]+${key}=\"([^\"]*)\" ]]; then
+        printf '%s (config)\n' "${BASH_REMATCH[1]}"
+        return 0
+      fi
+    done < "$config_file"
+  fi
+
+  echo "(not set)"
+}
+
+# ── Doctor command (Step 2) ──────────────────────────────────────────────────
+
+cmd_doctor() {
+  local passes=0 warnings=0 errors=0
+
+  _doctor_pass() { passes=$((passes + 1)); printf '    %s\n' "$(_tui_ok "$1")"; }
+  _doctor_warn() { warnings=$((warnings + 1)); printf '    %s\n' "$(_tui_warn "$1")"; }
+  _doctor_fail() { errors=$((errors + 1)); printf '    %s\n' "$(_tui_err "$1")"; }
+  _doctor_fix()  { printf '      Fix: %s\n' "$1"; }
+
+  # Shell Integration
+  _tui_header "  Shell Integration"
+  local rc
+  for rc in "$HOME/.zshrc" "$HOME/.bashrc"; do
+    local name
+    name="$(basename "$rc")"
+    if [[ -f "$rc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$rc" 2>/dev/null; then
+      _doctor_pass "$name has shelldone block"
+    elif [[ -f "$rc" ]]; then
+      _doctor_warn "$name exists but missing shelldone block"
+      _doctor_fix "shelldone setup"
+    fi
+  done
+
+  if command -v shelldone &>/dev/null; then
+    _doctor_pass "shelldone is on PATH"
+  else
+    _doctor_fail "shelldone not found on PATH"
+    _doctor_fix "Add to PATH or re-run install"
+  fi
+
+  # Notification Tools
+  _tui_header "  Notification Tools"
+  (
+    unset _SHELLDONE_LOADED
+    source "${SHELLDONE_LIB}/shelldone.sh"
+    case "$_SHELLDONE_PLATFORM" in
+      darwin)
+        if command -v osascript &>/dev/null; then
+          _doctor_pass "osascript available"
+        else
+          _doctor_fail "osascript not found"
+        fi
+        if command -v terminal-notifier &>/dev/null; then
+          _doctor_pass "terminal-notifier available"
+        else
+          _doctor_warn "terminal-notifier not installed (optional, enhances notifications)"
+          _doctor_fix "brew install terminal-notifier"
+        fi
+        ;;
+      linux)
+        if command -v notify-send &>/dev/null; then
+          _doctor_pass "notify-send available"
+        else
+          _doctor_warn "notify-send not found"
+          _doctor_fix "Install libnotify (e.g., apt install libnotify-bin)"
+        fi
+        ;;
+      wsl|windows)
+        if command -v powershell.exe &>/dev/null; then
+          _doctor_pass "powershell.exe available"
+        else
+          _doctor_warn "powershell.exe not found"
+        fi
+        ;;
+    esac
+  )
+
+  # Config File
+  _tui_header "  Configuration"
+  local config_file="${SHELLDONE_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/shelldone/config}"
+  if [[ -f "$config_file" ]]; then
+    if bash -n "$config_file" 2>/dev/null; then
+      _doctor_pass "Config file exists and parses ($config_file)"
+    else
+      _doctor_fail "Config file has syntax errors"
+      _doctor_fix "shelldone config edit"
+    fi
+  else
+    _doctor_warn "Config file not found"
+    _doctor_fix "shelldone config set SHELLDONE_THRESHOLD 10"
+  fi
+
+  # HTTP Transport
+  _tui_header "  HTTP Transport"
+  if command -v curl &>/dev/null; then
+    _doctor_pass "curl available"
+  elif command -v wget &>/dev/null; then
+    _doctor_pass "wget available"
+  else
+    _doctor_warn "Neither curl nor wget found (required for external channels)"
+    _doctor_fix "Install curl for external notification channels"
+  fi
+
+  # External Channels
+  _tui_header "  External Channels"
+  local channel_checked=false
+  if [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}" ]]; then
+    _doctor_pass "Slack webhook configured"
+    channel_checked=true
+  fi
+  if [[ -n "${SHELLDONE_DISCORD_WEBHOOK:-}" ]]; then
+    _doctor_pass "Discord webhook configured"
+    channel_checked=true
+  fi
+  if [[ -n "${SHELLDONE_TELEGRAM_TOKEN:-}" ]]; then
+    if [[ -n "${SHELLDONE_TELEGRAM_CHAT_ID:-}" ]]; then
+      _doctor_pass "Telegram configured (token + chat ID)"
+      channel_checked=true
+    else
+      _doctor_warn "Telegram: token set but SHELLDONE_TELEGRAM_CHAT_ID missing"
+      _doctor_fix "shelldone channel add telegram"
+      channel_checked=true
+    fi
+  fi
+  if [[ -n "${SHELLDONE_EMAIL_TO:-}" ]]; then
+    _doctor_pass "Email configured (${SHELLDONE_EMAIL_TO})"
+    channel_checked=true
+  fi
+  if [[ -n "${SHELLDONE_WHATSAPP_TOKEN:-}" ]]; then
+    local wa_ok=true
+    [[ -z "${SHELLDONE_WHATSAPP_API_URL:-}" ]] && wa_ok=false
+    [[ -z "${SHELLDONE_WHATSAPP_FROM:-}" ]] && wa_ok=false
+    [[ -z "${SHELLDONE_WHATSAPP_TO:-}" ]] && wa_ok=false
+    if $wa_ok; then
+      _doctor_pass "WhatsApp configured"
+    else
+      _doctor_warn "WhatsApp: token set but missing API_URL, FROM, or TO"
+      _doctor_fix "shelldone channel add whatsapp"
+    fi
+    channel_checked=true
+  fi
+  if [[ -n "${SHELLDONE_WEBHOOK_URL:-}" ]]; then
+    _doctor_pass "Generic webhook configured"
+    channel_checked=true
+  fi
+  if ! $channel_checked; then
+    printf '    %s\n' "$(_tui_info "No external channels configured (optional)")"
+  fi
+
+  # AI CLI Hooks
+  _tui_header "  AI CLI Hooks"
+  local ai_i
+  for ai_i in "${!_SHELLDONE_AI_NAMES[@]}"; do
+    local ai_name="${_SHELLDONE_AI_NAMES[$ai_i]}"
+    local ai_label="${_SHELLDONE_AI_LABELS[$ai_i]}"
+    local ai_hook="${_SHELLDONE_AI_HOOKS[$ai_i]}"
+    local ai_cmd="${_SHELLDONE_AI_CMDS[$ai_i]}"
+    local ai_settings="${_SHELLDONE_AI_SETTINGS[$ai_i]}"
+    local ai_config_dir="${_SHELLDONE_AI_CONFIGDIRS[$ai_i]}"
+
+    [[ -z "$ai_hook" ]] && continue
+
+    if ! command -v "$ai_cmd" &>/dev/null && [[ -z "$ai_config_dir" || ! -d "$ai_config_dir" ]]; then
+      continue  # Not detected, skip silently
+    fi
+
+    local hook_file="${SHELLDONE_HOOKS}/${ai_hook}"
+    local hook_installed=false
+    if [[ "$ai_name" == "copilot" ]]; then
+      local copilot_hook="$HOME/.github/hooks/shelldone-session-end.json"
+      [[ -f "$copilot_hook" ]] && grep -q "copilot-done" "$copilot_hook" 2>/dev/null && hook_installed=true
+    elif [[ -n "$ai_settings" && -f "$ai_settings" ]]; then
+      local hook_basename
+      hook_basename=$(basename "$hook_file")
+      grep -q "${hook_basename%.sh}" "$ai_settings" 2>/dev/null && hook_installed=true
+    fi
+
+    if $hook_installed; then
+      _doctor_pass "${ai_label} hook installed"
+    else
+      _doctor_warn "${ai_label} detected but hook not installed"
+      _doctor_fix "shelldone setup ${ai_name}-hook"
+    fi
+  done
+
+  # Permissions
+  _tui_header "  Permissions"
+  local bin_path
+  bin_path="$(cd "$(dirname "$0")" && pwd)/shelldone"
+  if [[ -x "$bin_path" ]]; then
+    _doctor_pass "shelldone is executable"
+  else
+    _doctor_fail "shelldone is not executable"
+    _doctor_fix "chmod +x $bin_path"
+  fi
+
+  # Summary
+  printf '\n  %sSummary:%s %s%d passed%s' "${_TUI_BOLD}" "${_TUI_RESET}" "${_TUI_GREEN}" "$passes" "${_TUI_RESET}"
+  if [[ $warnings -gt 0 ]]; then
+    printf ', %s%d warnings%s' "${_TUI_YELLOW}" "$warnings" "${_TUI_RESET}"
+  fi
+  if [[ $errors -gt 0 ]]; then
+    printf ', %s%d errors%s' "${_TUI_RED}" "$errors" "${_TUI_RESET}"
+  fi
+  printf '\n\n'
+
+  [[ $errors -eq 0 ]]
+}
+
+# ── Channel command (Step 5) ─────────────────────────────────────────────────
+
+cmd_channel() {
+  local action="${1:-list}"
+
+  case "$action" in
+    list)
+      (
+        unset _SHELLDONE_LOADED
+        source "${SHELLDONE_LIB}/shelldone.sh"
+        _tui_header "External Channels"
+        local -a channels=("slack" "discord" "telegram" "email" "whatsapp" "webhook")
+        local -a envvars=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
+        local i
+        for i in "${!channels[@]}"; do
+          local ch="${channels[$i]}"
+          local ev="${envvars[$i]}"
+          if [[ -n "${!ev:-}" ]]; then
+            printf '  %s✓%s %-12s configured\n' "${_TUI_GREEN}" "${_TUI_RESET}" "$ch"
+          else
+            printf '  %s-%s %-12s not configured\n' "${_TUI_DIM}" "${_TUI_RESET}" "$ch"
+          fi
+        done
+        echo ""
+        printf '  Tip: Run %sshelldone channel add <name>%s for guided setup\n' "${_TUI_BOLD}" "${_TUI_RESET}"
+        echo ""
+      )
+      ;;
+    add)
+      local channel="${2:-}"
+      if [[ -z "$channel" ]]; then
+        echo >&2 "Usage: shelldone channel add <name>"
+        echo >&2 "Channels: slack discord telegram email whatsapp webhook"
+        exit 1
+      fi
+      _channel_setup "$channel"
+      ;;
+    remove)
+      local channel="${2:-}"
+      if [[ -z "$channel" ]]; then
+        echo >&2 "Usage: shelldone channel remove <name>"
+        exit 1
+      fi
+      _channel_remove "$channel"
+      ;;
+    test)
+      local channel="${2:-}"
+      if [[ -z "$channel" ]]; then
+        echo >&2 "Usage: shelldone channel test <name>"
+        exit 1
+      fi
+      # Delegate to webhook test
+      cmd_webhook test "$channel"
+      ;;
+    *)
+      echo >&2 "Usage: shelldone channel [list|add <name>|remove <name>|test <name>]"
+      exit 1
+      ;;
+  esac
+}
+
+_channel_setup() {
+  local channel="$1"
+  case "$channel" in
+    slack)    _channel_setup_slack ;;
+    discord)  _channel_setup_discord ;;
+    telegram) _channel_setup_telegram ;;
+    email)    _channel_setup_email ;;
+    whatsapp) _channel_setup_whatsapp ;;
+    webhook)  _channel_setup_webhook ;;
+    *)
+      echo >&2 "Unknown channel: $channel"
+      echo >&2 "Available: slack discord telegram email whatsapp webhook"
+      exit 1
+      ;;
+  esac
+}
+
+_channel_setup_slack() {
+  _tui_header "Slack Setup"
+  echo ""
+  echo "  To get a Slack webhook URL:"
+  echo "  1. Go to https://api.slack.com/apps"
+  echo "  2. Create an app (or select existing) -> Incoming Webhooks"
+  echo "  3. Activate and add a new webhook to your workspace"
+  echo "  4. Copy the webhook URL"
+  echo ""
+
+  if ! _tui_is_interactive; then
+    echo "Non-interactive mode. Set SHELLDONE_SLACK_WEBHOOK manually."
+    return 1
+  fi
+
+  local url
+  url=$(_tui_prompt "Webhook URL")
+  url=$(_tui_sanitize_url "$url")
+  if [[ -z "$url" ]]; then
+    echo "Cancelled."
+    return 1
+  fi
+  if [[ ! "$url" =~ ^https://hooks\.slack\.com/ ]]; then
+    _tui_warn "URL doesn't look like a Slack webhook (expected https://hooks.slack.com/...)"
+    if ! _tui_confirm "Save anyway?"; then
+      return 1
+    fi
+  fi
+
+  _config_set_value "SHELLDONE_SLACK_WEBHOOK" "$url"
+  _tui_ok "Slack webhook saved to config"
+
+  # Test
+  if _tui_confirm "Send a test message?" "default_yes"; then
+    export SHELLDONE_SLACK_WEBHOOK="$url"
+    cmd_webhook test slack
+  fi
+}
+
+_channel_setup_discord() {
+  _tui_header "Discord Setup"
+  echo ""
+  echo "  To get a Discord webhook URL:"
+  echo "  1. Open Server Settings -> Integrations -> Webhooks"
+  echo "  2. Create a new webhook and copy the URL"
+  echo ""
+
+  if ! _tui_is_interactive; then
+    echo "Non-interactive mode. Set SHELLDONE_DISCORD_WEBHOOK manually."
+    return 1
+  fi
+
+  local url
+  url=$(_tui_prompt "Webhook URL")
+  url=$(_tui_sanitize_url "$url")
+  if [[ -z "$url" ]]; then
+    echo "Cancelled."
+    return 1
+  fi
+  if [[ ! "$url" =~ ^https://discord\.com/api/webhooks/ ]] && [[ ! "$url" =~ ^https://discordapp\.com/api/webhooks/ ]]; then
+    _tui_warn "URL doesn't look like a Discord webhook"
+    if ! _tui_confirm "Save anyway?"; then
+      return 1
+    fi
+  fi
+
+  _config_set_value "SHELLDONE_DISCORD_WEBHOOK" "$url"
+  _tui_ok "Discord webhook saved to config"
+
+  if _tui_confirm "Send a test message?" "default_yes"; then
+    export SHELLDONE_DISCORD_WEBHOOK="$url"
+    cmd_webhook test discord
+  fi
+}
+
+_channel_setup_telegram() {
+  _tui_header "Telegram Setup"
+  echo ""
+  echo "  To set up Telegram notifications:"
+  echo "  1. Message @BotFather on Telegram to create a bot"
+  echo "  2. Copy the bot token"
+  echo "  3. Start a chat with your bot, then get your chat ID"
+  echo "     (message @userinfobot or @RawDataBot to find it)"
+  echo ""
+
+  if ! _tui_is_interactive; then
+    echo "Non-interactive mode. Set SHELLDONE_TELEGRAM_TOKEN and SHELLDONE_TELEGRAM_CHAT_ID manually."
+    return 1
+  fi
+
+  local token
+  token=$(_tui_prompt "Bot token")
+  if [[ -z "$token" ]]; then
+    echo "Cancelled."
+    return 1
+  fi
+
+  local chat_id
+  chat_id=$(_tui_prompt "Chat ID")
+  if [[ -z "$chat_id" ]]; then
+    echo "Cancelled."
+    return 1
+  fi
+
+  _config_set_value "SHELLDONE_TELEGRAM_TOKEN" "$token"
+  _config_set_value "SHELLDONE_TELEGRAM_CHAT_ID" "$chat_id"
+  _tui_ok "Telegram config saved"
+
+  if _tui_confirm "Send a test message?" "default_yes"; then
+    export SHELLDONE_TELEGRAM_TOKEN="$token"
+    export SHELLDONE_TELEGRAM_CHAT_ID="$chat_id"
+    cmd_webhook test telegram
+  fi
+}
+
+_channel_setup_email() {
+  _tui_header "Email Setup"
+  echo ""
+  echo "  Email notifications require sendmail or mail to be available."
+
+  if ! command -v sendmail &>/dev/null && ! command -v mail &>/dev/null; then
+    _tui_err "Neither sendmail nor mail found. Install one first."
+    return 1
+  fi
+  echo ""
+
+  if ! _tui_is_interactive; then
+    echo "Non-interactive mode. Set SHELLDONE_EMAIL_TO manually."
+    return 1
+  fi
+
+  local email
+  email=$(_tui_prompt "Recipient email address")
+  if [[ -z "$email" ]]; then
+    echo "Cancelled."
+    return 1
+  fi
+
+  _config_set_value "SHELLDONE_EMAIL_TO" "$email"
+  _tui_ok "Email recipient saved to config"
+
+  if _tui_confirm "Send a test email?" "default_yes"; then
+    export SHELLDONE_EMAIL_TO="$email"
+    cmd_webhook test email
+  fi
+}
+
+_channel_setup_whatsapp() {
+  _tui_header "WhatsApp Setup (via Twilio)"
+  echo ""
+  echo "  WhatsApp notifications use the Twilio API."
+  echo "  You need a Twilio account with WhatsApp sandbox or approved sender."
+  echo ""
+
+  if ! _tui_is_interactive; then
+    echo "Non-interactive mode. Set SHELLDONE_WHATSAPP_* vars manually."
+    return 1
+  fi
+
+  local api_url token from_num to_num
+
+  api_url=$(_tui_prompt "Twilio API URL" "https://api.twilio.com/2010-04-01/Accounts/YOUR_SID/Messages.json")
+  api_url=$(_tui_sanitize_url "$api_url")
+  [[ -z "$api_url" ]] && { echo "Cancelled."; return 1; }
+
+  token=$(_tui_prompt_secret "Twilio Auth Token")
+  [[ -z "$token" ]] && { echo "Cancelled."; return 1; }
+
+  from_num=$(_tui_prompt "From number (e.g., whatsapp:+14155238886)")
+  [[ -z "$from_num" ]] && { echo "Cancelled."; return 1; }
+
+  to_num=$(_tui_prompt "To number (e.g., whatsapp:+1234567890)")
+  [[ -z "$to_num" ]] && { echo "Cancelled."; return 1; }
+
+  _config_set_value "SHELLDONE_WHATSAPP_API_URL" "$api_url"
+  _config_set_value "SHELLDONE_WHATSAPP_TOKEN" "$token"
+  _config_set_value "SHELLDONE_WHATSAPP_FROM" "$from_num"
+  _config_set_value "SHELLDONE_WHATSAPP_TO" "$to_num"
+  _tui_ok "WhatsApp config saved"
+
+  if _tui_confirm "Send a test message?" "default_yes"; then
+    export SHELLDONE_WHATSAPP_API_URL="$api_url"
+    export SHELLDONE_WHATSAPP_TOKEN="$token"
+    export SHELLDONE_WHATSAPP_FROM="$from_num"
+    export SHELLDONE_WHATSAPP_TO="$to_num"
+    cmd_webhook test whatsapp
+  fi
+}
+
+_channel_setup_webhook() {
+  _tui_header "Generic Webhook Setup"
+  echo ""
+  echo "  shelldone will POST JSON to your endpoint on each notification."
+  echo ""
+
+  if ! _tui_is_interactive; then
+    echo "Non-interactive mode. Set SHELLDONE_WEBHOOK_URL manually."
+    return 1
+  fi
+
+  local url
+  url=$(_tui_prompt "Webhook URL")
+  url=$(_tui_sanitize_url "$url")
+  if [[ -z "$url" ]]; then
+    echo "Cancelled."
+    return 1
+  fi
+  if ! _tui_validate_url "$url"; then
+    _tui_warn "URL doesn't look valid (expected http:// or https://)"
+    if ! _tui_confirm "Save anyway?"; then
+      return 1
+    fi
+  fi
+
+  _config_set_value "SHELLDONE_WEBHOOK_URL" "$url"
+  _tui_ok "Webhook URL saved to config"
+
+  if _tui_confirm "Send a test message?" "default_yes"; then
+    export SHELLDONE_WEBHOOK_URL="$url"
+    cmd_webhook test webhook
+  fi
+}
+
+_channel_remove() {
+  local channel="$1"
+  local key
+  case "$channel" in
+    slack)    key="SHELLDONE_SLACK_WEBHOOK" ;;
+    discord)  key="SHELLDONE_DISCORD_WEBHOOK" ;;
+    telegram) key="SHELLDONE_TELEGRAM_TOKEN" ;;
+    email)    key="SHELLDONE_EMAIL_TO" ;;
+    whatsapp) key="SHELLDONE_WHATSAPP_TOKEN" ;;
+    webhook)  key="SHELLDONE_WEBHOOK_URL" ;;
+    *)
+      echo >&2 "Unknown channel: $channel"
+      exit 1
+      ;;
+  esac
+
+  if _tui_is_interactive; then
+    if ! _tui_confirm "Remove ${channel} channel from config?"; then
+      echo "Cancelled."
+      return 0
+    fi
+  fi
+
+  local config_file="${SHELLDONE_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/shelldone/config}"
+  if [[ ! -f "$config_file" ]]; then
+    echo "No config file found."
+    return 0
+  fi
+
+  # Comment out all keys for this channel
+  local tmp_file
+  tmp_file=$(mktemp)
+  _SHELLDONE_TMPFILES+=("$tmp_file")
+
+  case "$channel" in
+    telegram)
+      local -a keys_to_remove=("SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_TELEGRAM_CHAT_ID") ;;
+    whatsapp)
+      local -a keys_to_remove=("SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WHATSAPP_API_URL" "SHELLDONE_WHATSAPP_FROM" "SHELLDONE_WHATSAPP_TO") ;;
+    *)
+      local -a keys_to_remove=("$key") ;;
+  esac
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    local should_comment=false
+    local k
+    for k in "${keys_to_remove[@]}"; do
+      if [[ "$line" =~ ^export[[:space:]]+${k}= ]] || [[ "$line" =~ ^:[[:space:]]+\"\$\{${k}: ]]; then
+        should_comment=true
+        break
+      fi
+    done
+    if $should_comment; then
+      printf '# %s\n' "$line" >> "$tmp_file"
+    else
+      printf '%s\n' "$line" >> "$tmp_file"
+    fi
+  done < "$config_file"
+
+  mv "$tmp_file" "$config_file"
+  _tui_ok "Removed ${channel} from config"
+}
+
 # ── Dispatch ─────────────────────────────────────────────────────────────────
+
+_SHELLDONE_COMMANDS="init setup uninstall status test-notify sounds exclude webhook channel history config doctor mute unmute toggle schedule test version help"
 
 case "${1:-help}" in
   init)        shift; cmd_init "$@" ;;
@@ -1729,8 +2801,10 @@ case "${1:-help}" in
   sounds)      shift; cmd_sounds "$@" ;;
   exclude)     shift; cmd_exclude "$@" ;;
   webhook)     shift; cmd_webhook "$@" ;;
+  channel)     shift; cmd_channel "$@" ;;
   history)     shift; cmd_history "$@" ;;
   config)      shift; cmd_config "$@" ;;
+  doctor)      shift; cmd_doctor "$@" ;;
   mute)        shift; cmd_mute "$@" ;;
   unmute)      shift; cmd_unmute "$@" ;;
   toggle)      shift; cmd_toggle "$@" ;;
@@ -1739,7 +2813,33 @@ case "${1:-help}" in
   version|--version|-v) shift 2>/dev/null; cmd_version "$@" ;;
   help|--help|-h)       cmd_help ;;
   *)
-    echo >&2 "shelldone: unknown command '$1'"
+    # "Did you mean?" suggestion (Step 8)
+    _input="$1"
+    _suggestion=""
+    for _cmd in $_SHELLDONE_COMMANDS; do
+      # Prefix match
+      if [[ "$_cmd" == "${_input}"* ]]; then
+        _suggestion="$_cmd"
+        break
+      fi
+    done
+    if [[ -z "$_suggestion" ]] && [[ ${#_input} -ge 3 ]]; then
+      # Check if first 3 chars match any command
+      _prefix="${_input:0:3}"
+      for _cmd in $_SHELLDONE_COMMANDS; do
+        if [[ "${_cmd:0:3}" == "$_prefix" ]]; then
+          _suggestion="$_cmd"
+          break
+        fi
+      done
+    fi
+    if [[ -n "$_suggestion" ]]; then
+      echo >&2 "shelldone: unknown command '${_input}'. Did you mean '${_suggestion}'?"
+    else
+      echo >&2 "shelldone: unknown command '${_input}'"
+      echo >&2 ""
+      echo >&2 "Commands: $_SHELLDONE_COMMANDS"
+    fi
     echo >&2 "Run 'shelldone help' for usage"
     exit 1
     ;;

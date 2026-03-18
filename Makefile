@@ -22,6 +22,7 @@ install:
 	install -m 644 lib/auto-notify.bash $(LIBDIR)/auto-notify.bash
 	install -m 644 lib/state.sh $(LIBDIR)/state.sh
 	install -m 644 lib/ai-hook-common.sh $(LIBDIR)/ai-hook-common.sh
+	install -m 644 lib/tui.sh $(LIBDIR)/tui.sh
 	install -m 755 hooks/claude-done.sh $(HOOKDIR)/claude-done.sh
 	install -m 755 hooks/claude-notify.sh $(HOOKDIR)/claude-notify.sh
 	install -m 755 hooks/codex-done.sh $(HOOKDIR)/codex-done.sh

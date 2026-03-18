@@ -9,15 +9,24 @@ _SHELLDONE_LOADED=1
 # ── Backward compatibility: migrate CLI_ALERT_* → SHELLDONE_* ────────────────
 
 _shelldone_migrate_env() {
-  local old new migrated=0
-  while IFS= read -r old; do
+  local old new migrated=0 old_val new_val
+  # List CLI_ALERT_* env vars portably (works in both bash and zsh)
+  while IFS='=' read -r old _; do
+    case "$old" in
+      CLI_ALERT_*) ;;
+      *) continue ;;
+    esac
     new="SHELLDONE_${old#CLI_ALERT_}"
-    if [[ -z "${!new:-}" ]]; then
-      eval "export $new=\"${!old}\""
+    eval "old_val=\"\${${old}:-}\""
+    eval "new_val=\"\${${new}:-}\""
+    if [[ -n "$old_val" ]] && [[ -z "$new_val" ]]; then
+      eval "export $new=\"\$old_val\""
       migrated=1
       printf '\033[1;33m[shelldone]\033[0m migrated env var %s -> %s (update your config)\n' "$old" "$new" >&2
     fi
-  done < <(compgen -v CLI_ALERT_ 2>/dev/null || true)
+  done <<EOF
+$(env 2>/dev/null)
+EOF
   return 0
 }
 _shelldone_migrate_env
