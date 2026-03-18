@@ -23,8 +23,17 @@ _shelldone_hook_resolve_lib() {
     local state_lib="${base_dir}/lib/state.sh"
     [[ -f "$state_lib" ]] && source "$state_lib"
   else
-    echo "shelldone: cannot find lib" >&2
-    exit 1
+    # Installed layout: hooks in PREFIX/share/shelldone/hooks/, lib in PREFIX/lib/shelldone/
+    local prefix_dir
+    prefix_dir="$(cd "$script_dir/../../.." 2>/dev/null && pwd)" || true
+    if [[ -n "$prefix_dir" && -f "${prefix_dir}/lib/shelldone/shelldone.sh" ]]; then
+      source "${prefix_dir}/lib/shelldone/shelldone.sh"
+      local state_lib="${prefix_dir}/lib/shelldone/state.sh"
+      [[ -f "$state_lib" ]] && source "$state_lib"
+    else
+      echo "shelldone: cannot find lib" >&2
+      exit 1
+    fi
   fi
 }
 

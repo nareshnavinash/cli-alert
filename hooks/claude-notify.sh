@@ -9,27 +9,16 @@ set -euo pipefail
 # Resolve script directory and source shared hook library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HOOK_COMMON="${SCRIPT_DIR}/../lib/ai-hook-common.sh"
+if [[ ! -f "$HOOK_COMMON" ]]; then
+  # Installed layout: hooks in PREFIX/share/shelldone/hooks/, lib in PREFIX/lib/shelldone/
+  HOOK_COMMON="${SCRIPT_DIR}/../../../lib/shelldone/ai-hook-common.sh"
+fi
 if [[ -f "$HOOK_COMMON" ]]; then
   source "$HOOK_COMMON"
   _shelldone_hook_resolve_lib "$SCRIPT_DIR"
 else
-  # Fallback: try installed layout
-  HOOK_COMMON="$(cd "$SCRIPT_DIR/../lib/shelldone" && pwd)/ai-hook-common.sh" 2>/dev/null || true
-  if [[ -f "$HOOK_COMMON" ]]; then
-    source "$HOOK_COMMON"
-    _shelldone_hook_resolve_lib "$SCRIPT_DIR"
-  else
-    # Legacy fallback: resolve lib directly
-    BASE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-    if [[ -f "${BASE_DIR}/lib/shelldone/shelldone.sh" ]]; then
-      source "${BASE_DIR}/lib/shelldone/shelldone.sh"
-    elif [[ -f "${BASE_DIR}/lib/shelldone.sh" ]]; then
-      source "${BASE_DIR}/lib/shelldone.sh"
-    else
-      echo "shelldone: cannot find lib" >&2
-      exit 1
-    fi
-  fi
+  echo "shelldone: cannot find lib" >&2
+  exit 1
 fi
 
 # Read the hook event JSON from stdin

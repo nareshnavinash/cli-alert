@@ -145,6 +145,7 @@ _shelldone_bg_timeout() {
     wait "$child" 2>/dev/null
     kill "$watchdog" 2>/dev/null
   ) 2>/dev/null &
+  disown 2>/dev/null
 }
 
 # ── Helper: Unicode-safe status icon ─────────────────────────────────────────

@@ -121,6 +121,12 @@ run_test "_shelldone_format_duration function exists" test_format_exists
 run_test "_shelldone_status_icon function exists" test_status_icon_exists
 run_test "_shelldone_sanitize_applescript function exists" test_sanitize_exists
 run_test "_shelldone_bg_timeout function exists" test_bg_timeout_exists
+
+test_bg_timeout_disown() {
+  grep -q 'disown' lib/shelldone.sh
+}
+run_test "_shelldone_bg_timeout calls disown to suppress job msgs" test_bg_timeout_disown
+
 run_test "_shelldone_debug function exists" test_debug_exists
 run_test "_shelldone_resolve_activate function exists" test_resolve_activate_exists
 run_test "_shelldone_resolve_workspace function exists" test_resolve_workspace_exists
