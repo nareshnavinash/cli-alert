@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-18
+
+### Added
+
+- Interactive TUI for channel setup (`shelldone setup` launches menu-driven interface)
+- `lib/tui.sh` — reusable TUI library for building interactive shell menus
+
+### Fixed
+
+- Background job notifications no longer leak `[N] PID` / `done` messages to terminal (added `disown` in `_shelldone_bg_timeout`)
+- Hook scripts resolve library paths correctly in installed layout (`PREFIX/share/shelldone/hooks/` → `PREFIX/lib/shelldone/`)
+- Prompt stdout leak during interactive setup
+
 ## [1.1.0] - 2026-03-17
 
 ### Added
@@ -106,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI: ShellCheck, macOS (bash + zsh), Linux, install round-trip
 - Comprehensive test suite (374 tests)
 
+[1.3.0]: https://github.com/nareshnavinash/shelldone/compare/v1.2.0...v1.3.0
 [1.1.0]: https://github.com/nareshnavinash/shelldone/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/nareshnavinash/shelldone/compare/v0.2.0...v1.0.0
 [0.2.0]: https://github.com/nareshnavinash/shelldone/compare/v0.1.0...v0.2.0
