@@ -137,6 +137,8 @@ _shelldone_sanitize_applescript() {
 
 _shelldone_bg_timeout() {
   local max_secs="${SHELLDONE_SOUND_TIMEOUT:-10}"
+  # Suppress zsh job-control noise ([N] PID) for background processes
+  [[ -n "${ZSH_VERSION:-}" ]] && setopt LOCAL_OPTIONS NO_MONITOR NO_NOTIFY 2>/dev/null
   (
     "$@" &
     local child=$!

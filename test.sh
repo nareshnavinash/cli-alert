@@ -127,6 +127,16 @@ test_bg_timeout_disown() {
 }
 run_test "_shelldone_bg_timeout calls disown to suppress job msgs" test_bg_timeout_disown
 
+test_bg_timeout_no_monitor() {
+  grep -q 'NO_MONITOR' lib/shelldone.sh
+}
+run_test "_shelldone_bg_timeout sets NO_MONITOR to suppress zsh job noise" test_bg_timeout_no_monitor
+
+test_external_notify_no_monitor() {
+  grep -q 'NO_MONITOR' lib/external-notify.sh
+}
+run_test "_shelldone_notify_external sets NO_MONITOR to suppress zsh job noise" test_external_notify_no_monitor
+
 run_test "_shelldone_debug function exists" test_debug_exists
 run_test "_shelldone_resolve_activate function exists" test_resolve_activate_exists
 run_test "_shelldone_resolve_workspace function exists" test_resolve_workspace_exists

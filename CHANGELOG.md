@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-03-18
+
+### Fixed
+
+- Background job notifications no longer leak `[N] PID` / `done` messages in zsh (added `NO_MONITOR`/`NO_NOTIFY` setopt in `_shelldone_bg_timeout` and `_shelldone_notify_external`)
+
 ## [1.3.0] - 2026-03-18
 
 ### Added
@@ -14,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Background job notifications no longer leak `[N] PID` / `done` messages to terminal (added `disown` in `_shelldone_bg_timeout`)
 - Hook scripts resolve library paths correctly in installed layout (`PREFIX/share/shelldone/hooks/` → `PREFIX/lib/shelldone/`)
 - Prompt stdout leak during interactive setup
 

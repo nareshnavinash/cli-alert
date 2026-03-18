@@ -142,7 +142,7 @@ fake_cmd "cd shelldone && ./install.sh" \
   "Installing shelldone..." \
   "  Linking shelldone to /usr/local/bin/shelldone ... done" \
   "  Adding shell hooks to ~/.zshrc ... done" \
-  "  shelldone v1.3.0 installed successfully!"
+  "  shelldone v1.3.1 installed successfully!"
 
 # ── Section 2: Version & Status ───────────────────────────────────────────
 section "Check Version & Status"
@@ -188,7 +188,7 @@ type_cmd "shelldone setup"
 _sleep 0.5
 
 # Welcome dashboard
-printf "\n%bshelldone 1.3.0%b setup\n" "$BOLD" "$RESET"
+printf "\n%bshelldone 1.3.1%b setup\n" "$BOLD" "$RESET"
 printf "%bPlatform: Darwin | Shell: zsh%b\n\n" "$DIM" "$RESET"
 
 printf "%b── %bCurrent Status%b%b ──────────────────────%b\n" "$DIM" "$BOLD" "$RESET$DIM" "" "$RESET"

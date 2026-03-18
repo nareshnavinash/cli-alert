@@ -872,6 +872,8 @@ _shelldone_notify_external() {
   if [[ "${_SHELLDONE_HOOK_CONTEXT:-}" == "true" ]]; then
     _shelldone_dispatch_external_channels 2>>"$_err_dest"
   else
+    # Suppress zsh job-control noise ([N] PID) for background dispatch
+    [[ -n "${ZSH_VERSION:-}" ]] && setopt LOCAL_OPTIONS NO_MONITOR NO_NOTIFY 2>/dev/null
     ( _shelldone_dispatch_external_channels ) 2>>"$_err_dest" &
     disown 2>/dev/null
   fi
