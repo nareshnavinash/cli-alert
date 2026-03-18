@@ -11,8 +11,16 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CAST_FILE="${SCRIPT_DIR}/../assets/demo.cast"
 GIF_FILE="${SCRIPT_DIR}/../assets/demo.gif"
 
+# DRY_RUN mode: validate script without recording
+if [[ "${DRY_RUN:-}" == "true" ]]; then
+  echo "Dry-run: validating demo script..."
+  DRY_RUN=true bash "${SCRIPT_DIR}/demo-record.sh"
+  echo "Dry-run: demo script completed successfully."
+  exit 0
+fi
+
 echo "Recording demo..."
-asciinema rec "$CAST_FILE" --command "bash ${SCRIPT_DIR}/demo-record.sh" --cols 100 --rows 30 --overwrite
+asciinema rec "$CAST_FILE" --command "bash ${SCRIPT_DIR}/demo-record.sh" --cols 110 --rows 35 --overwrite
 
 echo "Converting to GIF..."
 if command -v agg &>/dev/null; then

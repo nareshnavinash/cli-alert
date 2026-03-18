@@ -201,7 +201,9 @@ cmd_setup() {
 _setup_wizard() {
   local forced_mode="${1:-}"
   local mode="quick"
-  local total_phases=4
+
+  # Capture config snapshot before wizard starts
+  _setup_snapshot_before
 
   # Phase 1: Welcome & Mode
   _setup_phase_welcome
@@ -209,51 +211,93 @@ _setup_wizard() {
     mode="$forced_mode"
   fi
 
-  if [[ "$mode" == "advanced" ]]; then
-    total_phases=7
-  fi
+  local total_phases=4
+  case "$mode" in
+    advanced)    total_phases=7 ;;
+    reconfigure) total_phases=4 ;;
+  esac
 
   local phase=1
 
-  # Phase 2: Shell Integration
-  phase=$((phase + 1))
-  _tui_step "$phase" "$total_phases" "Shell integration"
-  _setup_shell_init
+  # Phase 2: Shell Integration (skip for reconfigure)
+  if [[ "$mode" != "reconfigure" ]]; then
+    phase=$((phase + 1))
+    _tui_divider "Shell Integration"
+    _tui_step "$phase" "$total_phases" "Shell integration"
+
+    # Show which shell RCs currently have the shelldone block
+    local _need_install=true
+    local _zsh_has=false _bash_has=false
+    if [[ -f "$HOME/.zshrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.zshrc" 2>/dev/null; then
+      _zsh_has=true
+    fi
+    if [[ -f "$HOME/.bashrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.bashrc" 2>/dev/null; then
+      _bash_has=true
+    fi
+
+    if $_zsh_has || $_bash_has; then
+      local _rc_status=""
+      $_zsh_has && _rc_status=".zshrc $(_tui_badge "configured" "green")"
+      $_bash_has && _rc_status="${_rc_status:+$_rc_status  }.bashrc $(_tui_badge "configured" "green")"
+      printf '  Currently: %s\n' "$_rc_status"
+      if _tui_is_interactive; then
+        if _tui_confirm "  Re-apply shell integration?"; then
+          _setup_shell_init
+        else
+          _tui_info "Skipped shell integration"
+        fi
+      else
+        _setup_shell_init
+      fi
+    else
+      _setup_shell_init
+    fi
+  fi
 
   # Phase 3 (advanced): Notification Preferences
   if [[ "$mode" == "advanced" ]]; then
     phase=$((phase + 1))
+    _tui_divider "Notification Preferences"
     _tui_step "$phase" "$total_phases" "Notification preferences"
     _setup_phase_preferences
   fi
 
-  # Phase 4 (advanced): External Channels
-  if [[ "$mode" == "advanced" ]]; then
+  # Phase: External Channels (advanced or reconfigure)
+  if [[ "$mode" == "advanced" ]] || [[ "$mode" == "reconfigure" ]]; then
     phase=$((phase + 1))
+    _tui_divider "External Channels"
     _tui_step "$phase" "$total_phases" "External channels"
-    _setup_phase_channels
+    _setup_phase_channels_advanced
   fi
 
-  # Phase N-2: AI Hooks
+  # Phase: AI Hooks
   phase=$((phase + 1))
+  _tui_divider "AI CLI Hooks"
   _tui_step "$phase" "$total_phases" "AI CLI hooks"
-  if [[ "$mode" == "advanced" ]]; then
+  if [[ "$mode" == "advanced" ]] || [[ "$mode" == "reconfigure" ]]; then
     _setup_phase_ai_hooks_interactive
   else
     _setup_ai_hooks
   fi
 
-  # Phase N-1: Health Check
+  # Phase: Health Check
   phase=$((phase + 1))
+  _tui_divider "Health Check"
   _tui_step "$phase" "$total_phases" "Health check"
   echo ""
-  cmd_doctor 2>/dev/null || true
+  if _tui_is_interactive; then
+    _tui_spinner "Running health check..." cmd_doctor 2>/dev/null || cmd_doctor 2>/dev/null || true
+  else
+    cmd_doctor 2>/dev/null || true
+  fi
 
   # Summary
+  _setup_snapshot_after
   _setup_phase_summary
 }
 
 _setup_phase_welcome() {
+  local _sd_platform _sd_shell
   (
     unset _SHELLDONE_LOADED
     source "${SHELLDONE_LIB}/shelldone.sh"
@@ -261,11 +305,64 @@ _setup_phase_welcome() {
     printf '%sPlatform: %s | Shell: %s%s\n\n' "${_TUI_DIM}" "$_SHELLDONE_PLATFORM" "$(basename "${SHELL:-unknown}")" "${_TUI_RESET}"
   )
 
-  if [[ -z "${1:-}" ]] && _tui_is_interactive; then
-    _tui_select "Choose setup mode:" "Quick (sensible defaults)" "Advanced (configure everything)"
-    if [[ $_TUI_SELECTED_INDEX -eq 1 ]]; then
-      mode="advanced"
+  # Mini-dashboard showing current installation status
+  _tui_divider "Current Status"
+
+  # Shell integration status
+  local shell_status
+  local shell_badge
+  if { [[ -f "$HOME/.zshrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.zshrc" 2>/dev/null; } || \
+     { [[ -f "$HOME/.bashrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.bashrc" 2>/dev/null; }; then
+    shell_badge="$(_tui_badge "configured" "green")"
+  else
+    shell_badge="$(_tui_badge "not set" "dim")"
+  fi
+  _tui_kv "Shell integration" "$shell_badge"
+
+  # Channel count
+  local -a _ch_envs=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
+  local ch_count=0 ch_total=6
+  local _ce
+  for _ce in "${_ch_envs[@]}"; do
+    [[ -n "${!_ce:-}" ]] && ch_count=$((ch_count + 1))
+  done
+  _tui_kv "Channels" "${ch_count} of ${ch_total}"
+
+  # AI hooks detected count
+  local ai_count=0 ai_total=0
+  local _ai_i
+  for _ai_i in "${!_SHELLDONE_AI_NAMES[@]}"; do
+    local _ai_hook="${_SHELLDONE_AI_HOOKS[$_ai_i]}"
+    local _ai_cmd="${_SHELLDONE_AI_CMDS[$_ai_i]}"
+    local _ai_config_dir="${_SHELLDONE_AI_CONFIGDIRS[$_ai_i]}"
+    [[ -z "$_ai_hook" ]] && continue
+    if command -v "$_ai_cmd" &>/dev/null || [[ -n "$_ai_config_dir" && -d "$_ai_config_dir" ]]; then
+      ai_total=$((ai_total + 1))
+      local _ai_settings="${_SHELLDONE_AI_SETTINGS[$_ai_i]}"
+      local _ai_name="${_SHELLDONE_AI_NAMES[$_ai_i]}"
+      local _hook_installed=false
+      if [[ "$_ai_name" == "copilot" ]]; then
+        [[ -f "$HOME/.github/hooks/shelldone-session-end.json" ]] && _hook_installed=true
+      elif [[ -n "$_ai_settings" && -f "$_ai_settings" ]]; then
+        grep -q "${_ai_hook%.sh}" "$_ai_settings" 2>/dev/null && _hook_installed=true
+      fi
+      $_hook_installed && ai_count=$((ai_count + 1))
     fi
+  done
+  _tui_kv "AI hooks" "${ai_count} of ${ai_total} detected"
+  echo ""
+
+  if [[ -z "${1:-}" ]] && _tui_is_interactive; then
+    local -a mode_options=("Quick (sensible defaults)" "Advanced (configure everything)")
+    # Offer Reconfigure if already set up
+    if [[ $ch_count -gt 0 ]] || [[ $ai_count -gt 0 ]]; then
+      mode_options+=("Reconfigure (channels & hooks only)")
+    fi
+    _tui_select "Choose setup mode:" "${mode_options[@]}"
+    case $_TUI_SELECTED_INDEX in
+      1) mode="advanced" ;;
+      2) mode="reconfigure" ;;
+    esac
     echo ""
   fi
 }
@@ -283,6 +380,7 @@ _setup_phase_preferences() {
   _config_set_value "SHELLDONE_THRESHOLD" "$threshold"
   _tui_ok "Threshold set to ${threshold}s"
 
+  echo ""
   _tui_select "Notify on:" "All commands (default)" "Failures only" "Successes only"
   local filter
   case $_TUI_SELECTED_INDEX in
@@ -293,11 +391,13 @@ _setup_phase_preferences() {
   _config_set_value "SHELLDONE_NOTIFY_ON" "$filter"
   _tui_ok "Filter set to ${filter}"
 
+  echo ""
   if _tui_confirm "Enable voice announcements (TTS)?" "default_no"; then
     _config_set_value "SHELLDONE_VOICE" "true"
     _tui_ok "Voice enabled"
   fi
 
+  echo ""
   if _tui_confirm "Enable focus detection (suppress when terminal focused)?" "default_yes"; then
     _config_set_value "SHELLDONE_FOCUS_DETECT" "true"
   else
@@ -322,32 +422,304 @@ _setup_phase_channels() {
   echo ""
 }
 
-_setup_phase_ai_hooks_interactive() {
-  local i installed=0
+# Channel dashboard for the advanced setup wizard
+_channels_status_dashboard() {
+  local -a ch_names=("Slack" "Discord" "Telegram" "Email" "WhatsApp" "Webhook")
+  local -a ch_keys=("slack" "discord" "telegram" "email" "whatsapp" "webhook")
+  local -a ch_envs=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
 
+  echo ""
+  local i
+  for i in "${!ch_names[@]}"; do
+    local env_var="${ch_envs[$i]}"
+    local badge
+    if [[ -n "${!env_var:-}" ]]; then
+      badge="$(_tui_badge "configured" "green")"
+    else
+      badge="$(_tui_badge "not set" "dim")"
+    fi
+    _tui_kv "${ch_names[$i]}" "$badge"
+  done
+  echo ""
+}
+
+_setup_phase_channels_advanced() {
+  echo ""
+
+  if ! _tui_is_interactive; then
+    # Non-interactive: skip channel dashboard loop
+    printf '  Tip: Run %sshelldone channel add slack%s to configure channels\n' "${_TUI_BOLD}" "${_TUI_RESET}"
+    echo ""
+    return 0
+  fi
+
+  local -a all_channels=("slack" "discord" "telegram" "email" "whatsapp" "webhook")
+  local -a ch_envs=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
+
+  while true; do
+    _channels_status_dashboard
+    _tui_select "Choose an action:" "Add/reconfigure a channel" "Remove a channel" "Test a channel" "Continue to next step"
+
+    case $_TUI_SELECTED_INDEX in
+      0)
+        # Add/reconfigure
+        _tui_select "Select channel:" "Slack" "Discord" "Telegram" "Email" "WhatsApp" "Webhook"
+        _channel_setup "${all_channels[$_TUI_SELECTED_INDEX]}"
+        ;;
+      1)
+        # Remove — only show configured channels
+        local -a configured=()
+        local ci
+        for ci in "${!all_channels[@]}"; do
+          [[ -n "${!ch_envs[$ci]:-}" ]] && configured+=("${all_channels[$ci]}")
+        done
+        if [[ ${#configured[@]} -eq 0 ]]; then
+          _tui_info "No channels configured to remove"
+        else
+          _tui_select "Remove which channel?" "${configured[@]}"
+          _channel_remove "$_TUI_SELECTED"
+        fi
+        ;;
+      2)
+        # Test — only show configured channels
+        local -a configured=()
+        local ci
+        for ci in "${!all_channels[@]}"; do
+          [[ -n "${!ch_envs[$ci]:-}" ]] && configured+=("${all_channels[$ci]}")
+        done
+        if [[ ${#configured[@]} -eq 0 ]]; then
+          _tui_info "No channels configured to test"
+        else
+          _tui_select "Test which channel?" "${configured[@]}"
+          cmd_webhook test "$_TUI_SELECTED" || true
+        fi
+        ;;
+      3)
+        # Continue
+        break
+        ;;
+    esac
+  done
+  echo ""
+}
+
+_setup_phase_ai_hooks_interactive() {
+  # Build list of detected AI CLIs
+  local -a detected_names=()
+  local -a detected_labels=()
+  local -a detected_indices=()
+  local i
+
+  echo ""
   for i in "${!_SHELLDONE_AI_NAMES[@]}"; do
     local name="${_SHELLDONE_AI_NAMES[$i]}"
     local label="${_SHELLDONE_AI_LABELS[$i]}"
     local hook="${_SHELLDONE_AI_HOOKS[$i]}"
     local cmd="${_SHELLDONE_AI_CMDS[$i]}"
     local config_dir="${_SHELLDONE_AI_CONFIGDIRS[$i]}"
+    local settings="${_SHELLDONE_AI_SETTINGS[$i]}"
 
     [[ -z "$hook" ]] && continue
 
     if command -v "$cmd" &>/dev/null || [[ -n "$config_dir" && -d "$config_dir" ]]; then
-      if _tui_confirm "  Install ${label} hook?" "default_yes"; then
-        "_setup_${name}_hook" && installed=$((installed + 1)) || true
+      # Check if already installed
+      local _hook_installed=false
+      if [[ "$name" == "copilot" ]]; then
+        [[ -f "$HOME/.github/hooks/shelldone-session-end.json" ]] && _hook_installed=true
+      elif [[ -n "$settings" && -f "$settings" ]]; then
+        grep -q "${hook%.sh}" "$settings" 2>/dev/null && _hook_installed=true
       fi
+
+      local badge
+      if $_hook_installed; then
+        badge="$(_tui_badge "installed" "green")"
+      else
+        badge="$(_tui_badge "detected" "yellow")"
+      fi
+      _tui_kv "$label" "$badge"
+
+      detected_names+=("$name")
+      detected_labels+=("$label")
+      detected_indices+=("$i")
+    fi
+  done
+
+  if [[ ${#detected_names[@]} -eq 0 ]]; then
+    _tui_info "No AI CLIs detected on this system"
+    echo ""
+    return 0
+  fi
+
+  echo ""
+  _tui_multiselect "Select hooks to install:" "${detected_labels[@]}"
+
+  # Install selected hooks
+  local installed=0
+  local total_selected=0
+  local sel_idx
+  for sel_idx in ${_TUI_MULTISELECTED_INDICES:-}; do
+    total_selected=$((total_selected + 1))
+  done
+
+  if [[ $total_selected -eq 0 ]]; then
+    _tui_info "No hooks selected"
+    echo ""
+    return 0
+  fi
+
+  local progress_i=0
+  for sel_idx in ${_TUI_MULTISELECTED_INDICES:-}; do
+    local ai_name="${detected_names[$sel_idx]}"
+    local ai_label="${detected_labels[$sel_idx]}"
+    progress_i=$((progress_i + 1))
+    _tui_progress "$progress_i" "$total_selected" "Installing ${ai_label} hook"
+    if "_setup_${ai_name}_hook" 2>/dev/null; then
+      installed=$((installed + 1))
+      _tui_ok "${ai_label} hook installed"
+    else
+      _tui_err "Failed to install ${ai_label} hook"
     fi
   done
 
   if [[ $installed -gt 0 ]]; then
+    echo ""
     _tui_ok "$installed AI hook(s) installed"
   fi
+  echo ""
+}
+
+_SETUP_SNAPSHOT_BEFORE=""
+_SETUP_SNAPSHOT_AFTER=""
+
+_setup_snapshot_before() {
+  local -a ch_envs=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
+  local snap=""
+  # Shell integration
+  if { [[ -f "$HOME/.zshrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.zshrc" 2>/dev/null; } || \
+     { [[ -f "$HOME/.bashrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.bashrc" 2>/dev/null; }; then
+    snap="shell:yes"
+  else
+    snap="shell:no"
+  fi
+  # Channels
+  local _ce
+  for _ce in "${ch_envs[@]}"; do
+    if [[ -n "${!_ce:-}" ]]; then
+      snap="$snap ${_ce}:yes"
+    else
+      snap="$snap ${_ce}:no"
+    fi
+  done
+  _SETUP_SNAPSHOT_BEFORE="$snap"
+}
+
+_setup_snapshot_after() {
+  local -a ch_envs=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
+  local snap=""
+  if { [[ -f "$HOME/.zshrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.zshrc" 2>/dev/null; } || \
+     { [[ -f "$HOME/.bashrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.bashrc" 2>/dev/null; }; then
+    snap="shell:yes"
+  else
+    snap="shell:no"
+  fi
+  local _ce
+  for _ce in "${ch_envs[@]}"; do
+    if [[ -n "${!_ce:-}" ]]; then
+      snap="$snap ${_ce}:yes"
+    else
+      snap="$snap ${_ce}:no"
+    fi
+  done
+  _SETUP_SNAPSHOT_AFTER="$snap"
+}
+
+_setup_diff_summary() {
+  local before="$_SETUP_SNAPSHOT_BEFORE"
+  local after="$_SETUP_SNAPSHOT_AFTER"
+  local changes=0
+
+  # Compare each item
+  local -a before_items after_items
+  read -ra before_items <<< "$before"
+  read -ra after_items <<< "$after"
+
+  local i
+  for i in "${!before_items[@]}"; do
+    if [[ "${before_items[$i]}" != "${after_items[$i]:-}" ]]; then
+      local key="${before_items[$i]%%:*}"
+      local old_val="${before_items[$i]#*:}"
+      local new_val="${after_items[$i]#*:}"
+      if [[ "$old_val" == "no" && "$new_val" == "yes" ]]; then
+        printf '    %s+ %s%s\n' "${_TUI_GREEN}" "$key" "${_TUI_RESET}"
+        changes=$((changes + 1))
+      elif [[ "$old_val" == "yes" && "$new_val" == "no" ]]; then
+        printf '    %s- %s%s\n' "${_TUI_RED}" "$key" "${_TUI_RESET}"
+        changes=$((changes + 1))
+      fi
+    fi
+  done
+  return $changes
 }
 
 _setup_phase_summary() {
+  echo ""
+  _tui_divider "Summary"
   _tui_header "Setup complete!"
+  echo ""
+
+  # Show current status dashboard
+  local shell_badge
+  if { [[ -f "$HOME/.zshrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.zshrc" 2>/dev/null; } || \
+     { [[ -f "$HOME/.bashrc" ]] && grep -qF "$_SHELLDONE_MARKER_BEGIN" "$HOME/.bashrc" 2>/dev/null; }; then
+    shell_badge="$(_tui_badge "configured" "green")"
+  else
+    shell_badge="$(_tui_badge "not set" "dim")"
+  fi
+  _tui_kv "Shell integration" "$shell_badge"
+
+  # Channels
+  local -a ch_names=("Slack" "Discord" "Telegram" "Email" "WhatsApp" "Webhook")
+  local -a ch_envs=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
+  local ch_configured=0
+  local ci
+  for ci in "${!ch_names[@]}"; do
+    if [[ -n "${!ch_envs[$ci]:-}" ]]; then
+      ch_configured=$((ch_configured + 1))
+    fi
+  done
+  _tui_kv "Channels" "${ch_configured} configured"
+
+  # AI hooks summary
+  local hook_count=0
+  local _ai_i
+  for _ai_i in "${!_SHELLDONE_AI_NAMES[@]}"; do
+    local _ai_hook="${_SHELLDONE_AI_HOOKS[$_ai_i]}"
+    local _ai_cmd="${_SHELLDONE_AI_CMDS[$_ai_i]}"
+    local _ai_name="${_SHELLDONE_AI_NAMES[$_ai_i]}"
+    local _ai_settings="${_SHELLDONE_AI_SETTINGS[$_ai_i]}"
+    local _ai_config_dir="${_SHELLDONE_AI_CONFIGDIRS[$_ai_i]}"
+    [[ -z "$_ai_hook" ]] && continue
+    if command -v "$_ai_cmd" &>/dev/null || [[ -n "$_ai_config_dir" && -d "$_ai_config_dir" ]]; then
+      local _hi=false
+      if [[ "$_ai_name" == "copilot" ]]; then
+        [[ -f "$HOME/.github/hooks/shelldone-session-end.json" ]] && _hi=true
+      elif [[ -n "$_ai_settings" && -f "$_ai_settings" ]]; then
+        grep -q "${_ai_hook%.sh}" "$_ai_settings" 2>/dev/null && _hi=true
+      fi
+      $_hi && hook_count=$((hook_count + 1))
+    fi
+  done
+  _tui_kv "AI hooks" "${hook_count} installed"
+
+  # Show diff if snapshots were taken
+  if [[ -n "$_SETUP_SNAPSHOT_BEFORE" && -n "$_SETUP_SNAPSHOT_AFTER" ]]; then
+    if [[ "$_SETUP_SNAPSHOT_BEFORE" != "$_SETUP_SNAPSHOT_AFTER" ]]; then
+      echo ""
+      printf '  %sChanges this session:%s\n' "${_TUI_BOLD}" "${_TUI_RESET}"
+      _setup_diff_summary || true
+    fi
+  fi
+
   echo ""
   echo "  Next steps:"
   printf '    1. Restart your shell: %sexec %s%s\n' "${_TUI_BOLD}" "$(basename "$SHELL")" "${_TUI_RESET}"
