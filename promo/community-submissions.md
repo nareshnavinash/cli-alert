@@ -37,7 +37,7 @@ long-running commands finish. It supports macOS, Linux, WSL, and Windows (Git Ba
 - AI CLI integration: hooks for Claude Code, Codex, Gemini, Copilot, and Cursor
 - Pure bash with zero dependencies
 - Sound alerts, text-to-speech, focus detection, mute/schedule/toggle controls
-- 374 tests, MIT licensed
+- 438 tests, MIT licensed
 
 **Why it belongs on this list:**
 
@@ -48,7 +48,7 @@ that existing tools like noti and undistract-me only partially cover.
 
 - GitHub: https://github.com/nareshnavinash/shelldone
 - License: MIT
-- Version: 1.0.0
+- Version: 1.3.0
 ```
 
 ---
@@ -88,7 +88,7 @@ and external channels.
 - **External channels**: Slack, Discord, Telegram, Email, WhatsApp, and generic webhooks — get notified on your phone
 - **AI CLI hooks**: native integration with Claude Code, Codex, Gemini, Copilot, and Cursor
 - **Pure bash**: zero dependencies, no compilers, no runtimes
-- **Well-tested**: 374 tests with CI on macOS and Linux
+- **Well-tested**: 438 tests with CI on macOS and Linux
 - **MIT licensed**
 
 This fills a gap in the awesome-shell list — there is currently no comprehensive
@@ -114,7 +114,7 @@ Add shelldone - pure bash terminal notification system
 **Entry to add** (matching the list's format):
 
 ```markdown
-- [shelldone](https://github.com/nareshnavinash/shelldone) - Cross-platform terminal notification system for long-running commands. Auto-notify via shell hooks, desktop/sound/TTS alerts, 6 external channels (Slack, Discord, Telegram, Email, WhatsApp, webhook), AI CLI integration, and notification controls (mute, toggle, schedule). Pure bash, zero dependencies, 374 tests.
+- [shelldone](https://github.com/nareshnavinash/shelldone) - Cross-platform terminal notification system for long-running commands. Auto-notify via shell hooks, desktop/sound/TTS alerts, 6 external channels (Slack, Discord, Telegram, Email, WhatsApp, webhook), AI CLI integration, and notification controls (mute, toggle, schedule). Pure bash, zero dependencies, 438 tests.
 ```
 
 **PR Description:**
@@ -145,7 +145,7 @@ This project is written entirely in bash and demonstrates advanced bash patterns
 - AI CLI hooks: Claude Code, Codex, Gemini, Copilot, Cursor
 - Mute, toggle, schedule, glob exclusions, focus detection
 - Works on macOS, Linux, WSL, and Windows (Git Bash)
-- 374 tests, CI with ShellCheck
+- 438 tests, CI with ShellCheck
 - MIT licensed
 
 GitHub: https://github.com/nareshnavinash/shelldone
@@ -188,7 +188,7 @@ Discord message, Telegram alert, email, or WhatsApp notification.
 - **AI CLI integration**: hooks for Claude Code, Codex CLI, Gemini CLI, Copilot CLI, and Cursor
 - **Notification controls**: mute with timer, per-layer toggle, quiet hours schedule
 - **Pure bash**: zero runtime dependencies
-- **374 tests**, CI, MIT licensed
+- **438 tests**, CI, MIT licensed
 
 ### Use case
 
@@ -232,7 +232,7 @@ Its standout feature is breadth. You get auto-notify for long-running commands, 
 
 shelldone also integrates natively with AI coding assistants. It ships hooks for Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor, so you get notified when an AI agent finishes its task. This is a category that did not exist when tools like noti were built, and shelldone is the first notification tool to address it.
 
-On the control side, shelldone offers mute with timed duration, per-layer toggles (you can disable sound but keep Slack, or mute desktop but keep Telegram), quiet hours scheduling, and glob-based command exclusions. It has 374 tests and CI on both macOS and Linux.
+On the control side, shelldone offers mute with timed duration, per-layer toggles (you can disable sound but keep Slack, or mute desktop but keep Telegram), quiet hours scheduling, and glob-based command exclusions. It has 438 tests and CI on both macOS and Linux.
 
 **Strengths:** Most features of any tool in this category. Cross-platform. Zero dependencies. AI CLI hooks. Six external channels. Extensive notification controls.
 
@@ -268,7 +268,7 @@ Each tool has its place. **undistract-me** is a one-line apt install for Ubuntu 
 
 But if you want a tool that does it all — auto-notify, external channels, AI CLI hooks, sound, TTS, notification controls, and cross-platform support with zero dependencies — **shelldone** is the clear winner. It covers every feature the other three offer and adds capabilities none of them have.
 
-For teams on Slack or Discord, the external channel support alone justifies adoption. For developers using AI coding assistants, the native hook system is unique. And the fact that it is pure bash with 374 tests means you can read and trust every line.
+For teams on Slack or Discord, the external channel support alone justifies adoption. For developers using AI coding assistants, the native hook system is unique. And the fact that it is pure bash with 438 tests means you can read and trust every line.
 
 **Recommendation:** Start with shelldone. Two minutes to install, works out of the box, and scales up to Slack/Discord/Telegram when you need it.
 
@@ -320,7 +320,7 @@ Linux, WSL, and Windows. The killer features:
 - Zero dependencies. Pure bash. No Go, no Python, no Node. Just shell scripts
   and the tools already on your system.
 
-It has 374 tests and CI on macOS and Linux. It is MIT licensed and fully open
+It has 438 tests and CI on macOS and Linux. It is MIT licensed and fully open
 source.
 
 I would love your feedback. What channels would you add? What integrations
@@ -359,7 +359,7 @@ have to babysit a terminal again.
 - Mute with timed duration, per-layer toggle, quiet hours schedule
 - Glob-based command exclusion patterns
 - Pure bash with zero runtime dependencies
-- 374 tests with CI on macOS and Linux
+- 438 tests with CI on macOS and Linux
 - MIT licensed, open source
 ```
 

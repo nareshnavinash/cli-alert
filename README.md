@@ -6,10 +6,10 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 
 [![CI](https://github.com/nareshnavinash/shelldone/actions/workflows/ci.yml/badge.svg)](https://github.com/nareshnavinash/shelldone/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](VERSION)
+[![Version](https://img.shields.io/badge/version-1.3.0-green.svg)](VERSION)
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL%20%7C%20Windows-lightgrey.svg)](#platform-support)
 [![Shell](https://img.shields.io/badge/shell-bash%20%7C%20zsh-89e051.svg)](#installation)
-[![Tests](https://img.shields.io/badge/tests-374%20passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/badge/tests-438%20passing-brightgreen.svg)](#testing)
 
 ![shelldone demo](assets/demo.gif)
 
@@ -464,7 +464,7 @@ Sending test to slack...
 | `shelldone unmute` | Resume notifications |
 | `shelldone toggle [layer [on\|off]]` | Toggle notification layers (sound, desktop, voice, channels) |
 | `shelldone schedule [HH:MM-HH:MM\|off]` | Set or clear daily quiet hours |
-| `shelldone test` | Run the full verification test suite (374 tests) |
+| `shelldone test` | Run the full verification test suite (438 tests) |
 | `shelldone version [--verbose]` | Show version (add `--verbose` for platform details) |
 | `shelldone help` | Show usage help |
 
@@ -481,7 +481,8 @@ shelldone/
 │   ├── auto-notify.bash       # Bash DEBUG trap auto-notify hooks
 │   ├── external-notify.sh     # External channels (Slack, Discord, etc.)
 │   ├── state.sh               # Mute, toggle, and schedule state management
-│   └── ai-hook-common.sh      # Shared library for AI CLI hooks
+│   ├── ai-hook-common.sh      # Shared library for AI CLI hooks
+│   └── tui.sh                 # Reusable TUI library for interactive menus
 ├── hooks/
 │   ├── claude-done.sh         # Claude Code Stop hook
 │   ├── codex-done.sh          # Codex CLI Stop hook
@@ -498,9 +499,9 @@ shelldone/
 │   └── scoop.json             # Scoop manifest
 ├── install.sh                 # Interactive installer
 ├── uninstall.sh               # Uninstaller
-├── test.sh                    # Test suite (374 tests)
+├── test.sh                    # Test suite (438 tests)
 ├── Makefile                   # make install/uninstall/test
-└── VERSION                    # 1.0.0
+└── VERSION                    # 1.3.0
 ```
 
 ### Design Principles
@@ -636,7 +637,7 @@ Prints HTTP transport selection, POST targets (URLs redacted), and per-channel s
 
 ## Testing
 
-shelldone includes a comprehensive test suite with 374 tests covering unit, integration, and end-to-end scenarios.
+shelldone includes a comprehensive test suite with 438 tests covering unit, integration, and end-to-end scenarios.
 
 ```bash
 # Run from project root
@@ -728,7 +729,7 @@ This removes shell integration from `.zshrc` and `.bashrc`, and removes all AI C
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes
-4. Run the test suite: `bash test.sh` (all 374 tests must pass)
+4. Run the test suite: `bash test.sh` (all 438 tests must pass)
 5. Run ShellCheck: `shellcheck bin/shelldone lib/*.sh hooks/*.sh`
 6. Commit and push
 7. Open a pull request

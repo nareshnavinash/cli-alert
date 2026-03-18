@@ -90,7 +90,7 @@ type_cmd "cd shelldone && ./install.sh"
 printf "Installing shelldone...\n"
 printf "  Linking shelldone to /usr/local/bin/shelldone ... done\n"
 printf "  Adding shell hooks to ~/.zshrc ... done\n"
-printf "  shelldone v1.0.0 installed successfully!\n"
+printf "  shelldone v1.3.0 installed successfully!\n"
 sleep "$CMD_PAUSE"
 
 # Section 2: Version
@@ -118,13 +118,32 @@ section "AI CLI Integration"
 comment "Set up hooks for Claude Code (also supports Codex, Gemini, Copilot, Cursor)"
 run_cmd "shelldone setup claude-hook"
 
-# Section 6: External Channels
+# Section 6: Interactive TUI Setup
+section "Interactive TUI Setup"
+
+comment "Launch the interactive setup menu"
+type_cmd "shelldone setup"
+printf "┌──────────────────────────────────────────┐\n"
+printf "│         shelldone — Channel Setup         │\n"
+printf "├──────────────────────────────────────────┤\n"
+printf "│  1) Slack                                │\n"
+printf "│  2) Discord                              │\n"
+printf "│  3) Telegram                             │\n"
+printf "│  4) Email                                │\n"
+printf "│  5) WhatsApp                             │\n"
+printf "│  6) Webhook                              │\n"
+printf "│  7) AI CLI Hooks                         │\n"
+printf "│  q) Quit                                 │\n"
+printf "└──────────────────────────────────────────┘\n"
+sleep "$CMD_PAUSE"
+
+# Section 7: External Channels
 section "External Notification Channels"
 
 comment "Check webhook / channel status (Slack, Discord, Telegram, Email, WhatsApp)"
 run_cmd "shelldone webhook status"
 
-# Section 7: Sounds
+# Section 8: Sounds
 section "Notification Sounds"
 
 comment "List available notification sounds"

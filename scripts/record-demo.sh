@@ -16,8 +16,9 @@ asciinema rec "$CAST_FILE" --command "bash ${SCRIPT_DIR}/demo-record.sh" --cols 
 
 echo "Converting to GIF..."
 if command -v agg &>/dev/null; then
-  agg "$CAST_FILE" "$GIF_FILE" --theme monokai --font-size 16
-  echo "GIF saved to $GIF_FILE"
+  agg "$CAST_FILE" "$GIF_FILE" --theme dracula --font-size 16 --speed 1.5
+  cp "$GIF_FILE" "${SCRIPT_DIR}/../docs/demo.gif"
+  echo "GIF saved to $GIF_FILE (and copied to docs/demo.gif)"
 else
   echo "Install agg to convert: cargo install --git https://github.com/asciinema/agg"
   echo "Cast file saved to $CAST_FILE"
