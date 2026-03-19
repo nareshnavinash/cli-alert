@@ -10,6 +10,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 [![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20WSL%20%7C%20Windows-lightgrey.svg)](#platform-support)
 [![Shell](https://img.shields.io/badge/shell-bash%20%7C%20zsh-89e051.svg)](#installation)
 [![Tests](https://img.shields.io/badge/tests-438%20passing-brightgreen.svg)](#testing)
+[![GitHub stars](https://img.shields.io/github/stars/nareshnavinash/shelldone?style=flat&color=green)](https://github.com/nareshnavinash/shelldone/stargazers)
 
 ![shelldone demo](assets/demo.gif)
 
