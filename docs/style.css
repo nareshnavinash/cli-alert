@@ -224,6 +224,17 @@ img {
   z-index: 0;
 }
 
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0, 255, 65, 0.03) 39px, rgba(0, 255, 65, 0.03) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0, 255, 65, 0.03) 39px, rgba(0, 255, 65, 0.03) 40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
 .hero__content {
   position: relative;
   z-index: 1;
@@ -437,18 +448,25 @@ img {
 }
 
 .feature-card__icon {
-  font-size: 1.8rem;
   margin-bottom: 16px;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 48px;
   height: 48px;
-  line-height: 48px;
-  text-align: center;
   background: var(--green-glow);
   border-radius: var(--radius);
   color: var(--green);
-  font-family: var(--font-mono);
-  font-weight: 700;
+}
+
+.feature-card__icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .feature-card__title {
@@ -648,6 +666,23 @@ img {
 
 .comparison th.highlight {
   color: var(--green);
+  background: rgba(0, 255, 65, 0.05);
+  position: relative;
+}
+
+.comparison th.highlight::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--green);
+  border-radius: 2px 2px 0 0;
+}
+
+.comparison td:nth-child(2) {
+  background: rgba(0, 255, 65, 0.05);
 }
 
 .comparison td {
@@ -684,6 +719,125 @@ img {
 
 .comparison tbody tr:hover {
   background: var(--green-glow);
+}
+
+/* --- Stats Bar --- */
+.stats {
+  padding: 60px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stats__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.stats__item {
+  padding: 16px 0;
+}
+
+.stats__number {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 800;
+  color: var(--green);
+  display: block;
+  line-height: 1.2;
+  text-shadow: 0 0 20px var(--green-glow);
+}
+
+.stats__label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* --- CTA Section --- */
+.cta {
+  padding: 100px 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta::before {
+  content: "";
+  position: absolute;
+  bottom: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--green-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.cta__title {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.cta__subtitle {
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  margin-bottom: 36px;
+  position: relative;
+}
+
+.cta__buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  position: relative;
+}
+
+/* --- Back to Top --- */
+.back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition);
+  z-index: 90;
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.back-to-top:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 20px var(--green-glow);
+}
+
+.back-to-top svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* --- Footer --- */
@@ -741,6 +895,16 @@ img {
 }
 
 @media (max-width: 640px) {
+  .stats__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cta__buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+
   .nav__links {
     display: none;
     position: absolute;
