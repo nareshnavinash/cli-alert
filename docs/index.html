@@ -168,31 +168,70 @@
       <div class="section__header fade-in">
         <span class="section__label">Install</span>
         <h2 class="section__title">Up and running in 30 seconds</h2>
-        <p class="section__subtitle">Clone, install, done. Works on any system with bash.</p>
+        <p class="section__subtitle">Install via your favourite package manager or clone the repo.</p>
       </div>
 
       <div class="fade-in">
         <div class="install__tabs" role="tablist" aria-label="Installation methods">
-          <button class="install__tab active" role="tab" aria-selected="true" aria-controls="panel-git" id="tab-git">Git Clone</button>
-          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-brew" id="tab-brew">Homebrew</button>
-          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-manual" id="tab-manual">Manual</button>
+          <button class="install__tab active" role="tab" aria-selected="true" aria-controls="panel-brew" id="tab-brew">Homebrew</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-apt" id="tab-apt">APT</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-scoop" id="tab-scoop">Scoop</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-choco" id="tab-choco">Chocolatey</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-git" id="tab-git">Git Clone</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-manual" id="tab-manual">Shell Init</button>
         </div>
 
-        <div class="install__panel active" id="panel-git" role="tabpanel" aria-labelledby="tab-git">
+        <div class="install__panel active" id="panel-brew" role="tabpanel" aria-labelledby="tab-brew">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy="brew install nareshnavinash/tap/shelldone">Copy</button>
+            <code><span class="code-prompt">$ </span><span class="code-cmd">brew install nareshnavinash/tap/shelldone</span></code>
+          </div>
+        </div>
+
+        <div class="install__panel" id="panel-apt" role="tabpanel" aria-labelledby="tab-apt">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy='curl -fsSL https://nareshnavinash.github.io/shelldone/KEY.gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/shelldone-archive-keyring.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/shelldone-archive-keyring.gpg] \
+  https://nareshnavinash.github.io/shelldone stable main" \
+  | sudo tee /etc/apt/sources.list.d/shelldone.list
+
+sudo apt update && sudo apt install shelldone'>Copy</button>
+            <code><span class="code-prompt">$ </span><span class="code-cmd">curl -fsSL https://nareshnavinash.github.io/shelldone/KEY.gpg \</span>
+    <span class="code-cmd">| sudo gpg --dearmor -o /usr/share/keyrings/shelldone-archive-keyring.gpg</span>
+
+<span class="code-prompt">$ </span><span class="code-cmd">echo "deb [signed-by=/usr/share/keyrings/shelldone-archive-keyring.gpg] \</span>
+    <span class="code-cmd">https://nareshnavinash.github.io/shelldone stable main" \</span>
+    <span class="code-cmd">| sudo tee /etc/apt/sources.list.d/shelldone.list</span>
+
+<span class="code-prompt">$ </span><span class="code-cmd">sudo apt update && sudo apt install shelldone</span></code>
+          </div>
+        </div>
+
+        <div class="install__panel" id="panel-scoop" role="tabpanel" aria-labelledby="tab-scoop">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy="scoop bucket add shelldone https://github.com/nareshnavinash/scoop-bucket
+scoop install shelldone">Copy</button>
+            <code><span class="code-prompt">$ </span><span class="code-cmd">scoop bucket add shelldone https://github.com/nareshnavinash/scoop-bucket</span>
+<span class="code-prompt">$ </span><span class="code-cmd">scoop install shelldone</span></code>
+          </div>
+        </div>
+
+        <div class="install__panel" id="panel-choco" role="tabpanel" aria-labelledby="tab-choco">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy="choco install shelldone">Copy</button>
+            <code><span class="code-prompt">$ </span><span class="code-cmd">choco install shelldone</span></code>
+          </div>
+        </div>
+
+        <div class="install__panel" id="panel-git" role="tabpanel" aria-labelledby="tab-git">
           <div class="code-block">
             <button class="code-block__copy" aria-label="Copy to clipboard" data-copy="git clone https://github.com/nareshnavinash/shelldone.git
 cd shelldone && ./install.sh">Copy</button>
             <code><span class="code-prompt">$ </span><span class="code-cmd">git clone https://github.com/nareshnavinash/shelldone.git</span>
 <span class="code-prompt">$ </span><span class="code-cmd">cd shelldone && ./install.sh</span></code>
           </div>
-        </div>
-
-        <div class="install__panel" id="panel-brew" role="tabpanel" aria-labelledby="tab-brew">
-          <div class="code-block">
-            <code><span class="code-comment"># Coming soon</span>
-<span class="code-prompt">$ </span><span class="code-cmd">brew install nareshnavinash/tap/shelldone</span></code>
-          </div>
-          <p class="install__note">Homebrew tap is coming soon. Use Git Clone for now.</p>
         </div>
 
         <div class="install__panel" id="panel-manual" role="tabpanel" aria-labelledby="tab-manual">
