@@ -8,15 +8,16 @@ class Shelldone < Formula
   # Stable release URL and sha256 are populated by the release workflow.
   # Until a release tarball exists, use `brew install --HEAD` to install from git.
   # To update after release: brew fetch --force shelldone && brew reinstall shelldone
-  url "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v1.1.0.tar.gz"
-  sha256 "PLACEHOLDER_POPULATED_BY_RELEASE_WORKFLOW"
+  url "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v1.3.1.tar.gz"
+  sha256 "d37ab4c643709ed640da454b77907022036bf9851493b166cd8d793afb5a1007"
   license "MIT"
   head "https://github.com/nareshnavinash/shelldone.git", branch: "main"
 
   def install
     bin.install "bin/shelldone"
     (lib/"shelldone").install "lib/shelldone.sh", "lib/auto-notify.zsh", "lib/auto-notify.bash",
-                              "lib/state.sh", "lib/external-notify.sh", "lib/ai-hook-common.sh"
+                              "lib/state.sh", "lib/external-notify.sh", "lib/ai-hook-common.sh",
+                              "lib/tui.sh"
     (share/"shelldone/hooks").install Dir["hooks/*.sh"]
     (share/"shelldone").install "VERSION"
     bash_completion.install "completions/shelldone.bash" => "shelldone"

@@ -5,6 +5,7 @@ lib/auto-notify.bash usr/lib/shelldone
 lib/external-notify.sh usr/lib/shelldone
 lib/state.sh usr/lib/shelldone
 lib/ai-hook-common.sh usr/lib/shelldone
+lib/tui.sh usr/lib/shelldone
 hooks/claude-done.sh usr/share/shelldone/hooks
 hooks/claude-notify.sh usr/share/shelldone/hooks
 hooks/codex-done.sh usr/share/shelldone/hooks

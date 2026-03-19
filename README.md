@@ -83,31 +83,36 @@ make install                     # installs to /usr/local
 make install PREFIX=~/.local     # installs to ~/.local
 ```
 
-### Homebrew (macOS/Linux) — Coming Soon
-
-No Homebrew tap has been published yet. To install from the local formula using HEAD:
+### Homebrew (macOS/Linux)
 
 ```bash
-brew install --HEAD ./Formula/shelldone.rb
+brew tap nareshnavinash/tap
+brew install shelldone
 ```
 
-A `brew install shelldone` command will be available once a tap repository and GitHub release are created.
-
-### Debian/Ubuntu — Coming Soon
-
-No `.deb` package has been published yet. The release workflow builds one automatically when a version tag is pushed. To build locally:
+### Debian/Ubuntu
 
 ```bash
-make install PREFIX=/usr/local
+# Add the GPG key and repository
+curl -fsSL https://nareshnavinash.github.io/shelldone/KEY.gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/shelldone-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/shelldone-archive-keyring.gpg] https://nareshnavinash.github.io/shelldone stable main" \
+  | sudo tee /etc/apt/sources.list.d/shelldone.list
+sudo apt update && sudo apt install shelldone
 ```
 
-### Scoop (Windows) — Coming Soon
+### Scoop (Windows)
 
-The Scoop manifest is not yet published to any bucket. Install from source on Windows (Git Bash/MSYS2) using `make install` or `./install.sh`.
+```bash
+scoop bucket add shelldone https://github.com/nareshnavinash/scoop-bucket
+scoop install shelldone
+```
 
-### Chocolatey (Windows) — Coming Soon
+### Chocolatey (Windows)
 
-The Chocolatey package is not yet published. Install from source on Windows (Git Bash/MSYS2) using `make install` or `./install.sh`.
+```bash
+choco install shelldone
+```
 
 ### Manual Setup
 

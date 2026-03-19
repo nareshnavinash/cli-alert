@@ -1,12 +1,11 @@
 {
-  "version": "1.1.0",
+  "version": "1.3.1",
   "description": "Terminal process completion notifier — OS-native notifications when commands finish",
   "homepage": "https://github.com/nareshnavinash/shelldone",
   "license": "MIT",
-  "url": "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v1.1.0.tar.gz",
-  "hash": "",
-  "notes": "The hash field is populated automatically by the release workflow. Install from source if no release exists yet.",
-  "extract_dir": "shelldone-1.1.0",
+  "url": "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v1.3.1.tar.gz",
+  "hash": "d37ab4c643709ed640da454b77907022036bf9851493b166cd8d793afb5a1007",
+  "extract_dir": "shelldone-1.3.1",
   "bin": "bin/shelldone",
   "post_install": [
     "Write-Host 'shelldone installed!' -ForegroundColor Green",
@@ -19,7 +18,7 @@
     "url": "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v$version.tar.gz",
     "hash": {
       "url": "https://github.com/nareshnavinash/shelldone/releases/download/v$version/checksums.txt",
-      "regex": "([a-fA-F0-9]{64})"
+      "regex": "([a-fA-F0-9]{64})\\s+shelldone-.*\\.tar\\.gz"
     },
     "extract_dir": "shelldone-$version"
   }

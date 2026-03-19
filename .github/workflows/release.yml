@@ -37,7 +37,8 @@ jobs:
           mkdir -p "${PKG_DIR}/usr/share/bash-completion/completions"
           mkdir -p "${PKG_DIR}/usr/share/zsh/site-functions"
 
-          cp debian/control "${PKG_DIR}/DEBIAN/control"
+          # Extract only the binary Package stanza (dpkg-deb rejects Source stanza)
+          awk '/^Package:/{found=1} found' debian/control > "${PKG_DIR}/DEBIAN/control"
           cp bin/shelldone "${PKG_DIR}/usr/bin/"
           cp lib/*.sh lib/*.bash lib/*.zsh "${PKG_DIR}/usr/lib/shelldone/"
           cp hooks/*.sh "${PKG_DIR}/usr/share/shelldone/hooks/"
@@ -50,11 +51,22 @@ jobs:
 
           dpkg-deb --build "${PKG_DIR}"
 
-      - name: Compute SHA256
+      - name: Compute SHA256 checksums
         id: sha
         run: |
-          sha256sum "shelldone_${{ steps.version.outputs.VERSION }}-1_all.deb" > checksums.txt
-          echo "DEB_SHA256=$(cut -d' ' -f1 checksums.txt)" >> "$GITHUB_OUTPUT"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          DEB_FILE="shelldone_${VERSION}-1_all.deb"
+
+          # Download the auto-generated source tarball
+          TARBALL="shelldone-${VERSION}.tar.gz"
+          curl -sL "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v${VERSION}.tar.gz" -o "${TARBALL}"
+
+          # Compute checksums for both artifacts
+          sha256sum "${DEB_FILE}" > checksums.txt
+          sha256sum "${TARBALL}" >> checksums.txt
+
+          echo "DEB_SHA256=$(sha256sum "${DEB_FILE}" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "TARBALL_SHA256=$(sha256sum "${TARBALL}" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           cat checksums.txt
 
       - name: Create GitHub Release
@@ -65,3 +77,225 @@ jobs:
           files: |
             shelldone_${{ steps.version.outputs.VERSION }}-1_all.deb
             checksums.txt
+
+  update-homebrew-tap:
+    name: Update Homebrew tap
+    needs: release
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.ref, '-') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute tarball SHA256
+        id: sha
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          curl -sL "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v${VERSION}.tar.gz" -o tarball.tar.gz
+          echo "SHA256=$(sha256sum tarball.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Update Homebrew formula
+        uses: actions/checkout@v4
+        with:
+          repository: nareshnavinash/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Write updated formula
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          SHA256="${{ steps.sha.outputs.SHA256 }}"
+          cat > homebrew-tap/Formula/shelldone.rb << 'FORMULA_EOF'
+          # Homebrew formula for shelldone
+          # Auto-updated by release workflow
+
+          class Shelldone < Formula
+            desc "Terminal process completion notifier — OS-native notifications when commands finish"
+            homepage "https://github.com/nareshnavinash/shelldone"
+          FORMULA_EOF
+
+          cat >> homebrew-tap/Formula/shelldone.rb << EOF
+            url "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v${VERSION}.tar.gz"
+            sha256 "${SHA256}"
+          EOF
+
+          cat >> homebrew-tap/Formula/shelldone.rb << 'FORMULA_EOF'
+            license "MIT"
+            head "https://github.com/nareshnavinash/shelldone.git", branch: "main"
+
+            def install
+              bin.install "bin/shelldone"
+              (lib/"shelldone").install "lib/shelldone.sh", "lib/auto-notify.zsh", "lib/auto-notify.bash",
+                                        "lib/state.sh", "lib/external-notify.sh", "lib/ai-hook-common.sh",
+                                        "lib/tui.sh"
+              (share/"shelldone/hooks").install Dir["hooks/*.sh"]
+              (share/"shelldone").install "VERSION"
+              bash_completion.install "completions/shelldone.bash" => "shelldone"
+              zsh_completion.install "completions/shelldone.zsh" => "_shelldone"
+            end
+
+            def caveats
+              <<~EOS
+                Add to your shell config (~/.zshrc or ~/.bashrc):
+
+                  eval "$(shelldone init zsh)"   # for zsh
+                  eval "$(shelldone init bash)"  # for bash
+
+                Or run automatic setup:
+
+                  shelldone setup
+              EOS
+            end
+
+            test do
+              assert_match "shelldone", shell_output("#{bin}/shelldone version")
+            end
+          end
+          FORMULA_EOF
+
+          # Fix indentation (remove leading spaces from heredoc)
+          sed -i 's/^          //' homebrew-tap/Formula/shelldone.rb
+
+      - name: Push to tap
+        working-directory: homebrew-tap
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/shelldone.rb
+          git commit -m "shelldone ${{ steps.version.outputs.VERSION }}"
+          git push
+
+  update-scoop-bucket:
+    name: Update Scoop bucket
+    needs: release
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.ref, '-') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute tarball SHA256
+        id: sha
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          curl -sL "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v${VERSION}.tar.gz" -o tarball.tar.gz
+          echo "SHA256=$(sha256sum tarball.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Scoop bucket
+        uses: actions/checkout@v4
+        with:
+          repository: nareshnavinash/scoop-bucket
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: scoop-bucket
+
+      - name: Update manifest
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          SHA256="${{ steps.sha.outputs.SHA256 }}"
+          cat > scoop-bucket/shelldone.json << EOF
+          {
+            "version": "${VERSION}",
+            "description": "Terminal process completion notifier — OS-native notifications when commands finish",
+            "homepage": "https://github.com/nareshnavinash/shelldone",
+            "license": "MIT",
+            "url": "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v${VERSION}.tar.gz",
+            "hash": "${SHA256}",
+            "extract_dir": "shelldone-${VERSION}",
+            "bin": "bin/shelldone",
+            "post_install": [
+              "Write-Host 'shelldone installed!' -ForegroundColor Green",
+              "Write-Host 'Add to your shell profile: eval \"\$(shelldone init bash)\"' -ForegroundColor Cyan"
+            ],
+            "checkver": {
+              "github": "https://github.com/nareshnavinash/shelldone"
+            },
+            "autoupdate": {
+              "url": "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v\$version.tar.gz",
+              "hash": {
+                "url": "https://github.com/nareshnavinash/shelldone/releases/download/v\$version/checksums.txt",
+                "regex": "([a-fA-F0-9]{64})\\\\s+shelldone-.*\\\\.tar\\\\.gz"
+              },
+              "extract_dir": "shelldone-\$version"
+            }
+          }
+          EOF
+
+      - name: Push to bucket
+        working-directory: scoop-bucket
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add shelldone.json
+          git commit -m "shelldone ${{ steps.version.outputs.VERSION }}"
+          git push
+
+  publish-apt:
+    name: Publish to APT repository
+    needs: release
+    runs-on: ubuntu-latest
+    concurrency: apt-publish
+    permissions:
+      contents: write
+    steps:
+      - name: Install reprepro
+        run: sudo apt-get update && sudo apt-get install -y reprepro
+
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.APT_GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Download .deb from release
+        run: |
+          gh release download "v${{ steps.version.outputs.VERSION }}" \
+            --repo nareshnavinash/shelldone \
+            --pattern "*.deb" \
+            --dir .
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Add package to APT repository
+        run: |
+          cd gh-pages
+          reprepro includedeb stable ../*.deb
+
+      - name: Export public GPG key
+        run: |
+          gpg --armor --export "shelldone APT repo" > gh-pages/KEY.gpg
+
+      - name: Commit and push
+        working-directory: gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "apt: shelldone ${{ steps.version.outputs.VERSION }}" || echo "No changes to commit"
+          git push
+
+  publish-choco:
+    name: Publish to Chocolatey
+    needs: release
+    runs-on: windows-latest
+    if: ${{ secrets.CHOCO_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pack and push
+        run: |
+          choco pack packaging/chocolatey.nuspec
+          choco push shelldone.*.nupkg --source https://push.chocolatey.org/ --api-key ${{ secrets.CHOCO_API_KEY }}
