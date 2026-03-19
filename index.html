@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>shelldone APT Repository</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 700px; margin: 2em auto; padding: 0 1em; color: #333; }
+    h1 { color: #1a1a2e; }
+    pre { background: #f4f4f4; padding: 1em; border-radius: 6px; overflow-x: auto; }
+    code { font-size: 0.95em; }
+    a { color: #0366d6; }
+  </style>
+</head>
+<body>
+  <h1>shelldone APT Repository</h1>
+  <p>Install <a href="https://github.com/nareshnavinash/shelldone">shelldone</a> on Debian/Ubuntu:</p>
+  <pre><code>curl -fsSL https://nareshnavinash.github.io/shelldone/KEY.gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/shelldone-archive-keyring.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/shelldone-archive-keyring.gpg] \
+https://nareshnavinash.github.io/shelldone stable main" \
+  | sudo tee /etc/apt/sources.list.d/shelldone.list
+
+sudo apt update && sudo apt install shelldone</code></pre>
+  <p><a href="https://github.com/nareshnavinash/shelldone">Back to GitHub</a></p>
+</body>
+</html>

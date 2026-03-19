@@ -1,0 +1,7 @@
+Origin: shelldone
+Label: shelldone
+Codename: stable
+Architectures: all
+Components: main
+Description: shelldone APT repository
+SignWith: yes
