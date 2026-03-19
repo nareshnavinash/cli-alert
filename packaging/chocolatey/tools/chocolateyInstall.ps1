@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $packageName = 'shelldone'
 $version = '1.3.1'
 $url = "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v${version}.tar.gz"
-$checksum = 'd37ab4c643709ed640da454b77907022036bf9851493b166cd8d793afb5a1007'
+$checksum = '2fb63fc185b9189c6f434400c3b03f325937419a82361b52b099d5f936ed3540'
 $checksumType = 'sha256'
 
 $toolsDir = "$(Split-Path -Parent $MyInvocation.MyCommand.Definition)"

@@ -9,7 +9,7 @@ class Shelldone < Formula
   # Until a release tarball exists, use `brew install --HEAD` to install from git.
   # To update after release: brew fetch --force shelldone && brew reinstall shelldone
   url "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v1.3.1.tar.gz"
-  sha256 "d37ab4c643709ed640da454b77907022036bf9851493b166cd8d793afb5a1007"
+  sha256 "2fb63fc185b9189c6f434400c3b03f325937419a82361b52b099d5f936ed3540"
   license "MIT"
   head "https://github.com/nareshnavinash/shelldone.git", branch: "main"
 
