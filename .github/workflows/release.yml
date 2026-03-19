@@ -37,8 +37,25 @@ jobs:
           mkdir -p "${PKG_DIR}/usr/share/bash-completion/completions"
           mkdir -p "${PKG_DIR}/usr/share/zsh/site-functions"
 
-          # Extract only the binary Package stanza (dpkg-deb rejects Source stanza)
-          awk '/^Package:/{found=1} found' debian/control > "${PKG_DIR}/DEBIAN/control"
+          # Generate binary control file (dpkg-deb needs Package, Version, Maintainer)
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          cat > "${PKG_DIR}/DEBIAN/control" << CTRL_EOF
+          Package: shelldone
+          Version: ${VERSION}-1
+          Architecture: all
+          Maintainer: Naresh Sekar <nareshnavinash@gmail.com>
+          Depends: bash (>= 4.0)
+          Recommends: libnotify-bin, pulseaudio-utils | alsa-utils
+          Suggests: espeak
+          Homepage: https://github.com/nareshnavinash/shelldone
+          Section: utils
+          Priority: optional
+          Description: Terminal process completion notifier
+           Sends OS-native desktop notifications and sounds when long-running
+           terminal commands complete. Cross-platform: macOS, Linux, WSL.
+          CTRL_EOF
+          # Strip heredoc indentation
+          sed -i 's/^          //' "${PKG_DIR}/DEBIAN/control"
           cp bin/shelldone "${PKG_DIR}/usr/bin/"
           cp lib/*.sh lib/*.bash lib/*.zsh "${PKG_DIR}/usr/lib/shelldone/"
           cp hooks/*.sh "${PKG_DIR}/usr/share/shelldone/hooks/"
