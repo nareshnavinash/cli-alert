@@ -1,7 +1,7 @@
 Origin: shelldone
 Label: shelldone
 Codename: stable
-Architectures: all
+Architectures: amd64 i386 arm64 armhf
 Components: main
 Description: shelldone APT repository
 SignWith: yes
