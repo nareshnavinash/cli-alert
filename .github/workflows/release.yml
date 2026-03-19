@@ -316,5 +316,7 @@ jobs:
         env:
           CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
         run: |
-          choco pack packaging/chocolatey.nuspec
-          choco push shelldone.*.nupkg --source https://push.chocolatey.org/ --api-key "$env:CHOCO_API_KEY"
+          Copy-Item packaging/chocolatey.nuspec .
+          choco pack chocolatey.nuspec
+          $nupkg = (Get-ChildItem shelldone.*.nupkg).FullName
+          choco push $nupkg --source https://push.chocolatey.org/ --api-key "$env:CHOCO_API_KEY"
