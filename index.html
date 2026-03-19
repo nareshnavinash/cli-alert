@@ -1,27 +1,462 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>shelldone APT Repository</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 700px; margin: 2em auto; padding: 0 1em; color: #333; }
-    h1 { color: #1a1a2e; }
-    pre { background: #f4f4f4; padding: 1em; border-radius: 6px; overflow-x: auto; }
-    code { font-size: 0.95em; }
-    a { color: #0366d6; }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>shelldone — Terminal notifications for long-running commands</title>
+  <meta name="description" content="Cross-platform terminal notification system. Desktop alerts, sounds, Slack, Discord, Telegram, Email, WhatsApp. Pure bash, zero deps. AI CLI hooks.">
+  <meta name="keywords" content="terminal notifications, bash, shell, long-running commands, desktop alerts, slack, discord, telegram, CLI, developer tools">
+  <meta name="author" content="Naresh Sekar">
+  <meta name="theme-color" content="#00ff41">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="shelldone — Terminal notifications for long-running commands">
+  <meta property="og:description" content="Cross-platform terminal notification system. Desktop alerts, sounds, Slack, Discord, Telegram, Email, WhatsApp. Pure bash, zero deps. AI CLI hooks.">
+  <meta property="og:url" content="https://nareshnavinash.github.io/shelldone/">
+  <meta property="og:site_name" content="shelldone">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="shelldone — Terminal notifications for long-running commands">
+  <meta name="twitter:description" content="Cross-platform terminal notification system. Desktop alerts, sounds, Slack, Discord, Telegram, Email, WhatsApp. Pure bash, zero deps. AI CLI hooks.">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="canonical" href="https://nareshnavinash.github.io/shelldone/">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "shelldone",
+    "description": "Cross-platform terminal notification system. Desktop alerts, sounds, Slack, Discord, Telegram, Email, WhatsApp. Pure bash, zero dependencies.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS, Linux, WSL, Windows",
+    "url": "https://nareshnavinash.github.io/shelldone/",
+    "downloadUrl": "https://github.com/nareshnavinash/shelldone",
+    "softwareVersion": "1.3.1",
+    "license": "https://opensource.org/licenses/MIT",
+    "author": {
+      "@type": "Person",
+      "name": "Naresh Sekar",
+      "url": "https://github.com/nareshnavinash"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
 </head>
 <body>
-  <h1>shelldone APT Repository</h1>
-  <p>Install <a href="https://github.com/nareshnavinash/shelldone">shelldone</a> on Debian/Ubuntu:</p>
-  <pre><code>curl -fsSL https://nareshnavinash.github.io/shelldone/KEY.gpg \
+
+  <!-- Skip to main content for keyboard users -->
+  <a href="#top" class="skip-nav">Skip to content</a>
+
+  <!-- ===== Navigation ===== -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <div class="nav__inner">
+      <a href="#" class="nav__logo" aria-label="shelldone home">shelldone<span>_</span></a>
+      <button class="nav__toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <ul class="nav__links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="#demo">Usage</a></li>
+        <li><a href="#compare">Compare</a></li>
+        <li>
+          <a href="https://github.com/nareshnavinash/shelldone" class="nav__github" aria-label="View on GitHub">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+          </a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ===== Hero ===== -->
+  <header class="hero" id="top">
+    <div class="container hero__content">
+      <h1 class="hero__title">shelldone</h1>
+      <p class="hero__tagline">Never miss a finished build again.</p>
+      <p class="hero__subtitle">Cross-platform terminal notifications for long-running commands. Desktop alerts, sounds, Slack, Discord, Telegram, and more. Pure bash, zero dependencies.</p>
+      <div class="hero__buttons">
+        <a href="#install" class="btn btn--primary">Get Started</a>
+        <a href="https://github.com/nareshnavinash/shelldone" class="btn btn--secondary">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <!-- Demo GIF -->
+      <div class="terminal" role="img" aria-label="Terminal demo showing shelldone in action">
+        <div class="terminal__header">
+          <span class="terminal__dot terminal__dot--red" aria-hidden="true"></span>
+          <span class="terminal__dot terminal__dot--yellow" aria-hidden="true"></span>
+          <span class="terminal__dot terminal__dot--green" aria-hidden="true"></span>
+          <span class="terminal__title">Terminal</span>
+        </div>
+        <img src="demo.gif" alt="shelldone demo — terminal notifications for long-running commands" class="terminal__gif" loading="lazy">
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Features ===== -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section__header fade-in">
+        <span class="section__label">Features</span>
+        <h2 class="section__title">Everything you need, nothing you don't</h2>
+        <p class="section__subtitle">Built for developers who run long commands and need to know when they finish.</p>
+      </div>
+
+      <div class="features__grid">
+        <article class="feature-card fade-in">
+          <span class="feature-card__icon" aria-hidden="true">A</span>
+          <h3 class="feature-card__title">Auto-Notify</h3>
+          <p class="feature-card__text">Commands running longer than a configurable threshold trigger notifications automatically. No need to remember to prefix anything.</p>
+        </article>
+
+        <article class="feature-card fade-in">
+          <span class="feature-card__icon" aria-hidden="true">6</span>
+          <h3 class="feature-card__title">6 External Channels</h3>
+          <p class="feature-card__text">Slack, Discord, Telegram, Email, WhatsApp, and generic webhooks. Get notified wherever you already work.</p>
+        </article>
+
+        <article class="feature-card fade-in">
+          <span class="feature-card__icon" aria-hidden="true">AI</span>
+          <h3 class="feature-card__title">AI CLI Integration</h3>
+          <p class="feature-card__text">Native hooks for Claude Code, Codex, Gemini CLI, Copilot, and Cursor. Know when your AI agent finishes its task.</p>
+        </article>
+
+        <article class="feature-card fade-in">
+          <span class="feature-card__icon" aria-hidden="true">+</span>
+          <h3 class="feature-card__title">Cross-Platform</h3>
+          <p class="feature-card__text">macOS, Linux, WSL, and Windows via Git Bash, MSYS2, and Cygwin. One tool that works everywhere you have a terminal.</p>
+        </article>
+
+        <article class="feature-card fade-in">
+          <span class="feature-card__icon" aria-hidden="true">0</span>
+          <h3 class="feature-card__title">Zero Dependencies</h3>
+          <p class="feature-card__text">Pure bash. No Python, no Node, no Go, no Rust. Just your shell. Installs in seconds, works immediately.</p>
+        </article>
+
+        <article class="feature-card fade-in">
+          <span class="feature-card__icon" aria-hidden="true">~</span>
+          <h3 class="feature-card__title">Notification Control</h3>
+          <p class="feature-card__text">Mute notifications, toggle individual layers, schedule quiet hours. Full control over when and how you get alerted.</p>
+        </article>
+
+        <article class="feature-card fade-in">
+          <span class="feature-card__icon" aria-hidden="true">></span>
+          <h3 class="feature-card__title">Interactive TUI Setup</h3>
+          <p class="feature-card__text">Run <code style="font-family: var(--font-mono); color: var(--green);">shelldone setup</code> for a menu-driven interface to configure channels, webhooks, and AI CLI hooks.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Install ===== -->
+  <section class="section section--alt" id="install">
+    <div class="container">
+      <div class="section__header fade-in">
+        <span class="section__label">Install</span>
+        <h2 class="section__title">Up and running in 30 seconds</h2>
+        <p class="section__subtitle">Install via your favourite package manager or clone the repo.</p>
+      </div>
+
+      <div class="fade-in">
+        <div class="install__tabs" role="tablist" aria-label="Installation methods">
+          <button class="install__tab active" role="tab" aria-selected="true" aria-controls="panel-brew" id="tab-brew">Homebrew</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-apt" id="tab-apt">APT</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-scoop" id="tab-scoop">Scoop</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-choco" id="tab-choco">Chocolatey</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-git" id="tab-git">Git Clone</button>
+          <button class="install__tab" role="tab" aria-selected="false" aria-controls="panel-manual" id="tab-manual">Shell Init</button>
+        </div>
+
+        <div class="install__panel active" id="panel-brew" role="tabpanel" aria-labelledby="tab-brew">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy="brew install nareshnavinash/tap/shelldone">Copy</button>
+            <code><span class="code-prompt">$ </span><span class="code-cmd">brew install nareshnavinash/tap/shelldone</span></code>
+          </div>
+        </div>
+
+        <div class="install__panel" id="panel-apt" role="tabpanel" aria-labelledby="tab-apt">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy='curl -fsSL https://nareshnavinash.github.io/shelldone/KEY.gpg \
   | sudo gpg --dearmor -o /usr/share/keyrings/shelldone-archive-keyring.gpg
 
 echo "deb [signed-by=/usr/share/keyrings/shelldone-archive-keyring.gpg] \
-https://nareshnavinash.github.io/shelldone stable main" \
+  https://nareshnavinash.github.io/shelldone stable main" \
   | sudo tee /etc/apt/sources.list.d/shelldone.list
 
-sudo apt update && sudo apt install shelldone</code></pre>
-  <p><a href="https://github.com/nareshnavinash/shelldone">Back to GitHub</a></p>
+sudo apt update && sudo apt install shelldone'>Copy</button>
+            <code><span class="code-prompt">$ </span><span class="code-cmd">curl -fsSL https://nareshnavinash.github.io/shelldone/KEY.gpg \</span>
+    <span class="code-cmd">| sudo gpg --dearmor -o /usr/share/keyrings/shelldone-archive-keyring.gpg</span>
+
+<span class="code-prompt">$ </span><span class="code-cmd">echo "deb [signed-by=/usr/share/keyrings/shelldone-archive-keyring.gpg] \</span>
+    <span class="code-cmd">https://nareshnavinash.github.io/shelldone stable main" \</span>
+    <span class="code-cmd">| sudo tee /etc/apt/sources.list.d/shelldone.list</span>
+
+<span class="code-prompt">$ </span><span class="code-cmd">sudo apt update && sudo apt install shelldone</span></code>
+          </div>
+        </div>
+
+        <div class="install__panel" id="panel-scoop" role="tabpanel" aria-labelledby="tab-scoop">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy="scoop bucket add shelldone https://github.com/nareshnavinash/scoop-bucket
+scoop install shelldone">Copy</button>
+            <code><span class="code-prompt">$ </span><span class="code-cmd">scoop bucket add shelldone https://github.com/nareshnavinash/scoop-bucket</span>
+<span class="code-prompt">$ </span><span class="code-cmd">scoop install shelldone</span></code>
+          </div>
+        </div>
+
+        <div class="install__panel" id="panel-choco" role="tabpanel" aria-labelledby="tab-choco">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy="choco install shelldone">Copy</button>
+            <code><span class="code-prompt">$ </span><span class="code-cmd">choco install shelldone</span></code>
+          </div>
+        </div>
+
+        <div class="install__panel" id="panel-git" role="tabpanel" aria-labelledby="tab-git">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy="git clone https://github.com/nareshnavinash/shelldone.git
+cd shelldone && ./install.sh">Copy</button>
+            <code><span class="code-prompt">$ </span><span class="code-cmd">git clone https://github.com/nareshnavinash/shelldone.git</span>
+<span class="code-prompt">$ </span><span class="code-cmd">cd shelldone && ./install.sh</span></code>
+          </div>
+        </div>
+
+        <div class="install__panel" id="panel-manual" role="tabpanel" aria-labelledby="tab-manual">
+          <div class="code-block">
+            <button class="code-block__copy" aria-label="Copy to clipboard" data-copy='eval "$(shelldone init zsh)"    # for zsh
+eval "$(shelldone init bash)"   # for bash'>Copy</button>
+            <code><span class="code-comment"># Add to your .zshrc or .bashrc</span>
+<span class="code-prompt">$ </span><span class="code-cmd">eval "$(shelldone init zsh)"</span>   <span class="code-comment"># for zsh</span>
+<span class="code-prompt">$ </span><span class="code-cmd">eval "$(shelldone init bash)"</span>  <span class="code-comment"># for bash</span>
+
+<span class="code-comment"># Or auto-configure everything</span>
+<span class="code-prompt">$ </span><span class="code-cmd">shelldone setup</span></code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Quick Demo ===== -->
+  <section class="section" id="demo">
+    <div class="container">
+      <div class="section__header fade-in">
+        <span class="section__label">Usage</span>
+        <h2 class="section__title">Simple by design</h2>
+        <p class="section__subtitle">Prefix any command with <code style="font-family: var(--font-mono); color: var(--green);">alert</code> or use the built-in setup commands.</p>
+      </div>
+
+      <div class="demo__grid">
+        <article class="demo-card fade-in">
+          <p class="demo-card__label">Run with alert</p>
+          <p class="demo-card__code">$ alert make build</p>
+          <p class="demo-card__desc">Wraps any command. Sends a desktop notification when it finishes, with exit code and duration.</p>
+        </article>
+
+        <article class="demo-card fade-in">
+          <p class="demo-card__label">AI CLI hooks</p>
+          <p class="demo-card__code">$ shelldone setup claude-hook</p>
+          <p class="demo-card__desc">Installs a hook so Claude Code, Codex, Gemini, Copilot, or Cursor notifies you on task completion.</p>
+        </article>
+
+        <article class="demo-card fade-in">
+          <p class="demo-card__label">Test webhooks</p>
+          <p class="demo-card__code">$ shelldone webhook test slack</p>
+          <p class="demo-card__desc">Sends a test notification to your configured Slack channel. Works with Discord, Telegram, and others too.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Comparison ===== -->
+  <section class="section section--alt" id="compare">
+    <div class="container">
+      <div class="section__header fade-in">
+        <span class="section__label">Compare</span>
+        <h2 class="section__title">How shelldone stacks up</h2>
+        <p class="section__subtitle">The most complete terminal notification tool available.</p>
+      </div>
+
+      <div class="comparison fade-in">
+        <table role="table">
+          <thead>
+            <tr>
+              <th scope="col">Feature</th>
+              <th scope="col" class="highlight">shelldone</th>
+              <th scope="col">undistract-me</th>
+              <th scope="col">noti</th>
+              <th scope="col">done (fish)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Auto-notify</td>
+              <td class="yes">Yes</td>
+              <td class="yes">Yes</td>
+              <td class="partial">Partial</td>
+              <td class="yes">Yes</td>
+            </tr>
+            <tr>
+              <td>macOS + Linux + WSL + Windows</td>
+              <td class="yes">Yes</td>
+              <td class="no">No</td>
+              <td class="yes">Yes</td>
+              <td class="no">No</td>
+            </tr>
+            <tr>
+              <td>External channels (6)</td>
+              <td class="yes">Yes</td>
+              <td class="no">No</td>
+              <td class="partial">Partial</td>
+              <td class="no">No</td>
+            </tr>
+            <tr>
+              <td>Zero dependencies</td>
+              <td class="yes">Yes</td>
+              <td class="yes">Yes</td>
+              <td class="no">No (Go)</td>
+              <td class="yes">Yes</td>
+            </tr>
+            <tr>
+              <td>AI CLI integration (5 tools)</td>
+              <td class="yes">Yes</td>
+              <td class="no">No</td>
+              <td class="no">No</td>
+              <td class="no">No</td>
+            </tr>
+            <tr>
+              <td>Sound + TTS</td>
+              <td class="yes">Yes</td>
+              <td class="no">No</td>
+              <td class="partial">Partial</td>
+              <td class="no">No</td>
+            </tr>
+            <tr>
+              <td>Mute / schedule / toggle</td>
+              <td class="yes">Yes</td>
+              <td class="no">No</td>
+              <td class="no">No</td>
+              <td class="no">No</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <div class="container">
+      <nav class="footer__links" aria-label="Footer navigation">
+        <a href="https://github.com/nareshnavinash/shelldone">GitHub</a>
+        <a href="https://github.com/nareshnavinash/shelldone/blob/main/LICENSE">MIT License</a>
+        <a href="https://github.com/nareshnavinash/shelldone/blob/main/CONTRIBUTING.md">Contributing</a>
+        <a href="https://github.com/nareshnavinash/shelldone/blob/main/CHANGELOG.md">Changelog</a>
+      </nav>
+      <p class="footer__copy">Made by <a href="https://github.com/nareshnavinash">Naresh Sekar</a></p>
+    </div>
+  </footer>
+
+  <!-- ===== Minimal JS: typing animation, tabs, copy, scroll fade-in, mobile nav ===== -->
+  <script>
+    (function () {
+      "use strict";
+
+      // --- Install tabs ---
+      var tabs = document.querySelectorAll(".install__tab");
+      var panels = document.querySelectorAll(".install__panel");
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          tabs.forEach(function (t) {
+            t.classList.remove("active");
+            t.setAttribute("aria-selected", "false");
+          });
+          panels.forEach(function (p) {
+            p.classList.remove("active");
+          });
+
+          tab.classList.add("active");
+          tab.setAttribute("aria-selected", "true");
+
+          var panelId = tab.getAttribute("aria-controls");
+          var panel = document.getElementById(panelId);
+          if (panel) panel.classList.add("active");
+        });
+      });
+
+      // --- Copy buttons ---
+      document.querySelectorAll(".code-block__copy").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var text = btn.getAttribute("data-copy");
+          if (!text) {
+            var codeEl = btn.parentElement.querySelector("code");
+            text = codeEl ? codeEl.textContent.replace(/^\$ /gm, "").trim() : "";
+          }
+
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(function () {
+              btn.textContent = "Copied!";
+              btn.classList.add("copied");
+              setTimeout(function () {
+                btn.textContent = "Copy";
+                btn.classList.remove("copied");
+              }, 2000);
+            });
+          }
+        });
+      });
+
+      // --- Fade-in on scroll ---
+      var fadeEls = document.querySelectorAll(".fade-in");
+
+      function checkFade() {
+        var trigger = window.innerHeight * 0.88;
+        fadeEls.forEach(function (el) {
+          var rect = el.getBoundingClientRect();
+          if (rect.top < trigger) {
+            el.classList.add("visible");
+          }
+        });
+      }
+
+      window.addEventListener("scroll", checkFade, { passive: true });
+      window.addEventListener("load", checkFade);
+      checkFade();
+
+      // --- Mobile nav toggle ---
+      var toggle = document.querySelector(".nav__toggle");
+      var navLinks = document.querySelector(".nav__links");
+
+      if (toggle && navLinks) {
+        toggle.addEventListener("click", function () {
+          var isOpen = navLinks.classList.toggle("open");
+          toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+
+        // Close nav when a link is clicked
+        navLinks.querySelectorAll("a").forEach(function (link) {
+          link.addEventListener("click", function () {
+            navLinks.classList.remove("open");
+            toggle.setAttribute("aria-expanded", "false");
+          });
+        });
+      }
+    })();
+  </script>
+
 </body>
 </html>
