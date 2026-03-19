@@ -1,0 +1,5 @@
+Component: main
+Origin: shelldone
+Label: shelldone
+Architecture: amd64
+Description: shelldone APT repository

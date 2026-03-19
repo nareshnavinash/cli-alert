@@ -1,0 +1,5 @@
+Component: main
+Origin: shelldone
+Label: shelldone
+Architecture: i386
+Description: shelldone APT repository

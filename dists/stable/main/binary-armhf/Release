@@ -1,0 +1,5 @@
+Component: main
+Origin: shelldone
+Label: shelldone
+Architecture: armhf
+Description: shelldone APT repository
