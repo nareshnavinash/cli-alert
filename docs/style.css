@@ -1,5 +1,5 @@
 /* ============================================================
-   shelldone Landing Page — style.css
+   shelldone Landing Page - style.css
    Dark terminal-green aesthetic, responsive, zero dependencies
    ============================================================ */
 
@@ -82,7 +82,7 @@ img {
   border: 0;
 }
 
-/* Skip-nav link — visible only on focus */
+/* Skip-nav link - visible only on focus */
 .skip-nav {
   position: absolute;
   top: -100%;

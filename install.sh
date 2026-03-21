@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh — Quick installer (downloads or runs from source)
+# install.sh - Quick installer (downloads or runs from source)
 # For package manager users, use brew/apt/scoop instead.
 set -euo pipefail
 

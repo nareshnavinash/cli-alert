@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ai-hook-common.sh — Shared library for AI CLI hook scripts
+# ai-hook-common.sh - Shared library for AI CLI hook scripts
 # Sourced by hooks/*-done.sh to provide common JSON extraction
 # and toggle-aware notification dispatch.
 
@@ -69,7 +69,7 @@ _shelldone_hook_exit_code_for_reason() {
       printf '0'
       ;;
     *)
-      # Unknown reason — default to success (safe fallback)
+      # Unknown reason - default to success (safe fallback)
       printf '0'
       ;;
   esac
@@ -95,7 +95,7 @@ _shelldone_hook_notify() {
   export _SHELLDONE_META_SOURCE="ai-hook"
   export _SHELLDONE_META_AI_NAME="$ai_name"
 
-  # Run external notifications synchronously in hook context — the parent
+  # Run external notifications synchronously in hook context - the parent
   # AI CLI may kill the process tree when the hook script exits, which would
   # terminate background HTTP requests before they complete.
   export _SHELLDONE_HOOK_CONTEXT=true

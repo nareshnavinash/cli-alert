@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tui.sh — Terminal UI utilities for shelldone
+# tui.sh - Terminal UI utilities for shelldone
 # Provides colors, output helpers, interactive prompts, and validation.
 # bash 3.2 compatible (no associative arrays, no namerefs).
 
@@ -125,15 +125,15 @@ _tui_select() {
   local count=${#options[@]}
 
   if ! _tui_is_interactive; then
-    _TUI_SELECTED="${options[0]}"
+    _TUI_SELECTED="${options[@]:0:1}"
     _TUI_SELECTED_INDEX=0
     return 0
   fi
 
   printf '%s\n' "$prompt"
   local i
-  for i in "${!options[@]}"; do
-    printf '  %s%d)%s %s\n' "${_TUI_BOLD}" $((i + 1)) "${_TUI_RESET}" "${options[$i]}"
+  for (( i=0; i<count; i++ )); do
+    printf '  %s%d)%s %s\n' "${_TUI_BOLD}" $((i + 1)) "${_TUI_RESET}" "${options[@]:$i:1}"
   done
 
   while true; do
@@ -141,7 +141,7 @@ _tui_select() {
     local reply
     read -r reply </dev/tty
     if [[ "$reply" =~ ^[0-9]+$ ]] && (( reply >= 1 && reply <= count )); then
-      _TUI_SELECTED="${options[$((reply - 1))]}"
+      _TUI_SELECTED="${options[@]:$((reply - 1)):1}"
       _TUI_SELECTED_INDEX=$((reply - 1))
       return 0
     fi
@@ -268,7 +268,7 @@ _tui_multiselect() {
     _TUI_MULTISELECTED="${options[*]}"
     local indices=""
     local k
-    for k in "${!options[@]}"; do
+    for (( k=0; k<count; k++ )); do
       indices="${indices:+$indices }$k"
     done
     _TUI_MULTISELECTED_INDICES="$indices"
@@ -277,8 +277,8 @@ _tui_multiselect() {
 
   printf '%s\n' "$prompt"
   local i
-  for i in "${!options[@]}"; do
-    printf '  %s%d)%s [ ] %s\n' "${_TUI_BOLD}" $((i + 1)) "${_TUI_RESET}" "${options[$i]}"
+  for (( i=0; i<count; i++ )); do
+    printf '  %s%d)%s [ ] %s\n' "${_TUI_BOLD}" $((i + 1)) "${_TUI_RESET}" "${options[@]:$i:1}"
   done
   printf '  Enter numbers (comma-separated), %sa%s=all, %sn%s=none: ' \
     "${_TUI_BOLD}" "${_TUI_RESET}" "${_TUI_BOLD}" "${_TUI_RESET}"
@@ -290,7 +290,7 @@ _tui_multiselect() {
 
   case "$reply" in
     [aA]|[aA][lL][lL])
-      for i in "${!options[@]}"; do
+      for (( i=0; i<count; i++ )); do
         selected_indices+=("$i")
       done
       ;;
@@ -324,12 +324,12 @@ _tui_multiselect() {
   _TUI_MULTISELECTED=""
   _TUI_MULTISELECTED_INDICES=""
   for i in "${selected_indices[@]+"${selected_indices[@]}"}"; do
-    _TUI_MULTISELECTED="${_TUI_MULTISELECTED:+$_TUI_MULTISELECTED }${options[$i]}"
+    _TUI_MULTISELECTED="${_TUI_MULTISELECTED:+$_TUI_MULTISELECTED }${options[@]:$i:1}"
     _TUI_MULTISELECTED_INDICES="${_TUI_MULTISELECTED_INDICES:+$_TUI_MULTISELECTED_INDICES }$i"
   done
 
   # Show selected items with [x] markers
-  for i in "${!options[@]}"; do
+  for (( i=0; i<count; i++ )); do
     local marker="[ ]"
     local si
     for si in "${selected_indices[@]+"${selected_indices[@]}"}"; do
@@ -338,7 +338,7 @@ _tui_multiselect() {
         break
       fi
     done
-    printf '  %s%d)%s %s %s\n' "${_TUI_BOLD}" $((i + 1)) "${_TUI_RESET}" "$marker" "${options[$i]}"
+    printf '  %s%d)%s %s %s\n' "${_TUI_BOLD}" $((i + 1)) "${_TUI_RESET}" "$marker" "${options[@]:$i:1}"
   done
 }
 

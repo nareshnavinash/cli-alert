@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# copilot-notify.sh — GitHub Copilot CLI Notification hook
+# copilot-notify.sh - GitHub Copilot CLI Notification hook
 # Sends a notification when Copilot CLI fires a system notification.
 # Configured via ~/.github/hooks/shelldone-notification.json
 

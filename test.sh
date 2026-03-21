@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test.sh — Verification script for shelldone
+# test.sh - Verification script for shelldone
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -35,6 +35,8 @@ export SHELLDONE_SOUND_SUCCESS=""
 export SHELLDONE_SOUND_FAILURE=""
 unset SHELLDONE_VOICE
 unset _SHELLDONE_EXTERNAL_LOADED
+# Prevent config file from re-setting notification env vars during tests
+export SHELLDONE_CONFIG=/dev/null
 
 pass() { printf '\033[1;32m  ✓ PASS\033[0m %s\n' "$1"; }
 fail() { printf '\033[1;31m  ✗ FAIL\033[0m %s\n' "$1"; }
@@ -361,14 +363,14 @@ case "$_SHELLDONE_PLATFORM" in
     elif command -v aplay &>/dev/null; then
       info "aplay available for sound"
     else
-      info "No sound player found (paplay/aplay) — will use terminal bell"
+      info "No sound player found (paplay/aplay) - will use terminal bell"
     fi
     ;;
   wsl|windows)
     if command -v powershell.exe &>/dev/null; then
       info "powershell.exe available for sound"
     else
-      info "powershell.exe not found — will use terminal bell"
+      info "powershell.exe not found - will use terminal bell"
     fi
     ;;
 esac
@@ -567,7 +569,7 @@ test_warn_once_exists() {
 }
 test_warn_once_deduplicates() {
   unset _SHELLDONE_WARNED_TESTDEDUP
-  # Call twice — first should warn, second should be silent
+  # Call twice - first should warn, second should be silent
   local combined
   combined=$({ _shelldone_warn_once TESTDEDUP "first call" ; _shelldone_warn_once TESTDEDUP "second call"; } 2>&1)
   # Should contain "first call" but not "second call"
@@ -602,12 +604,20 @@ test_glob_exact_match() {
 test_glob_pattern_match() {
   local cmd_name="npm-check"
   local excluded="npm*"
-  [[ "$cmd_name" == $excluded ]]
+  if [[ -n "${ZSH_VERSION:-}" ]]; then
+    [[ "$cmd_name" == $~excluded ]]
+  else
+    [[ "$cmd_name" == $excluded ]]
+  fi
 }
 test_glob_no_false_positive() {
   local cmd_name="make"
   local excluded="npm*"
-  ! [[ "$cmd_name" == $excluded ]]
+  if [[ -n "${ZSH_VERSION:-}" ]]; then
+    ! [[ "$cmd_name" == $~excluded ]]
+  else
+    ! [[ "$cmd_name" == $excluded ]]
+  fi
 }
 
 run_test "Exact match still works with glob" test_glob_exact_match
@@ -1777,7 +1787,7 @@ run_test "CLI webhook test: discord missing var shows specific error" test_cli_w
 test_cli_webhook_test_telegram_missing_chat_id() {
   local out
   out=$(SHELLDONE_TELEGRAM_TOKEN="fake" unset SHELLDONE_TELEGRAM_CHAT_ID; "${SCRIPT_DIR}/bin/shelldone" webhook test telegram 2>&1) || true
-  # Either TOKEN or CHAT_ID error is acceptable — depends on env
+  # Either TOKEN or CHAT_ID error is acceptable - depends on env
   [[ "$out" == *"SHELLDONE_TELEGRAM"* ]] && [[ "$out" == *"not set"* ]]
 }
 run_test "CLI webhook test: telegram missing config shows error" test_cli_webhook_test_telegram_missing_chat_id
@@ -1891,7 +1901,7 @@ run_test "CLI webhook test E2E: failure shows debug hint" test_cli_webhook_test_
 
 test_cli_webhook_test_not_rate_limited() {
   _test_setup_mock_curl "200"
-  # Run twice in quick succession — second should also succeed (not rate-limited)
+  # Run twice in quick succession - second should also succeed (not rate-limited)
   local out1 out2
   out1=$(
     PATH="${_test_mock_curl_dir}:$PATH" \
@@ -3065,6 +3075,7 @@ test_auto_notify_installs_debug_trap() {
   tmpscript=$(mktemp)
   cat > "$tmpscript" << TESTEOF
 #!/bin/bash
+export SHELLDONE_CONFIG=/dev/null
 source "${LIB_DIR}/shelldone.sh"
 unset _SHELLDONE_AUTO_BASH_LOADED
 source "${LIB_DIR}/auto-notify.bash"
@@ -3083,6 +3094,7 @@ test_auto_notify_chains_existing_trap() {
   tmpscript=$(mktemp)
   cat > "$tmpscript" << TESTEOF
 #!/bin/bash
+export SHELLDONE_CONFIG=/dev/null
 trap "OLD_TRAP_MARKER=1" DEBUG
 source "${LIB_DIR}/shelldone.sh"
 unset _SHELLDONE_AUTO_BASH_LOADED
@@ -3356,7 +3368,7 @@ test_claude_setup_idempotent() {
 }
 run_test "Claude setup is idempotent (no duplicates on re-run)" test_claude_setup_idempotent
 
-# Claude: pre-existing Stop array with entries — appends, not replaces
+# Claude: pre-existing Stop array with entries - appends, not replaces
 test_claude_setup_appends_to_stop_array() {
   local tmpdir
   tmpdir=$(mktemp -d)
@@ -4700,7 +4712,7 @@ test_channels_dashboard_renders() {
     source "${SCRIPT_DIR}/bin/shelldone" 2>/dev/null <<< "help" || true
     _channels_status_dashboard 2>/dev/null
   )
-  # Should not error — output may be empty if function isn't directly callable
+  # Should not error - output may be empty if function isn't directly callable
   # Let's test via the CLI instead
   true
 }

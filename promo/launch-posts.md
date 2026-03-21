@@ -1,4 +1,4 @@
-# shelldone v1.3.0 — Launch Posts & Articles
+# shelldone v1.3.0 - Launch Posts & Articles
 
 All promotional content for the shelldone launch. Each section is copy-paste ready.
 
@@ -23,12 +23,12 @@ shelldone is a different approach:
 - **Pure bash, zero dependencies.** No Go, no Node, no Python runtime. Uses osascript on macOS, notify-send on Linux, BurntToast/WinRT on Windows. curl/wget only needed if you want external channels.
 - **Auto-notify via shell hooks.** It taps into zsh's preexec/precmd and bash's DEBUG trap + PROMPT_COMMAND. Any command running longer than a configurable threshold (default 30s) triggers a notification automatically. No wrapper needed.
 - **6 external channels.** Slack, Discord, Telegram, Email, WhatsApp (Twilio), and a generic webhook. Each with rate limiting and independent toggle controls.
-- **AI CLI hooks.** Native integration with Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor. Each tool's hook system is different — shelldone reads the JSON event from stdin, extracts metadata, and sends a notification. `shelldone setup claude-hook` and you're done.
+- **AI CLI hooks.** Native integration with Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor. Each tool's hook system is different - shelldone reads the JSON event from stdin, extracts metadata, and sends a notification. `shelldone setup claude-hook` and you're done.
 - **Smart focus detection.** On macOS it checks which app is frontmost via AppleScript; on Linux it walks the PID tree from xdotool. If you're staring at your terminal, it suppresses the notification.
 
 Some things I'm happy with technically: pure-bash JSON escaping (no jq dependency), background sound playback with watchdog timers to prevent hangs, and marker-based RC file management for clean uninstall.
 
-438 tests, CI on macOS and Linux. MIT licensed. Feedback welcome — especially on design, feature gaps, or better patterns for shell hook integration.
+438 tests, CI on macOS and Linux. MIT licensed. Feedback welcome - especially on design, feature gaps, or better patterns for shell hook integration.
 
 ---
 
@@ -42,11 +42,11 @@ Some things I'm happy with technically: pure-bash JSON escaping (no jq dependenc
 
 **Body:**
 
-I got tired of guessing when my builds and deploys finished, so I built shelldone — a terminal notification system that hooks into your shell and alerts you automatically.
+I got tired of guessing when my builds and deploys finished, so I built shelldone - a terminal notification system that hooks into your shell and alerts you automatically.
 
 **How it works:**
 
-After installation, shelldone integrates with your shell via preexec/precmd (zsh) or DEBUG trap (bash). Any command running longer than a configurable threshold (default 30s) triggers a desktop notification, sound, and optional external alerts — without needing to wrap the command.
+After installation, shelldone integrates with your shell via preexec/precmd (zsh) or DEBUG trap (bash). Any command running longer than a configurable threshold (default 30s) triggers a desktop notification, sound, and optional external alerts - without needing to wrap the command.
 
 ```bash
 # Just run commands normally
@@ -62,7 +62,7 @@ You can also wrap explicitly: `alert make build`
 
 - Pure bash, no compiled dependencies
 - 6 external channels: Slack, Discord, Telegram, Email, WhatsApp, generic webhook
-- Smart focus detection — won't bother you if you're already looking at the terminal
+- Smart focus detection - won't bother you if you're already looking at the terminal
 - Glob-based exclusions (`vim`, `ssh`, `npm*`, etc.)
 - Mute, schedule quiet hours, toggle layers independently
 - AI CLI hooks: Claude Code, Codex, Gemini, Copilot, Cursor
@@ -78,17 +78,17 @@ Works on macOS, Linux, WSL, and Windows (Git Bash/MSYS2/Cygwin).
 
 GitHub: https://github.com/nareshnavinash/shelldone
 
-Feedback welcome — especially around edge cases with shell hooks or platform-specific notification quirks.
+Feedback welcome - especially around edge cases with shell hooks or platform-specific notification quirks.
 
 ---
 
 ### r/bash
 
-**Title:** Built a terminal notification system in pure bash — zero dependencies, shell hooks for auto-notify
+**Title:** Built a terminal notification system in pure bash - zero dependencies, shell hooks for auto-notify
 
 **Body:**
 
-I wanted a notification system for long-running commands that didn't pull in Go, Node, or Python. The result is shelldone — 100% bash, zero runtime dependencies.
+I wanted a notification system for long-running commands that didn't pull in Go, Node, or Python. The result is shelldone - 100% bash, zero runtime dependencies.
 
 **Technical highlights:**
 
@@ -112,13 +112,13 @@ cd shelldone && ./install.sh
 
 GitHub: https://github.com/nareshnavinash/shelldone
 
-Would love feedback from other bash devs — especially if you've dealt with the subtleties of DEBUG trap in bash vs. preexec in zsh, or if you see better patterns for the JSON escaping.
+Would love feedback from other bash devs - especially if you've dealt with the subtleties of DEBUG trap in bash vs. preexec in zsh, or if you see better patterns for the JSON escaping.
 
 ---
 
 ### r/devops
 
-**Title:** shelldone — get Slack/Discord/Telegram alerts when your builds and deploys finish (pure bash, zero deps)
+**Title:** shelldone - get Slack/Discord/Telegram alerts when your builds and deploys finish (pure bash, zero deps)
 
 **Body:**
 
@@ -126,7 +126,7 @@ How often do you kick off a build or deploy and then switch context? I built she
 
 **The pitch for DevOps workflows:**
 
-- Run `alert ./deploy.sh production` — get a desktop notification + Slack message when it finishes, with exit code, duration, project name, git branch, and hostname.
+- Run `alert ./deploy.sh production` - get a desktop notification + Slack message when it finishes, with exit code, duration, project name, git branch, and hostname.
 - Or skip the wrapper entirely: shelldone auto-notifies for any command running longer than your threshold.
 - 6 external channels: **Slack** (Block Kit formatted messages with color-coded status), **Discord**, **Telegram**, **Email**, **WhatsApp** (via Twilio), and **generic webhook** (JSON payload with title, message, exit code).
 - Per-channel rate limiting, independent toggles, and quiet hours scheduling.
@@ -150,7 +150,7 @@ alert terraform apply -auto-approve
 }
 ```
 
-It also hooks into AI coding assistants (Claude Code, Codex, Gemini, Copilot, Cursor) — so if you're using AI tools for infrastructure code, you get notified when they finish too.
+It also hooks into AI coding assistants (Claude Code, Codex, Gemini, Copilot, Cursor) - so if you're using AI tools for infrastructure code, you get notified when they finish too.
 
 Pure bash, no compiled binaries, works on macOS/Linux/WSL/Windows. Install from source:
 
@@ -165,7 +165,7 @@ GitHub: https://github.com/nareshnavinash/shelldone
 
 ### r/programming
 
-**Title:** shelldone — cross-platform terminal notifications in pure bash (desktop, Slack, Discord, AI CLI hooks)
+**Title:** shelldone - cross-platform terminal notifications in pure bash (desktop, Slack, Discord, AI CLI hooks)
 
 **Body:**
 
@@ -177,7 +177,7 @@ shelldone hooks into your shell (zsh preexec/precmd or bash DEBUG trap) to autom
 
 **Notification channels:**
 
-Desktop popups, sound alerts, text-to-speech, plus 6 external channels — Slack (with Block Kit formatted messages), Discord, Telegram, Email, WhatsApp, and generic webhooks. Each channel has independent rate limiting and can be toggled on/off.
+Desktop popups, sound alerts, text-to-speech, plus 6 external channels - Slack (with Block Kit formatted messages), Discord, Telegram, Email, WhatsApp, and generic webhooks. Each channel has independent rate limiting and can be toggled on/off.
 
 **Architecture decisions:**
 
@@ -190,7 +190,7 @@ Desktop popups, sound alerts, text-to-speech, plus 6 external channels — Slack
 
 **AI CLI integration:**
 
-Native hooks for Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor. Each AI tool has a different hook mechanism — shelldone adapts to each, reading JSON events from stdin and dispatching notifications through the same channel infrastructure.
+Native hooks for Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor. Each AI tool has a different hook mechanism - shelldone adapts to each, reading JSON events from stdin and dispatching notifications through the same channel infrastructure.
 
 438 tests, CI on macOS + Linux, ShellCheck clean.
 
@@ -200,7 +200,7 @@ GitHub: https://github.com/nareshnavinash/shelldone
 
 ### r/ClaudeAI
 
-**Title:** shelldone — get notified (desktop + Slack/Discord) when Claude Code finishes a task
+**Title:** shelldone - get notified (desktop + Slack/Discord) when Claude Code finishes a task
 
 **Body:**
 
@@ -234,7 +234,7 @@ shelldone config edit
 # Uncomment: export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/..."
 ```
 
-The Slack message includes the AI name, stop reason, hostname, directory, git branch, and timestamp — formatted with Block Kit.
+The Slack message includes the AI name, stop reason, hostname, directory, git branch, and timestamp - formatted with Block Kit.
 
 **Other AI CLIs supported:**
 
@@ -248,7 +248,7 @@ GitHub: https://github.com/nareshnavinash/shelldone
 
 ### r/LocalLLaMA
 
-**Title:** shelldone — terminal notifications for AI CLI tools (Claude Code, Codex, Gemini, Copilot, Cursor)
+**Title:** shelldone - terminal notifications for AI CLI tools (Claude Code, Codex, Gemini, Copilot, Cursor)
 
 **Body:**
 
@@ -265,7 +265,7 @@ If you run AI coding assistants from the terminal and switch context while they 
 | Cursor | Stop hook | `shelldone setup cursor-hook` |
 | Aider | Wrapper | `alert aider "fix the bug"` |
 
-Each tool has a different hook mechanism. shelldone adapts to each one — reading JSON events, extracting metadata (stop reason, task status), and routing notifications.
+Each tool has a different hook mechanism. shelldone adapts to each one - reading JSON events, extracting metadata (stop reason, task status), and routing notifications.
 
 **What you get:**
 
@@ -291,7 +291,7 @@ GitHub: https://github.com/nareshnavinash/shelldone
 ## 3. Twitter/X Thread
 
 **Tweet 1:**
-You kick off a build, switch to Slack, come back 20 minutes later — the build finished 18 minutes ago.
+You kick off a build, switch to Slack, come back 20 minutes later - the build finished 18 minutes ago.
 
 I built shelldone to fix this. Terminal notifications for long-running commands. Pure bash, zero deps.
 
@@ -311,7 +311,7 @@ No wrappers needed. Just run commands normally.
 **Tweet 3:**
 The AI CLI angle: shelldone hooks into Claude Code, Codex CLI, Gemini CLI, Copilot CLI, and Cursor.
 
-When your AI assistant finishes a task, you get notified — desktop, Slack, Discord, whatever you've configured.
+When your AI assistant finishes a task, you get notified - desktop, Slack, Discord, whatever you've configured.
 
 `shelldone setup ai-hooks`
 
@@ -359,11 +359,11 @@ https://github.com/nareshnavinash/shelldone
 
 ## 4. LinkedIn Post
 
-I just released shelldone v1.3.0 — an open-source terminal notification system that alerts you when builds, deploys, and tests finish.
+I just released shelldone v1.3.0 - an open-source terminal notification system that alerts you when builds, deploys, and tests finish.
 
 If you work in a terminal, you've been there. You kick off a long command, switch context, and come back to find it completed minutes ago. That idle time adds up.
 
-shelldone hooks into your shell and automatically notifies you when commands exceed a time threshold. No wrappers needed — just run commands as you always do.
+shelldone hooks into your shell and automatically notifies you when commands exceed a time threshold. No wrappers needed - just run commands as you always do.
 
 What makes it different:
 
@@ -383,7 +383,7 @@ https://github.com/nareshnavinash/shelldone
 
 ## 5. Mastodon/Fediverse Post
 
-I built shelldone — a terminal notification system in pure bash that alerts you when long-running commands finish.
+I built shelldone - a terminal notification system in pure bash that alerts you when long-running commands finish.
 
 Desktop notifications, sounds, Slack, Discord, Telegram, Email, WhatsApp, webhooks. Auto-detects long commands via shell hooks. Hooks into AI CLIs (Claude Code, Codex, Gemini, Copilot, Cursor).
 
@@ -399,7 +399,7 @@ https://github.com/nareshnavinash/shelldone
 
 ```
 ---
-title: I built a terminal notification system in pure bash — here's how
+title: I built a terminal notification system in pure bash - here's how
 published: false
 description: shelldone sends desktop alerts, sounds, Slack, Discord, Telegram, and more when your builds finish. Zero dependencies, cross-platform, AI CLI hooks.
 tags: bash, opensource, productivity, devops
@@ -416,7 +416,7 @@ I tried several tools before building my own. `noti` is decent but requires Go a
 
 ### What shelldone does
 
-shelldone is a terminal notification system written entirely in bash. After installation, it hooks into your shell and automatically notifies you when any command takes longer than a configurable threshold (default: 30 seconds). No need to remember a wrapper — just run commands the way you always have:
+shelldone is a terminal notification system written entirely in bash. After installation, it hooks into your shell and automatically notifies you when any command takes longer than a configurable threshold (default: 30 seconds). No need to remember a wrapper - just run commands the way you always have:
 
 ```bash
 make build-all    # 5 min build -> desktop notification + sound
@@ -434,7 +434,7 @@ alert docker compose up --build
 
 ### How auto-notify works
 
-The auto-notify mechanism is probably the most interesting technical piece. In zsh, shelldone uses `preexec` and `precmd` hooks — `preexec` fires before every command and records the timestamp and command name, `precmd` fires after the command completes and checks whether the elapsed time exceeded the threshold.
+The auto-notify mechanism is probably the most interesting technical piece. In zsh, shelldone uses `preexec` and `precmd` hooks - `preexec` fires before every command and records the timestamp and command name, `precmd` fires after the command completes and checks whether the elapsed time exceeded the threshold.
 
 In bash, it's trickier. Bash doesn't have native preexec/precmd, so shelldone uses the `DEBUG` trap to capture the command before execution and `PROMPT_COMMAND` to check the result after. This requires careful handling to avoid interfering with existing traps and prompt commands.
 
@@ -442,7 +442,7 @@ Both paths feed into the same notification engine, which handles platform detect
 
 ### Focus detection
 
-One of the early annoyances was getting a notification while I was actively staring at my terminal — the command finished, I saw it, and then a notification popped up telling me what I already knew.
+One of the early annoyances was getting a notification while I was actively staring at my terminal - the command finished, I saw it, and then a notification popped up telling me what I already knew.
 
 shelldone's focus detection suppresses notifications when your terminal is the frontmost application. On macOS, it queries the frontmost app via AppleScript. On Linux, it uses `xdotool` to get the active window PID and walks the process tree to check if your shell owns it. If you're already looking at the terminal, the notification is silently skipped.
 
@@ -450,12 +450,12 @@ shelldone's focus detection suppresses notifications when your terminal is the f
 
 Desktop notifications are useful when you're at your computer. But what if you walked to the kitchen? shelldone supports six external channels:
 
-- **Slack** — sends Block Kit formatted messages with color-coded status, command, duration, exit code, project, git branch, hostname, and timestamp
-- **Discord** — embedded messages with color sidebar
-- **Telegram** — via the Bot API
-- **Email** — using sendmail or mail
-- **WhatsApp** — via Twilio's API
-- **Generic webhook** — JSON payload to any endpoint
+- **Slack** - sends Block Kit formatted messages with color-coded status, command, duration, exit code, project, git branch, hostname, and timestamp
+- **Discord** - embedded messages with color sidebar
+- **Telegram** - via the Bot API
+- **Email** - using sendmail or mail
+- **WhatsApp** - via Twilio's API
+- **Generic webhook** - JSON payload to any endpoint
 
 ```bash
 # Configure Slack
@@ -465,19 +465,19 @@ export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
 alert terraform apply
 ```
 
-External notifications fire even when the terminal is focused — they're designed for when you're away from your machine entirely. Each channel has independent rate limiting and can be toggled on or off without removing the configuration.
+External notifications fire even when the terminal is focused - they're designed for when you're away from your machine entirely. Each channel has independent rate limiting and can be toggled on or off without removing the configuration.
 
 ### Pure bash, zero dependencies
 
 I made a deliberate choice to avoid compiled dependencies. shelldone uses only tools that come pre-installed on each platform: `osascript` and `afplay` on macOS, `notify-send` and `paplay` on Linux, `powershell.exe` on Windows/WSL.
 
-The only optional dependency is `curl` or `wget` — needed if you want external channels (Slack, Discord, etc.). For HTTP transport, shelldone tries curl first, falls back to wget, and can even use bash's `/dev/tcp` for plain HTTP endpoints.
+The only optional dependency is `curl` or `wget` - needed if you want external channels (Slack, Discord, etc.). For HTTP transport, shelldone tries curl first, falls back to wget, and can even use bash's `/dev/tcp` for plain HTTP endpoints.
 
-JSON payloads are built with a custom escaping function — character-by-character handling of quotes, backslashes, newlines, and tabs. It's not fast, but it's correct and it means zero dependency on `jq`.
+JSON payloads are built with a custom escaping function - character-by-character handling of quotes, backslashes, newlines, and tabs. It's not fast, but it's correct and it means zero dependency on `jq`.
 
 ### AI CLI integration
 
-This is the feature I'm most excited about. If you use AI coding assistants from the terminal — Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, or Cursor — shelldone can hook into their native event systems and notify you when they finish a task.
+This is the feature I'm most excited about. If you use AI coding assistants from the terminal - Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, or Cursor - shelldone can hook into their native event systems and notify you when they finish a task.
 
 ```bash
 # Install hooks for all detected AI CLIs
@@ -523,7 +523,7 @@ The installer detects your platform, sets up shell integration in your rc files,
 
 ### What's next
 
-I'm working on Homebrew and Debian packaging to make installation simpler. The generic webhook channel makes it easy to integrate with any service that accepts JSON — PagerDuty, Opsgenie, custom dashboards, whatever your team uses.
+I'm working on Homebrew and Debian packaging to make installation simpler. The generic webhook channel makes it easy to integrate with any service that accepts JSON - PagerDuty, Opsgenie, custom dashboards, whatever your team uses.
 
 shelldone is MIT licensed and contributions are welcome. If you've run into edge cases with shell hooks, notification systems, or platform quirks, I'd love to hear about them.
 
@@ -535,13 +535,13 @@ GitHub: [https://github.com/nareshnavinash/shelldone](https://github.com/nareshn
 
 **Title:** Never miss a finished build again
 
-**Subtitle:** How I built shelldone — a terminal notification system that works everywhere
+**Subtitle:** How I built shelldone - a terminal notification system that works everywhere
 
 ---
 
 There's a small but persistent gap in the developer workflow that costs everyone time: the moment between kicking off a long-running command and finding out it finished.
 
-You start a build. You switch to your browser. You get pulled into a Slack thread. Ten minutes later you check your terminal — the build finished nine minutes ago. Sometimes it failed, and you've been waiting on nothing.
+You start a build. You switch to your browser. You get pulled into a Slack thread. Ten minutes later you check your terminal - the build finished nine minutes ago. Sometimes it failed, and you've been waiting on nothing.
 
 This gap compounds. Every time you context-switch away from a terminal, you're gambling on when to switch back. Check too early and the command is still running. Check too late and you've wasted idle time. The longer the command, the wider the gap.
 
@@ -549,11 +549,11 @@ I wanted something that would simply tap me on the shoulder when a command finis
 
 ### What it does
 
-shelldone is a terminal notification system. After a one-time install, it hooks into your shell and watches for commands that take longer than a configurable threshold — 30 seconds by default. When one finishes, it sends you a notification.
+shelldone is a terminal notification system. After a one-time install, it hooks into your shell and watches for commands that take longer than a configurable threshold - 30 seconds by default. When one finishes, it sends you a notification.
 
 The notification can be a desktop popup, a sound alert, a text-to-speech announcement, or a message on Slack, Discord, Telegram, Email, WhatsApp, or a generic webhook. You choose which channels to enable. Most people start with desktop notifications and add Slack or Discord once they see the value.
 
-It works on macOS, Linux, WSL, and Windows. No wrapper needed for most commands — just run them the way you always have. shelldone detects long-running commands automatically.
+It works on macOS, Linux, WSL, and Windows. No wrapper needed for most commands - just run them the way you always have. shelldone detects long-running commands automatically.
 
 ### Why not just use an existing tool?
 
@@ -568,7 +568,7 @@ The tool I wanted needed to:
 
 ### The pure bash decision
 
-shelldone is written entirely in bash. It uses the notification tools already on your system — `osascript` on macOS, `notify-send` on Linux, PowerShell on Windows. The only optional dependency is `curl` or `wget`, needed for sending messages to Slack, Discord, and other external services.
+shelldone is written entirely in bash. It uses the notification tools already on your system - `osascript` on macOS, `notify-send` on Linux, PowerShell on Windows. The only optional dependency is `curl` or `wget`, needed for sending messages to Slack, Discord, and other external services.
 
 This means installation is cloning a repo and running a script. No build step, no package manager dependency, no runtime version issues.
 
@@ -580,16 +580,16 @@ This might be the most useful feature for developers using AI coding assistants.
 shelldone setup ai-hooks
 ```
 
-One command installs hooks for every AI CLI it detects on your system. Now when Claude Code finishes generating that migration file or Codex completes a refactor, you know immediately — even if you're in another app, on your phone, or away from your desk.
+One command installs hooks for every AI CLI it detects on your system. Now when Claude Code finishes generating that migration file or Codex completes a refactor, you know immediately - even if you're in another app, on your phone, or away from your desk.
 
 ### Staying in control
 
 Getting too many notifications is almost as bad as getting none. shelldone has several mechanisms to keep noise down:
 
-- **Focus detection** — if you're already looking at the terminal, the notification is suppressed
-- **Exclusion patterns** — editors, pagers, and interactive tools like `vim`, `ssh`, and `top` are excluded by default
-- **Mute and quiet hours** — `shelldone mute 1h` or `shelldone schedule 22:00-08:00`
-- **Per-channel toggles** — disable sound but keep desktop popups, or turn off Slack but keep Telegram
+- **Focus detection** - if you're already looking at the terminal, the notification is suppressed
+- **Exclusion patterns** - editors, pagers, and interactive tools like `vim`, `ssh`, and `top` are excluded by default
+- **Mute and quiet hours** - `shelldone mute 1h` or `shelldone schedule 22:00-08:00`
+- **Per-channel toggles** - disable sound but keep desktop popups, or turn off Slack but keep Telegram
 
 ### Getting started
 
@@ -615,11 +615,11 @@ GitHub: [https://github.com/nareshnavinash/shelldone](https://github.com/nareshn
 
 If you use Claude Code, you've probably experienced this: you give Claude a task, switch to another window, and come back to find it finished minutes ago. The idle time between completion and your awareness adds up.
 
-shelldone fixes this by hooking into Claude Code's native Stop hook system. When Claude finishes, shelldone sends a notification — desktop popup, sound, Slack, Discord, or whatever channels you've configured.
+shelldone fixes this by hooking into Claude Code's native Stop hook system. When Claude finishes, shelldone sends a notification - desktop popup, sound, Slack, Discord, or whatever channels you've configured.
 
 ### How the integration works
 
-Claude Code supports hooks that run at specific lifecycle events. shelldone registers a Stop hook — a script that Claude Code calls every time it finishes its turn. Claude passes a JSON event to the hook via stdin, which includes the stop reason (e.g., "end_turn", "max_tokens").
+Claude Code supports hooks that run at specific lifecycle events. shelldone registers a Stop hook - a script that Claude Code calls every time it finishes its turn. Claude passes a JSON event to the hook via stdin, which includes the stop reason (e.g., "end_turn", "max_tokens").
 
 shelldone's hook script (`hooks/claude-done.sh`) reads this JSON, extracts the stop reason, and dispatches a notification through shelldone's standard notification infrastructure. That means you get the same channel support (desktop, Slack, Discord, Telegram, Email, WhatsApp, webhook) and the same controls (mute, toggles, quiet hours) as regular command notifications.
 
@@ -645,11 +645,11 @@ This adds shelldone's hook script to `~/.claude/settings.json`. You can verify i
 shelldone status
 ```
 
-Look for the "AI CLI Hooks" section — it should show Claude Code as configured.
+Look for the "AI CLI Hooks" section - it should show Claude Code as configured.
 
 **Step 3: Test it**
 
-Start Claude Code and give it a task. When it finishes, you should see a desktop notification with "Claude Code — Task complete" and the stop reason.
+Start Claude Code and give it a task. When it finishes, you should see a desktop notification with "Claude Code - Task complete" and the stop reason.
 
 ### Adding Slack or Discord notifications
 
@@ -679,7 +679,7 @@ export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"
 
 Note: if you set this after Claude Code is already running, Claude's process won't see it. You'd need to restart Claude Code to pick up new environment variables.
 
-The Slack message from an AI hook includes the AI tool name, stop reason, hostname, working directory, git branch, and timestamp — all formatted with Slack's Block Kit.
+The Slack message from an AI hook includes the AI tool name, stop reason, hostname, working directory, git branch, and timestamp - all formatted with Slack's Block Kit.
 
 ### Discord, Telegram, and other channels
 
@@ -703,7 +703,7 @@ shelldone toggle claude off    # silence Claude notifications
 shelldone toggle claude on     # re-enable
 ```
 
-This only affects Claude Code — other AI CLI notifications and regular command notifications continue as configured.
+This only affects Claude Code - other AI CLI notifications and regular command notifications continue as configured.
 
 ### Other AI CLIs
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# claude-done.sh — Claude Code Stop hook
+# claude-done.sh - Claude Code Stop hook
 # Sends a notification when Claude Code finishes its turn.
 # Configured as a Claude Code hook (reads JSON event from stdin).
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gemini-done.sh — Gemini CLI (Google) command hook
+# gemini-done.sh - Gemini CLI (Google) command hook
 # Sends a notification when Gemini CLI finishes its turn.
 # Configured in ~/.gemini/settings.json as a command hook.
 

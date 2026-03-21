@@ -2,7 +2,7 @@
 """Generate the shelldone radar-ping icon at all required .iconset sizes.
 
 Design: Dark rounded-square background with an off-center dot and radiating
-concentric arcs that fade from bright cyan to transparent — like a freeze-frame
+concentric arcs that fade from bright cyan to transparent - like a freeze-frame
 of a sonar pulse mid-broadcast. Motion blur on the rings implies animation.
 
 Requirements: Pillow (pip install Pillow)

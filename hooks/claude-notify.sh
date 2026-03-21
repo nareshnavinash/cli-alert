@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# claude-notify.sh — Claude Code Notification hook
+# claude-notify.sh - Claude Code Notification hook
 # Sends a notification when Claude Code fires a system notification
 # (e.g., waiting for user input, context window full).
 # Configured as a Claude Code hook (reads JSON event from stdin).

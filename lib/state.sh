@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# state.sh — Persistent state management for shelldone (mute, toggle, schedule)
+# state.sh - Persistent state management for shelldone (mute, toggle, schedule)
 # Loaded lazily on first notification or CLI command.
 
 # Guard against double-sourcing
@@ -100,9 +100,15 @@ _shelldone_parse_duration() {
   local remaining="$input"
   while [[ -n "$remaining" ]]; do
     if [[ "$remaining" =~ ^([0-9]+)([smhd]) ]]; then
-      num="${BASH_REMATCH[1]}"
-      unit="${BASH_REMATCH[2]}"
-      remaining="${remaining#"${BASH_REMATCH[0]}"}"
+      if [[ -n "${BASH_VERSION:-}" ]]; then
+        num="${BASH_REMATCH[1]}"
+        unit="${BASH_REMATCH[2]}"
+        remaining="${remaining#"${BASH_REMATCH[0]}"}"
+      else
+        num="${match[1]}"
+        unit="${match[2]}"
+        remaining="${remaining#"${MATCH}"}"
+      fi
       case "$unit" in
         s) total=$((total + num)) ;;
         m) total=$((total + num * 60)) ;;
@@ -141,7 +147,7 @@ _shelldone_is_muted() {
     return 0
   fi
 
-  # Expired — clean up
+  # Expired - clean up
   _shelldone_state_delete "mute_until"
   return 1
 }
@@ -170,8 +176,13 @@ _shelldone_is_quiet_hours() {
   # Env var fallback: SHELLDONE_QUIET_HOURS="22:00-08:00"
   if [[ -z "$quiet_start" && -z "$quiet_end" && -n "${SHELLDONE_QUIET_HOURS:-}" ]]; then
     if [[ "$SHELLDONE_QUIET_HOURS" =~ ^([0-9]{2}:[0-9]{2})-([0-9]{2}:[0-9]{2})$ ]]; then
-      quiet_start="${BASH_REMATCH[1]}"
-      quiet_end="${BASH_REMATCH[2]}"
+      if [[ -n "${BASH_VERSION:-}" ]]; then
+        quiet_start="${BASH_REMATCH[1]}"
+        quiet_end="${BASH_REMATCH[2]}"
+      else
+        quiet_start="${match[1]}"
+        quiet_end="${match[2]}"
+      fi
     else
       return 1
     fi

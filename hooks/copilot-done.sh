@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# copilot-done.sh — GitHub Copilot CLI sessionEnd hook
+# copilot-done.sh - GitHub Copilot CLI sessionEnd hook
 # Sends a notification when Copilot CLI finishes a session.
 # Configured via ~/.github/hooks/shelldone-session-end.json
 

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-03-21
+
+### Added
+
+- `SHELLDONE_NESTED_SHELL=suppress` config - disables auto-notify in nested shells (`SHLVL > 1`), preventing duplicate alerts from subshells spawned by AI coding tools, IDEs, and other wrappers. Top-level shells, tmux panes, and new terminal tabs are unaffected (they reset `SHLVL` to 1).
+
+### Fixed
+
+- **Zsh compatibility**: Fixed 22 failing tests and their underlying library bugs when running under zsh:
+  - `_shelldone_warn_once` - replaced bash-only `${!var}` indirect expansion with cross-shell `eval`
+  - `_shelldone_json_escape` - fixed `${str:i:1}` substring syntax (`${str:$i:1}`)
+  - `_shelldone_redact_url` - added `match[]` fallback for zsh regex captures
+  - `_shelldone_parse_duration` - added `match[]`/`MATCH` fallback for zsh regex captures
+  - `_shelldone_is_quiet_hours` - added `match[]` fallback for zsh regex captures
+  - `auto-notify.zsh` glob exclusion - fixed pattern matching with `$~excluded` for proper glob support
+  - `_tui_select` / `_tui_multiselect` - replaced bash-only `${!array[@]}` and 0-indexed `options[$i]` with cross-shell array access
+- Test harness now sets `SHELLDONE_CONFIG=/dev/null` to prevent real config (e.g., Slack webhook) from leaking into test runs
+
 ## [1.3.1] - 2026-03-18
 
 ### Fixed
@@ -16,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Interactive TUI for channel setup (`shelldone setup` launches menu-driven interface)
-- `lib/tui.sh` — reusable TUI library for building interactive shell menus
+- `lib/tui.sh` - reusable TUI library for building interactive shell menus
 
 ### Fixed
 
@@ -38,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Auto-notify captures full command with arguments (truncated to 50 chars) instead of just the basename — notification body now shows `✓ make deploy-production (2m 5s, exit 0)` instead of `✓ make (2m 5s, exit 0)`
+- Auto-notify captures full command with arguments (truncated to 50 chars) instead of just the basename - notification body now shows `✓ make deploy-production (2m 5s, exit 0)` instead of `✓ make (2m 5s, exit 0)`
 - `alert-bg` title now includes job name: `Background: PID 1234 Complete` instead of `Background Job Complete`
 - `alert-bg` unknown exit code path now passes exit code 2 with `⚠` icon instead of false-green exit code 0
 - Duration formatting shows `<1s` instead of `0s` for sub-second commands
@@ -124,6 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI: ShellCheck, macOS (bash + zsh), Linux, install round-trip
 - Comprehensive test suite (374 tests)
 
+[1.4.0]: https://github.com/nareshnavinash/shelldone/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/nareshnavinash/shelldone/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/nareshnavinash/shelldone/compare/v1.2.0...v1.3.0
 [1.1.0]: https://github.com/nareshnavinash/shelldone/compare/v1.0.0...v1.1.0

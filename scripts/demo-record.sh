@@ -126,7 +126,7 @@ section() {
 
 clear
 
-section "shelldone — Terminal Notifications for Long-Running Commands"
+section "shelldone - Terminal Notifications for Long-Running Commands"
 
 _sleep 1
 
@@ -142,7 +142,7 @@ fake_cmd "cd shelldone && ./install.sh" \
   "Installing shelldone..." \
   "  Linking shelldone to /usr/local/bin/shelldone ... done" \
   "  Adding shell hooks to ~/.zshrc ... done" \
-  "  shelldone v1.3.1 installed successfully!"
+  "  shelldone v1.4.0 installed successfully!"
 
 # ── Section 2: Version & Status ───────────────────────────────────────────
 section "Check Version & Status"
@@ -156,11 +156,11 @@ run_cmd "shelldone status"
 # ── Section 3: Auto-Notify ─────────────────────────────────────────────────
 section "Auto-Notify on Long-Running Commands"
 
-comment "Wrap a command with 'alert' — notifies when done"
+comment "Wrap a command with 'alert' - notifies when done"
 comment "(Using a short sleep for demo purposes)"
 type_cmd "alert sleep 3"
 _sleep 3
-printf "✓ sleep Complete (3s) — exit 0\n"
+printf "✓ sleep Complete (3s) - exit 0\n"
 _sleep "$CMD_PAUSE"
 
 # ── Section 4: Quick Setup ─────────────────────────────────────────────────
@@ -188,7 +188,7 @@ type_cmd "shelldone setup"
 _sleep 0.5
 
 # Welcome dashboard
-printf "\n%bshelldone 1.3.1%b setup\n" "$BOLD" "$RESET"
+printf "\n%bshelldone 1.4.0%b setup\n" "$BOLD" "$RESET"
 printf "%bPlatform: Darwin | Shell: zsh%b\n\n" "$DIM" "$RESET"
 
 printf "%b── %bCurrent Status%b%b ──────────────────────%b\n" "$DIM" "$BOLD" "$RESET$DIM" "" "$RESET"

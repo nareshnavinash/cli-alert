@@ -130,7 +130,7 @@ jobs:
           # Auto-updated by release workflow
 
           class Shelldone < Formula
-            desc "Terminal process completion notifier — OS-native notifications when commands finish"
+            desc "Terminal process completion notifier - OS-native notifications when commands finish"
             homepage "https://github.com/nareshnavinash/shelldone"
           FORMULA_EOF
 
@@ -218,7 +218,7 @@ jobs:
           cat > scoop-bucket/shelldone.json << EOF
           {
             "version": "${VERSION}",
-            "description": "Terminal process completion notifier — OS-native notifications when commands finish",
+            "description": "Terminal process completion notifier - OS-native notifications when commands finish",
             "homepage": "https://github.com/nareshnavinash/shelldone",
             "license": "MIT",
             "url": "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v${VERSION}.tar.gz",

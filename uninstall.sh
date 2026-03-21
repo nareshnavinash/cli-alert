@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# uninstall.sh — Clean removal of shelldone
+# uninstall.sh - Clean removal of shelldone
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

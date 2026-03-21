@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# codex-notify.sh — Codex CLI (OpenAI) Notification hook
+# codex-notify.sh - Codex CLI (OpenAI) Notification hook
 # Sends a notification when Codex CLI fires a system notification.
 # Configured in ~/.codex/config.json as an experimental hook.
 

@@ -42,7 +42,7 @@ long-running commands finish. It supports macOS, Linux, WSL, and Windows (Git Ba
 **Why it belongs on this list:**
 
 Terminal notification tools are a core productivity category. shelldone is the most
-feature-complete option available — it combines auto-notification, external channel
+feature-complete option available - it combines auto-notification, external channel
 delivery, and AI CLI integration in a single zero-dependency package. It fills a gap
 that existing tools like noti and undistract-me only partially cover.
 
@@ -83,15 +83,15 @@ and external channels.
 
 ### Why add it?
 
-- **Cross-platform**: macOS, Linux, WSL, Windows — same tool everywhere
+- **Cross-platform**: macOS, Linux, WSL, Windows - same tool everywhere
 - **Auto-notify**: no wrapper needed; integrates via shell hooks (preexec/precmd for zsh, DEBUG trap for bash)
-- **External channels**: Slack, Discord, Telegram, Email, WhatsApp, and generic webhooks — get notified on your phone
+- **External channels**: Slack, Discord, Telegram, Email, WhatsApp, and generic webhooks - get notified on your phone
 - **AI CLI hooks**: native integration with Claude Code, Codex, Gemini, Copilot, and Cursor
 - **Pure bash**: zero dependencies, no compilers, no runtimes
 - **Well-tested**: 438 tests with CI on macOS and Linux
 - **MIT licensed**
 
-This fills a gap in the awesome-shell list — there is currently no comprehensive
+This fills a gap in the awesome-shell list - there is currently no comprehensive
 terminal notification tool listed that covers external channels and AI CLI integration.
 
 GitHub: https://github.com/nareshnavinash/shelldone
@@ -122,7 +122,7 @@ Add shelldone - pure bash terminal notification system
 ```markdown
 ## Adding shelldone
 
-shelldone is a **pure bash** terminal notification system — no Go, no Python, no
+shelldone is a **pure bash** terminal notification system - no Go, no Python, no
 Node.js, no compiled binaries. It uses only built-in system tools and optional
 curl/wget for external channels.
 
@@ -177,12 +177,12 @@ Add shelldone - terminal notifications with external channels and AI hooks
 ## Adding shelldone
 
 shelldone is a terminal notification system that tells you when long-running
-commands finish — wherever you are. Desktop popup, sound, voice, Slack ping,
+commands finish - wherever you are. Desktop popup, sound, voice, Slack ping,
 Discord message, Telegram alert, email, or WhatsApp notification.
 
 ### What makes it terminal-sexy
 
-- **Works everywhere**: macOS, Linux, WSL, Windows (Git Bash) — bash and zsh
+- **Works everywhere**: macOS, Linux, WSL, Windows (Git Bash) - bash and zsh
 - **Auto-notify**: no wrapper needed. Commands exceeding a threshold (default 30s) trigger notifications automatically
 - **6 external channels**: Slack, Discord, Telegram, Email, WhatsApp, generic webhook
 - **AI CLI integration**: hooks for Claude Code, Codex CLI, Gemini CLI, Copilot CLI, and Cursor
@@ -244,7 +244,7 @@ On the control side, shelldone offers mute with timed duration, per-layer toggle
 
 **Strengths:** Simple interface. Single-file Go binary. Mature codebase (since 2015).
 
-**Considerations:** No auto-notify — you must prefix every command. HipChat is obsolete. No Discord, Telegram, Email, or WhatsApp. No AI CLI integration. No TTS or notification controls.
+**Considerations:** No auto-notify - you must prefix every command. HipChat is obsolete. No Discord, Telegram, Email, or WhatsApp. No AI CLI integration. No TTS or notification controls.
 
 #### undistract-me
 
@@ -252,7 +252,7 @@ On the control side, shelldone offers mute with timed duration, per-layer toggle
 
 **Strengths:** Simplicity is its greatest asset. Install and forget. Available via `apt install undistract-me`.
 
-**Considerations:** Desktop only — no external channels, sound, or TTS. Ubuntu/Debian only. No AI CLI integration. Development largely inactive.
+**Considerations:** Desktop only - no external channels, sound, or TTS. Ubuntu/Debian only. No AI CLI integration. Development largely inactive.
 
 #### done (fish plugin)
 
@@ -266,7 +266,7 @@ On the control side, shelldone offers mute with timed duration, per-layer toggle
 
 Each tool has its place. **undistract-me** is a one-line apt install for Ubuntu users who want simplicity. **done** is the natural choice for fish shell users. **noti** is a mature single-binary wrapper.
 
-But if you want a tool that does it all — auto-notify, external channels, AI CLI hooks, sound, TTS, notification controls, and cross-platform support with zero dependencies — **shelldone** is the clear winner. It covers every feature the other three offer and adds capabilities none of them have.
+But if you want a tool that does it all - auto-notify, external channels, AI CLI hooks, sound, TTS, notification controls, and cross-platform support with zero dependencies - **shelldone** is the clear winner. It covers every feature the other three offer and adds capabilities none of them have.
 
 For teams on Slack or Discord, the external channel support alone justifies adoption. For developers using AI coding assistants, the native hook system is unique. And the fact that it is pure bash with 438 tests means you can read and trust every line.
 
@@ -337,7 +337,7 @@ matter to your workflow? Let me know in the comments.
 shelldone is a cross-platform terminal notification system that alerts you when
 long-running commands finish. It works on macOS, Linux, WSL, and Windows (Git Bash)
 with bash and zsh. shelldone sends desktop popups, plays sounds, speaks results
-aloud via TTS, and delivers notifications to six external channels — so you never
+aloud via TTS, and delivers notifications to six external channels - so you never
 have to babysit a terminal again.
 ```
 

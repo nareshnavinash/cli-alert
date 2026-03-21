@@ -7,10 +7,10 @@ Thank you for your interest in contributing! This document explains how to get s
 ```bash
 git clone https://github.com/nareshnavinash/shelldone.git
 cd shelldone
-bash test.sh   # run the full test suite (374 tests)
+bash test.sh   # run the full test suite (452 tests)
 ```
 
-No build step is required — shelldone is pure shell script.
+No build step is required - shelldone is pure shell script.
 
 ## Code Style
 
@@ -40,12 +40,12 @@ No build step is required — shelldone is pure shell script.
 bash test.sh
 ```
 
-All 374 tests must pass before submitting a PR. Tests cover unit, integration, and end-to-end scenarios including mock HTTP servers.
+All 452 tests must pass before submitting a PR. Tests cover unit, integration, and end-to-end scenarios including mock HTTP servers.
 
 ## Pull Request Guidelines
 
 1. Fork the repo and create a feature branch: `git checkout -b feature/my-feature`
-2. Keep commits focused — one logical change per commit.
+2. Keep commits focused - one logical change per commit.
 3. Ensure all tests pass and ShellCheck reports no warnings.
 4. Update `README.md` if your change adds user-facing functionality.
 5. Link the relevant issue in your PR description, if one exists.

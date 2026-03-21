@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# generate-icon.sh — Generate shelldone icon assets
+# generate-icon.sh - Generate shelldone icon assets
 # Renders the radar-ping icon into .iconset/ sizes, converts to .icns, and exports Linux PNG.
 # Requires: Python 3 + Pillow (pip install Pillow)
 set -euo pipefail

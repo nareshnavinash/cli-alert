@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# codex-done.sh — Codex CLI (OpenAI) Stop hook
+# codex-done.sh - Codex CLI (OpenAI) Stop hook
 # Sends a notification when Codex CLI finishes its turn.
 # Configured in ~/.codex/config.json as an experimental hook.
 

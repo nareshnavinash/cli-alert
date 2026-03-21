@@ -1,5 +1,5 @@
 #!/usr/bin/env zsh
-# auto-notify.zsh — Automatic notification for long-running commands in Zsh
+# auto-notify.zsh - Automatic notification for long-running commands in Zsh
 # Source this file in your .zshrc AFTER shelldone.sh
 
 # Guard against double-sourcing
@@ -17,6 +17,11 @@ fi
 SHELLDONE_AUTO="${SHELLDONE_AUTO:-true}"
 SHELLDONE_THRESHOLD="${SHELLDONE_THRESHOLD:-10}"
 SHELLDONE_EXCLUDE="${SHELLDONE_EXCLUDE:-vim nvim vi nano less more man top htop ssh tmux screen fg bg alert-bg watch}"
+
+# Suppress auto-notify in nested shells (subshells spawned by coding tools, etc.)
+if [[ "${SHELLDONE_NESTED_SHELL:-notify}" == "suppress" ]] && (( ${SHLVL:-1} > 1 )); then
+  return 0
+fi
 
 # ── State variables ──────────────────────────────────────────────────────────
 
@@ -70,7 +75,7 @@ _shelldone_precmd() {
   # Check exclusion list
   local excluded
   for excluded in ${=SHELLDONE_EXCLUDE}; do
-    [[ "$cmd_name" == $excluded ]] && return  # shellcheck disable=SC2053
+    [[ "$cmd_name" == $~excluded ]] && return
   done
 
   # Check notification filter

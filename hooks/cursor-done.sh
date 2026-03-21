@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cursor-done.sh — Cursor stop hook
+# cursor-done.sh - Cursor stop hook
 # Sends a notification when Cursor finishes its turn.
 # Configured in ~/.cursor/hooks.json
 

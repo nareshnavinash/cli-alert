@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cursor-notify.sh — Cursor Notification hook
+# cursor-notify.sh - Cursor Notification hook
 # Sends a notification when Cursor fires a system notification.
 # Configured in ~/.cursor/hooks.json
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# shelldone.sh — Core notification engine + `alert` wrapper (cross-platform)
+# shelldone.sh - Core notification engine + `alert` wrapper (cross-platform)
 # Source this file in your shell: eval "$(shelldone init bash)"
 
 # Guard against double-sourcing
@@ -75,7 +75,9 @@ _shelldone_debug() {
 _shelldone_warn_once() {
   local key="$1"; shift
   local var="_SHELLDONE_WARNED_${key}"
-  if [[ -z "${!var:-}" ]]; then
+  local _val=""
+  eval "_val=\"\${${var}:-}\""
+  if [[ -z "$_val" ]]; then
     eval "$var=1"
     printf '\033[1;33m[shelldone]\033[0m %s\n' "$*" >&2
   fi
@@ -236,7 +238,7 @@ _shelldone_notify_darwin() {
     fi
 
     if ! terminal-notifier "${tn_args[@]}" 2>/dev/null; then
-      _shelldone_warn_once DARWIN_TN "terminal-notifier failed — run 'shelldone status' to diagnose"
+      _shelldone_warn_once DARWIN_TN "terminal-notifier failed - run 'shelldone status' to diagnose"
     fi
   else
     # Fallback: osascript (no custom icon, no click-to-activate)
@@ -244,7 +246,7 @@ _shelldone_notify_darwin() {
     safe_title="$(_shelldone_sanitize_applescript "$title")"
     safe_message="$(_shelldone_sanitize_applescript "$message")"
     if ! osascript -e "display notification \"$safe_message\" with title \"$safe_title\"" 2>/dev/null; then
-      _shelldone_warn_once DARWIN_OSASCRIPT "osascript notification failed — run 'shelldone status' to diagnose"
+      _shelldone_warn_once DARWIN_OSASCRIPT "osascript notification failed - run 'shelldone status' to diagnose"
     fi
   fi
 
@@ -266,7 +268,7 @@ _shelldone_notify_darwin() {
     if [[ -f "$sound_file" ]]; then
       _shelldone_bg_timeout afplay "$sound_file"
     else
-      _shelldone_warn_once SOUND "sound file not found: $sound_file — try 'shelldone sounds'"
+      _shelldone_warn_once SOUND "sound file not found: $sound_file - try 'shelldone sounds'"
     fi
   fi
 
@@ -364,7 +366,7 @@ _shelldone_notify_wsl() {
         [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("shelldone").Show($toast)
       ' 2>/dev/null
   else
-    _shelldone_warn_once WSL_NOTIFY "no Windows notification tool found — run 'shelldone status' to diagnose"
+    _shelldone_warn_once WSL_NOTIFY "no Windows notification tool found - run 'shelldone status' to diagnose"
     _shelldone_fallback "$title" "$message"
     return
   fi
@@ -395,7 +397,7 @@ _shelldone_notify_wsl() {
 }
 
 _shelldone_notify_windows() {
-  # Git Bash / MSYS2 / Cygwin — same approach as WSL but without wsl-notify-send
+  # Git Bash / MSYS2 / Cygwin - same approach as WSL but without wsl-notify-send
   _shelldone_notify_wsl "$@"
 }
 
@@ -490,7 +492,7 @@ _shelldone_notify() {
     [[ -f "$_state_lib" ]] && source "$_state_lib"
   fi
 
-  # Mute / quiet hours check (full suppression — still logs to history)
+  # Mute / quiet hours check (full suppression - still logs to history)
   if _shelldone_is_muted 2>/dev/null || _shelldone_is_quiet_hours 2>/dev/null; then
     _shelldone_debug "suppressed by mute or quiet hours"
     _shelldone_log_history "$title" "$message" "$exit_code"
@@ -647,7 +649,7 @@ alert-bg() {
     exit_code=$?
   fi
 
-  # wait returns 127 for non-child PIDs — fall back to polling
+  # wait returns 127 for non-child PIDs - fall back to polling
   if [[ $exit_code -eq 127 ]]; then
     while kill -0 "$pid" 2>/dev/null; do
       sleep 1

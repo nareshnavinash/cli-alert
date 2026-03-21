@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# external-notify.sh — External notification channels for shelldone
+# external-notify.sh - External notification channels for shelldone
 # Loaded lazily only when at least one external channel env var is set.
 
 # Guard against double-sourcing
@@ -31,7 +31,7 @@ _shelldone_json_escape() {
   fi
   local i char result=""
   for (( i=0; i<${#str}; i++ )); do
-    char="${str:i:1}"
+    char="${str:$i:1}"
     case "$char" in
       '"')   result+='\"' ;;
       '\')   result+='\\' ;;
@@ -89,7 +89,7 @@ _shelldone_detect_http_transport() {
   elif [[ -e /dev/tcp ]]; then
     _SHELLDONE_HTTP_TRANSPORT="tcp"
   else
-    # Try /dev/tcp by attempting a connection — bash may support it even without the file
+    # Try /dev/tcp by attempting a connection - bash may support it even without the file
     _SHELLDONE_HTTP_TRANSPORT="tcp"
   fi
   _shelldone_external_debug "HTTP transport: $_SHELLDONE_HTTP_TRANSPORT"
@@ -228,7 +228,11 @@ _shelldone_redact_url() {
   local url="$1"
   # Keep scheme + host, replace path with <redacted>
   if [[ "$url" =~ ^(https?://[^/]+) ]]; then
-    printf '%s/<redacted>' "${BASH_REMATCH[1]}"
+    if [[ -n "${BASH_VERSION:-}" ]]; then
+      printf '%s/<redacted>' "${BASH_REMATCH[1]}"
+    else
+      printf '%s/<redacted>' "${match[1]}"
+    fi
   else
     printf '<redacted-url>'
   fi

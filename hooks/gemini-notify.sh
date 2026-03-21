@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# gemini-notify.sh — Gemini CLI (Google) Notification hook
+# gemini-notify.sh - Gemini CLI (Google) Notification hook
 # Sends a notification when Gemini CLI fires a system notification.
 # Configured in ~/.gemini/settings.json as a command hook.
 
