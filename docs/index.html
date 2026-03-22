@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>shelldone - Terminal notifications for long-running commands</title>
-  <meta name="description" content="Cross-platform terminal notification system. Desktop alerts, sounds, Slack, Discord, Telegram, Email, WhatsApp. Pure bash, zero deps. AI CLI hooks.">
+  <meta name="description" content="Never miss a finished build again. shelldone sends desktop alerts, Slack, Discord, Telegram, and email notifications when long-running terminal commands complete. Pure bash, zero dependencies. Install in 30 seconds.">
   <meta name="keywords" content="terminal notifications, bash, shell, long-running commands, desktop alerts, slack, discord, telegram, CLI, developer tools">
   <meta name="author" content="Naresh Sekar">
   <meta name="theme-color" content="#00ff41">
@@ -12,7 +12,7 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="shelldone - Terminal notifications for long-running commands">
-  <meta property="og:description" content="Cross-platform terminal notification system. Desktop alerts, sounds, Slack, Discord, Telegram, Email, WhatsApp. Pure bash, zero deps. AI CLI hooks.">
+  <meta property="og:description" content="Never miss a finished build again. shelldone sends desktop alerts, Slack, Discord, Telegram, and email notifications when long-running terminal commands complete. Pure bash, zero dependencies. Install in 30 seconds.">
   <meta property="og:url" content="https://nareshnavinash.github.io/shelldone/">
   <meta property="og:site_name" content="shelldone">
 
@@ -20,11 +20,13 @@
   <meta property="og:image" content="https://nareshnavinash.github.io/shelldone/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image:alt" content="shelldone - terminal notification system for long-running commands">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="shelldone - Terminal notifications for long-running commands">
-  <meta name="twitter:description" content="Cross-platform terminal notification system. Desktop alerts, sounds, Slack, Discord, Telegram, Email, WhatsApp. Pure bash, zero deps. AI CLI hooks.">
+  <meta name="twitter:description" content="Never miss a finished build again. shelldone sends desktop alerts, Slack, Discord, Telegram, and email notifications when long-running terminal commands complete. Pure bash, zero dependencies. Install in 30 seconds.">
   <meta name="twitter:image" content="https://nareshnavinash.github.io/shelldone/og-image.png">
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -53,9 +55,13 @@
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "USD"
-    }
+    },
+    "sameAs": "https://github.com/nareshnavinash/shelldone",
+    "screenshot": "https://nareshnavinash.github.io/shelldone/demo.gif",
+    "datePublished": "2026-03-15"
   }
   </script>
+  <noscript><style>.fade-in { opacity: 1 !important; transform: none !important; }</style></noscript>
 </head>
 <body>
 
@@ -77,7 +83,7 @@
         <li><a href="#demo">Usage</a></li>
         <li><a href="#compare">Compare</a></li>
         <li>
-          <a href="https://github.com/nareshnavinash/shelldone" class="nav__github" aria-label="View on GitHub">
+          <a href="https://github.com/nareshnavinash/shelldone" class="nav__github" aria-label="View on GitHub" target="_blank" rel="noopener noreferrer">
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
             GitHub
           </a>
@@ -89,12 +95,12 @@
   <!-- ===== Hero ===== -->
   <header class="hero" id="top">
     <div class="container hero__content">
-      <h1 class="hero__title">shelldone</h1>
+      <h1 class="hero__title">shelldone<span class="hero__title-sub"> - Terminal Notifications</span></h1>
       <p class="hero__tagline">Never miss a finished build again.</p>
       <p class="hero__subtitle">Cross-platform terminal notifications for long-running commands. Desktop alerts, sounds, Slack, Discord, Telegram, and more. Pure bash, zero dependencies.</p>
       <div class="hero__buttons">
         <a href="#install" class="btn btn--primary">Get Started</a>
-        <a href="https://github.com/nareshnavinash/shelldone" class="btn btn--secondary">
+        <a href="https://github.com/nareshnavinash/shelldone" class="btn btn--secondary" target="_blank" rel="noopener noreferrer">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
           View on GitHub
         </a>
@@ -113,41 +119,39 @@
     </div>
   </header>
 
-  <p class="section-quote">"I'm not needy. I simply believe every completed process deserves recognition."</p>
+  <main>
 
   <!-- ===== Stats Bar ===== -->
   <section class="stats fade-in">
     <div class="container">
       <div class="stats__grid">
         <div class="stats__item">
-          <span class="stats__number" data-target="6">0</span>
+          <span class="stats__number" data-target="6">6</span>
           <span class="stats__label">Notification Channels</span>
         </div>
         <div class="stats__item">
-          <span class="stats__number" data-target="5">0</span>
+          <span class="stats__number" data-target="5">5</span>
           <span class="stats__label">AI CLI Integrations</span>
         </div>
         <div class="stats__item">
-          <span class="stats__number" data-target="452">0</span>
+          <span class="stats__number" data-target="452">452</span>
           <span class="stats__label">Tests Passing</span>
         </div>
         <div class="stats__item">
-          <span class="stats__number" data-target="4">0</span>
+          <span class="stats__number" data-target="4">4</span>
           <span class="stats__label">Platforms</span>
         </div>
       </div>
     </div>
   </section>
 
-  <p class="section-quote">"Running without me is like running without set -e. Technically possible. Spiritually wrong."</p>
-
   <!-- ===== Features ===== -->
   <section class="section" id="features">
     <div class="container">
       <div class="section__header fade-in">
         <span class="section__label">Features</span>
-        <h2 class="section__title">Everything you need, nothing you don't</h2>
-        <p class="section__subtitle">Built for developers who run long commands and need to know when they finish.</p>
+        <h2 class="section__title">Terminal Notification Features</h2>
+        <p class="section__subtitle">Everything you need, nothing you don't. Built for developers who run long commands and need to know when they finish.</p>
       </div>
 
       <div class="features__grid">
@@ -196,7 +200,28 @@
     </div>
   </section>
 
-  <p class="section-quote">"You left your terminal. I waited. I notified. You're welcome."</p>
+  <aside class="quotes-ticker" aria-label="shelldone quotes">
+    <div class="quotes-ticker__track">
+      <span class="quotes-ticker__item">"I'm not needy. I simply believe every completed process deserves recognition."</span>
+      <span class="quotes-ticker__item">"Running without me is like running without set -e. Technically possible. Spiritually wrong."</span>
+      <span class="quotes-ticker__item">"You left your terminal. I waited. I notified. You're welcome."</span>
+      <span class="quotes-ticker__item">"I didn't notify you because I wanted to. I notified you because exit code 0 demands acknowledgment."</span>
+      <span class="quotes-ticker__item">"Knock knock knock... your build is done. Knock knock knock... your build is done."</span>
+      <span class="quotes-ticker__item">"I don't have trust issues. I have exit code verification standards."</span>
+      <span class="quotes-ticker__item">"My notification was not late. Your attention to the terminal was early to leave."</span>
+      <span class="quotes-ticker__item">"I monitor six channels simultaneously. What do you monitor? Your phone?"</span>
+      <span class="quotes-ticker__item">"I could let your build finish in silence. But that would be chaos, and I don't do chaos."</span>
+      <span class="quotes-ticker__item">"If you wanted a quiet terminal, you shouldn't have installed something this thorough."</span>
+      <span class="quotes-ticker__item">"Your deploy finished 4 minutes ago. I told Slack. I told Discord. I told you. You ignored all three."</span>
+      <span class="quotes-ticker__item">"0 is the only exit code I respect."</span>
+      <span class="quotes-ticker__item">"I'm not needy. I simply believe every completed process deserves recognition."</span>
+      <span class="quotes-ticker__item">"Running without me is like running without set -e. Technically possible. Spiritually wrong."</span>
+      <span class="quotes-ticker__item">"You left your terminal. I waited. I notified. You're welcome."</span>
+      <span class="quotes-ticker__item">"I didn't notify you because I wanted to. I notified you because exit code 0 demands acknowledgment."</span>
+      <span class="quotes-ticker__item">"Knock knock knock... your build is done. Knock knock knock... your build is done."</span>
+      <span class="quotes-ticker__item">"I don't have trust issues. I have exit code verification standards."</span>
+    </div>
+  </aside>
 
   <!-- ===== Install ===== -->
   <section class="section section--alt" id="install">
@@ -287,14 +312,12 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
     </div>
   </section>
 
-  <p class="section-quote">"I didn't notify you because I wanted to. I notified you because exit code 0 demands acknowledgment."</p>
-
   <!-- ===== Quick Demo ===== -->
   <section class="section" id="demo">
     <div class="container">
       <div class="section__header fade-in">
         <span class="section__label">Usage</span>
-        <h2 class="section__title">Simple by design</h2>
+        <h2 class="section__title">How to Use shelldone</h2>
         <p class="section__subtitle">Prefix any command with <code style="font-family: var(--font-mono); color: var(--green);">alert</code> or use the built-in setup commands.</p>
       </div>
 
@@ -320,14 +343,12 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
     </div>
   </section>
 
-  <p class="section-quote">"I monitor six channels simultaneously. What do you monitor? Your phone? Pathetic."</p>
-
   <!-- ===== Comparison ===== -->
   <section class="section section--alt" id="compare">
     <div class="container">
       <div class="section__header fade-in">
         <span class="section__label">Compare</span>
-        <h2 class="section__title">How shelldone stacks up</h2>
+        <h2 class="section__title">shelldone vs Alternatives</h2>
         <p class="section__subtitle">The most complete terminal notification tool available.</p>
       </div>
 
@@ -398,8 +419,6 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
     </div>
   </section>
 
-  <p class="section-quote">"Knock knock knock... your build is done. Knock knock knock... your build is done."</p>
-
   <!-- ===== Transparency ===== -->
   <section class="section" id="tested">
     <div class="container">
@@ -452,15 +471,13 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
         </div>
 
         <p class="transparency__message">
-          shelldone is <a href="https://github.com/nareshnavinash/shelldone/blob/main/LICENSE">MIT licensed</a>.
+          shelldone is <a href="https://github.com/nareshnavinash/shelldone/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT licensed</a>.
           If something doesn't work on your platform - fork it, fix it, send a PR.
           The codebase is pure bash with zero dependencies. Contributions welcome.
         </p>
       </div>
     </div>
   </section>
-
-  <p class="section-quote">"0 is the only exit code I respect."</p>
 
   <!-- ===== CTA ===== -->
   <section class="cta fade-in">
@@ -469,7 +486,7 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
       <p class="cta__subtitle">Install in 30 seconds. No dependencies. Works everywhere you have a terminal.</p>
       <div class="cta__buttons">
         <a href="#install" class="btn btn--primary">Get Started</a>
-        <a href="https://github.com/nareshnavinash/shelldone" class="btn btn--secondary">
+        <a href="https://github.com/nareshnavinash/shelldone" class="btn btn--secondary" target="_blank" rel="noopener noreferrer">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
           View on GitHub
         </a>
@@ -477,16 +494,18 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
     </div>
   </section>
 
+  </main>
+
   <!-- ===== Footer ===== -->
   <footer class="footer">
     <div class="container">
       <nav class="footer__links" aria-label="Footer navigation">
-        <a href="https://github.com/nareshnavinash/shelldone">GitHub</a>
-        <a href="https://github.com/nareshnavinash/shelldone/blob/main/LICENSE">MIT License</a>
-        <a href="https://github.com/nareshnavinash/shelldone/blob/main/CONTRIBUTING.md">Contributing</a>
-        <a href="https://github.com/nareshnavinash/shelldone/blob/main/CHANGELOG.md">Changelog</a>
+        <a href="https://github.com/nareshnavinash/shelldone" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/nareshnavinash/shelldone/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
+        <a href="https://github.com/nareshnavinash/shelldone/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing</a>
+        <a href="https://github.com/nareshnavinash/shelldone/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">Changelog</a>
       </nav>
-      <p class="footer__copy">Made by <a href="https://github.com/nareshnavinash">Naresh Sekar</a></p>
+      <p class="footer__copy">Made by <a href="https://github.com/nareshnavinash" target="_blank" rel="noopener noreferrer">Naresh Sekar</a></p>
     </div>
   </footer>
 

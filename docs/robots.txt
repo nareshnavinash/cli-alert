@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://nareshnavinash.github.io/shelldone/sitemap.xml

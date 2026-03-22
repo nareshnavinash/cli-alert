@@ -251,6 +251,16 @@ img {
   text-shadow: 0 0 40px var(--green-glow-strong);
 }
 
+.hero__title-sub {
+  display: block;
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 0;
+  text-shadow: none;
+  margin-top: 8px;
+}
+
 .hero__tagline {
   font-size: clamp(1.2rem, 3vw, 1.6rem);
   color: var(--text-bright);
@@ -854,17 +864,37 @@ img {
   }
 }
 
-/* --- Section Quotes (separators between sections) --- */
-.section-quote {
-  text-align: center;
+/* --- Quotes Ticker (auto-scrolling marquee) --- */
+.quotes-ticker {
+  overflow: hidden;
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.quotes-ticker__track {
+  display: flex;
+  gap: 48px;
+  white-space: nowrap;
+  animation: ticker 60s linear infinite;
+  width: max-content;
+}
+
+.quotes-ticker:hover .quotes-ticker__track {
+  animation-play-state: paused;
+}
+
+.quotes-ticker__item {
   font-family: var(--font-mono);
   font-size: 0.9rem;
   font-style: italic;
   color: var(--text-dim);
-  padding: 32px 24px;
-  max-width: var(--max-width);
-  margin: 0 auto;
-  line-height: 1.6;
+  flex-shrink: 0;
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 /* --- CTA Section --- */
