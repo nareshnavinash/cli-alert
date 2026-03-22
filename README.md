@@ -118,6 +118,8 @@ scoop install shelldone
 
 ### Chocolatey (Windows)
 
+Coming soon - submitted for review.
+
 ```bash
 choco install shelldone
 ```
