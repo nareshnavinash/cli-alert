@@ -42,6 +42,10 @@ bash test.sh
 
 All 452 tests must pass before submitting a PR. Tests cover unit, integration, and end-to-end scenarios including mock HTTP servers.
 
+## Platform Testing
+
+shelldone is primarily tested on macOS (bash + zsh). If you use Linux, WSL, or Windows (Git Bash/MSYS2/Cygwin), your testing and bug reports are especially valuable. Platform-specific notification paths (`notify-send`, BurntToast, `powershell.exe`) benefit the most from real-world validation.
+
 ## Pull Request Guidelines
 
 1. Fork the repo and create a feature branch: `git checkout -b feature/my-feature`

@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
 $packageName = 'shelldone'
-$version = '1.3.1'
+$version = '1.4.0'
 $url = "https://github.com/nareshnavinash/shelldone/archive/refs/tags/v${version}.tar.gz"
 $checksum = '2fb63fc185b9189c6f434400c3b03f325937419a82361b52b099d5f936ed3540'
 $checksumType = 'sha256'

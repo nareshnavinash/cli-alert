@@ -375,6 +375,8 @@ Shell startup (eval "$(shelldone init zsh)")
 | External notifications | All channels | All channels | All channels | All channels |
 | Fallback | terminal bell | terminal bell | terminal bell | terminal bell |
 
+> shelldone is extensively tested on macOS. Other platforms are supported through consistent bash/zsh behavior and platform-specific notification code paths. [MIT licensed](https://github.com/nareshnavinash/shelldone/blob/main/LICENSE) - contributions from Linux, WSL, and Windows users are especially welcome.
+
 ## Testing
 
 shelldone includes 452 tests covering unit, integration, and end-to-end scenarios.
