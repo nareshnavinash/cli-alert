@@ -42,6 +42,8 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 
 ## Features
 
+> *"Running without me is like running without set -e. Technically possible. Spiritually wrong."* - shelldone
+
 - **Desktop notifications** on macOS, Linux, WSL, and Windows (Git Bash/MSYS2/Cygwin)
 - **Auto-notify** for any command that runs longer than a configurable threshold (default: 10s)
 - **Sound alerts** with customizable success/failure sounds (system sounds or custom file paths)
@@ -55,6 +57,8 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 - **Zero dependencies** - uses only built-in system tools (`curl`/`wget` optional for external channels)
 
 ## Quick Start
+
+> *"You left your terminal. I waited. I notified. You're welcome."* - shelldone
 
 ```bash
 # Clone and install
@@ -145,6 +149,8 @@ shelldone setup
 
 ### Setup
 
+> *"If you wanted a quiet terminal, you shouldn't have installed something this thorough."* - shelldone
+
 Run the interactive setup wizard to configure everything at once:
 
 ```bash
@@ -173,6 +179,8 @@ shelldone setup cursor-hook   # Cursor only
 
 ### `alert <command>` - Explicit Notifications
 
+> *"I didn't notify you because I wanted to. I notified you because exit code 0 demands acknowledgment."* - shelldone
+
 Wrap any command to get notified when it completes:
 
 ```bash
@@ -185,6 +193,8 @@ The notification shows the command name, exit status icon, elapsed time, and exi
 
 ### Automatic Notifications
 
+> *"My notification was not late. Your attention to the terminal was early to leave."* - shelldone
+
 After shell integration, any command running longer than the threshold (default: 10 seconds) triggers a notification automatically. No `alert` wrapper needed.
 
 ```bash
@@ -194,6 +204,8 @@ vim file.txt      # excluded by default -> no notification
 ```
 
 ### AI CLI Integration
+
+> *"I monitor six channels simultaneously. What do you monitor? Your phone? Pathetic."* - shelldone
 
 shelldone can notify you when AI coding assistants finish their turn via native hook systems:
 
@@ -207,6 +219,8 @@ Supports Claude Code, Codex CLI, Gemini CLI, Copilot CLI, and Cursor. Aider uses
 
 ### Notification Control
 
+> *"I could let your build finish in silence. But that would be chaos, and I don't do chaos."* - shelldone
+
 ```bash
 shelldone mute 30m               # mute for 30 minutes
 shelldone unmute                  # resume
@@ -218,6 +232,8 @@ shelldone schedule 22:00-08:00    # set quiet hours
 Supported layers: `desktop`, `sound`, `voice`, `slack`, `discord`, `telegram`, `email`, `whatsapp`, `webhook`, `external` (group), `claude`, `codex`, `gemini`, `copilot`, `cursor`.
 
 ## Configuration
+
+> *"I don't have trust issues. I have exit code verification standards."* - shelldone
 
 All settings are environment variables. Set them before the `eval` line in your shell config:
 
@@ -243,6 +259,8 @@ eval "$(shelldone init zsh)"
 Full reference with all variables: **[docs/configuration.md](docs/configuration.md)**
 
 ## External Notifications
+
+> *"Your deploy finished 4 minutes ago. I told Slack. I told Discord. I told you. You ignored all three."* - shelldone
 
 Send alerts to Slack, Discord, Telegram, Email, WhatsApp, or any webhook. External notifications fire even when the terminal is focused.
 
@@ -309,6 +327,8 @@ Full troubleshooting guide: **[docs/troubleshooting.md](docs/troubleshooting.md)
 
 ## Testing
 
+> *"0 is the only exit code I respect."* - shelldone
+
 shelldone includes 452 tests covering unit, integration, and end-to-end scenarios.
 
 ```bash
@@ -317,6 +337,8 @@ shelldone test        # via the CLI
 ```
 
 ## Alternatives
+
+> *"Knock knock knock... your build is done. Knock knock knock... your build is done."* - shelldone
 
 | Feature | shelldone | undistract-me | noti | done (fish) |
 |---|---|---|---|---|
