@@ -14,6 +14,8 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 
 ![shelldone demo](assets/demo.gif)
 
+> *"I'm not needy. I simply believe every completed process deserves recognition."* - shelldone
+
 ## Table of Contents
 
 - [Features](#features)
@@ -325,8 +327,6 @@ shelldone test        # via the CLI
 | AI CLI integration (5 tools) | Yes | No | No | No |
 | Sound + TTS | Yes | No | Partial | No |
 | Mute / schedule / toggle | Yes | No | No | No |
-
-> *"I'm not needy. I simply believe every completed process deserves recognition."* -- shelldone
 
 ## Contributing
 
