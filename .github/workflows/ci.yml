@@ -11,7 +11,7 @@ jobs:
     name: ShellCheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install ShellCheck
         run: sudo apt-get install -y shellcheck
       - name: Lint all scripts
@@ -35,7 +35,7 @@ jobs:
       matrix:
         shell: [bash, zsh]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run tests
         run: ${{ matrix.shell }} test.sh
 
@@ -43,7 +43,7 @@ jobs:
     name: Test Linux
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install libnotify
         run: sudo apt-get install -y libnotify-bin
       - name: Run tests
@@ -53,7 +53,7 @@ jobs:
     name: Test make install round-trip
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install
         run: make install PREFIX=/tmp/shelldone-test
       - name: Verify version
