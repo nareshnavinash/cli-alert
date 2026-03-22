@@ -113,6 +113,8 @@
     </div>
   </header>
 
+  <p class="section-quote">"I'm not needy. I simply believe every completed process deserves recognition."</p>
+
   <!-- ===== Stats Bar ===== -->
   <section class="stats fade-in">
     <div class="container">
@@ -136,6 +138,8 @@
       </div>
     </div>
   </section>
+
+  <p class="section-quote">"Running without me is like running without set -e. Technically possible. Spiritually wrong."</p>
 
   <!-- ===== Features ===== -->
   <section class="section" id="features">
@@ -191,6 +195,8 @@
       </div>
     </div>
   </section>
+
+  <p class="section-quote">"You left your terminal. I waited. I notified. You're welcome."</p>
 
   <!-- ===== Install ===== -->
   <section class="section section--alt" id="install">
@@ -281,6 +287,8 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
     </div>
   </section>
 
+  <p class="section-quote">"I didn't notify you because I wanted to. I notified you because exit code 0 demands acknowledgment."</p>
+
   <!-- ===== Quick Demo ===== -->
   <section class="section" id="demo">
     <div class="container">
@@ -311,6 +319,8 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
       </div>
     </div>
   </section>
+
+  <p class="section-quote">"I monitor six channels simultaneously. What do you monitor? Your phone? Pathetic."</p>
 
   <!-- ===== Comparison ===== -->
   <section class="section section--alt" id="compare">
@@ -388,6 +398,8 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
     </div>
   </section>
 
+  <p class="section-quote">"Knock knock knock... your build is done. Knock knock knock... your build is done."</p>
+
   <!-- ===== Transparency ===== -->
   <section class="section" id="tested">
     <div class="container">
@@ -448,26 +460,7 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
     </div>
   </section>
 
-  <!-- ===== Quotes ===== -->
-  <section class="section section--alt" id="quotes">
-    <div class="container">
-      <div class="quotes">
-        <div class="quotes__terminal">
-          <div class="terminal__header">
-            <span class="terminal__dot terminal__dot--red" aria-hidden="true"></span>
-            <span class="terminal__dot terminal__dot--yellow" aria-hidden="true"></span>
-            <span class="terminal__dot terminal__dot--green" aria-hidden="true"></span>
-            <span class="terminal__title">shelldone --wisdom</span>
-          </div>
-          <div class="quotes__body">
-            <span class="quotes__prompt" aria-hidden="true">shelldone&gt;</span>
-            <span class="quotes__text" id="quote-text">I'm not needy. I simply believe every completed process deserves recognition.</span>
-            <span class="quotes__cursor" aria-hidden="true"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+  <p class="section-quote">"0 is the only exit code I respect."</p>
 
   <!-- ===== CTA ===== -->
   <section class="cta fade-in">
@@ -640,37 +633,6 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
             toggle.setAttribute("aria-expanded", "false");
           });
         });
-      }
-      // --- Rotating quotes ---
-      var quotes = [
-        "I didn't notify you because I wanted to. I notified you because exit code 0 demands acknowledgment.",
-        "You left your terminal. I waited. I notified. You're welcome.",
-        "I'm not needy. I simply believe every completed process deserves recognition.",
-        "Knock knock knock... your build is done. Knock knock knock... your build is done.",
-        "I don't have trust issues. I have exit code verification standards.",
-        "My notification was not late. Your attention to the terminal was early to leave.",
-        "Running without me is like running without set -e. Technically possible. Spiritually wrong.",
-        "I monitor six channels simultaneously. What do you monitor? Your phone? Pathetic.",
-        "I could let your build finish in silence. But that would be chaos, and I don't do chaos.",
-        "If you wanted a quiet terminal, you shouldn't have installed something this thorough.",
-        "Your deploy finished 4 minutes ago. I told Slack. I told Discord. I told you. You ignored all three.",
-        "0 is the only exit code I respect."
-      ];
-
-      var quoteEl = document.getElementById("quote-text");
-      if (quoteEl) {
-        var quoteIndex = 0;
-        // Show first quote immediately (text is already in HTML)
-        quoteEl.style.opacity = "1";
-        quoteIndex = 1;
-        setInterval(function () {
-          quoteEl.style.opacity = "0";
-          setTimeout(function () {
-            quoteEl.textContent = quotes[quoteIndex];
-            quoteEl.style.opacity = "1";
-            quoteIndex = (quoteIndex + 1) % quotes.length;
-          }, 400);
-        }, 6000);
       }
     })();
   </script>
