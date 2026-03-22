@@ -756,6 +756,166 @@ img {
   margin-top: 4px;
 }
 
+/* --- Transparency Section --- */
+.transparency {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.transparency__terminal {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  background: var(--bg-code);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.transparency__body {
+  padding: 20px 24px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.transparency__row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.transparency__row:last-child {
+  border-bottom: none;
+}
+
+.transparency__icon {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.transparency__row--pass .transparency__icon {
+  background: rgba(0, 255, 65, 0.15);
+  color: var(--green);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+.transparency__row--expected .transparency__icon {
+  background: rgba(240, 192, 64, 0.12);
+  color: #f0c040;
+  border: 1px solid rgba(240, 192, 64, 0.25);
+}
+
+.transparency__platform {
+  color: var(--text-bright);
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 160px;
+}
+
+.transparency__detail {
+  color: var(--text-dim);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+}
+
+.transparency__message {
+  text-align: center;
+  margin-top: 28px;
+  font-size: 1rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.transparency__message a {
+  color: var(--green);
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .transparency__row {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .transparency__platform {
+    min-width: auto;
+  }
+
+  .transparency__icon {
+    align-self: flex-start;
+  }
+}
+
+/* --- Quotes Section --- */
+.quotes {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.quotes__terminal {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  background: var(--bg-code);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.quotes__body {
+  padding: 28px 24px;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.7;
+  min-height: 80px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.quotes__prompt {
+  color: var(--green);
+  font-weight: 700;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.quotes__text {
+  color: var(--text);
+  font-style: italic;
+  transition: opacity 0.4s ease;
+}
+
+.quotes__cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  background: var(--green);
+  margin-left: 2px;
+  flex-shrink: 0;
+  animation: blink 1s step-end infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (max-width: 640px) {
+  .quotes__body {
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.9rem;
+  }
+}
+
 /* --- CTA Section --- */
 .cta {
   padding: 100px 0;

@@ -326,6 +326,8 @@ shelldone test        # via the CLI
 | Sound + TTS | Yes | No | Partial | No |
 | Mute / schedule / toggle | Yes | No | No | No |
 
+> *"I'm not needy. I simply believe every completed process deserves recognition."* -- shelldone
+
 ## Contributing
 
 1. Fork the repository
