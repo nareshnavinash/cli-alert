@@ -61,6 +61,54 @@
     "datePublished": "2026-03-15"
   }
   </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I install shelldone?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Install via Homebrew (brew install nareshnavinash/tap/shelldone), APT on Debian/Ubuntu, Scoop on Windows, or clone from GitHub and run ./install.sh. After installation, run shelldone setup to configure shell integration and AI CLI hooks."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What shells and platforms does shelldone support?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "shelldone works with bash and zsh on macOS, Linux, WSL, and Windows (Git Bash, MSYS2, Cygwin). It uses platform-native notification tools: osascript on macOS, notify-send on Linux, and BurntToast/PowerShell on Windows."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I set up Slack notifications with shelldone?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Create a Slack app at api.slack.com/apps, enable Incoming Webhooks, and set the webhook URL: export SHELLDONE_SLACK_WEBHOOK='https://hooks.slack.com/services/...'. Test with: shelldone webhook test slack."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does shelldone work with AI coding tools?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. shelldone has native hook integration with Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, and Cursor. Run shelldone setup ai-hooks to install hooks for all detected AI CLIs. You get notified when your AI assistant finishes a task."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does shelldone slow down my shell?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. shelldone adds less than 50ms to shell startup time. It uses lazy loading for external notification modules and runs all notification delivery in the background so your shell prompt is never blocked."
+        }
+      }
+    ]
+  }
+  </script>
   <noscript><style>.fade-in { opacity: 1 !important; transform: none !important; }</style></noscript>
 </head>
 <body>
@@ -114,7 +162,10 @@
           <span class="terminal__dot terminal__dot--green" aria-hidden="true"></span>
           <span class="terminal__title">Terminal</span>
         </div>
-        <img src="demo.gif" alt="shelldone demo - terminal notifications for long-running commands" class="terminal__gif" loading="lazy">
+        <picture>
+          <source srcset="demo.webp" type="image/webp">
+          <img src="demo.gif" alt="shelldone demo - terminal notifications for long-running commands" class="terminal__gif" loading="lazy">
+        </picture>
       </div>
     </div>
   </header>
@@ -140,6 +191,10 @@
         <div class="stats__item">
           <span class="stats__number" data-target="4">4</span>
           <span class="stats__label">Platforms</span>
+        </div>
+        <div class="stats__item">
+          <span class="stats__number">&lt;50<small>ms</small></span>
+          <span class="stats__label">Shell Startup Overhead</span>
         </div>
       </div>
     </div>

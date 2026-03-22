@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuration - shelldone</title>
+  <meta name="description" content="Complete configuration guide for shelldone: environment variables, sound settings, focus detection, exclusion lists, quiet hours, external channels, and config file management.">
+  <link rel="canonical" href="https://nareshnavinash.github.io/shelldone/configuration.html">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+
+  <nav class="doc-nav">
+    <a href="./" class="doc-nav__back">shelldone</a>
+    <span class="doc-nav__title">Configuration</span>
+  </nav>
+
+  <main class="doc-content">
+    <div class="container">
+
+      <h1>Configuration</h1>
+
+      <p>All settings are environment variables. Set them before the <code>eval</code> line in your shell config:</p>
+
+      <div class="code-block"><pre><code># Example .zshrc
+export SHELLDONE_THRESHOLD=60
+export SHELLDONE_SOUND_SUCCESS=Ping
+export SHELLDONE_VOICE=true
+eval "$(shelldone init zsh)"</code></pre></div>
+
+      <p>Or persist them in the config file: <code>~/.config/shelldone/config</code></p>
+
+      <div class="code-block"><pre><code>shelldone config edit    # open in $EDITOR
+shelldone config init    # print a template</code></pre></div>
+
+      <h2>General Settings</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>SHELLDONE_ENABLED</code></td>
+            <td><code>true</code></td>
+            <td>Master on/off switch</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_AUTO</code></td>
+            <td><code>true</code></td>
+            <td>Auto-notify on/off</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_THRESHOLD</code></td>
+            <td><code>10</code></td>
+            <td>Seconds before auto-notify triggers</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_DEBUG</code></td>
+            <td><em>(off)</em></td>
+            <td>Set to <code>true</code> for debug output to stderr</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Sound Settings</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>SHELLDONE_SOUND_SUCCESS</code></td>
+            <td><code>Glass</code> (macOS), <code>complete</code> (Linux), <code>Asterisk</code> (Windows)</td>
+            <td>Success sound name or file path</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_SOUND_FAILURE</code></td>
+            <td><code>Sosumi</code> (macOS), <code>dialog-error</code> (Linux), <code>Hand</code> (Windows)</td>
+            <td>Failure sound name or file path</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_SOUND_TIMEOUT</code></td>
+            <td><code>10</code></td>
+            <td>Max seconds to wait for sound playback</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_VOICE</code></td>
+            <td><em>(off)</em></td>
+            <td>Set to <code>true</code> for TTS announcements</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Use a system sound name or a file path:</p>
+
+      <div class="code-block"><pre><code>export SHELLDONE_SOUND_SUCCESS=Ping
+export SHELLDONE_SOUND_FAILURE=/path/to/custom/error.aiff</code></pre></div>
+
+      <p>List available sounds: <code>shelldone sounds</code></p>
+
+      <h2>Focus &amp; Exclusion Settings</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>SHELLDONE_FOCUS_DETECT</code></td>
+            <td><code>true</code></td>
+            <td>Suppress notifications when terminal is focused</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_TERMINALS</code></td>
+            <td><code>Terminal iTerm2 Alacritty kitty WezTerm Hyper</code></td>
+            <td>Terminal app names for focus detection (macOS)</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_EXCLUDE</code></td>
+            <td><code>vim nvim vi nano less more man top htop ssh tmux screen fg bg watch</code></td>
+            <td>Space-separated commands/globs to skip</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_NESTED_SHELL</code></td>
+            <td><code>notify</code></td>
+            <td>Set to <code>suppress</code> to disable auto-notify in nested shells (<code>SHLVL &gt; 1</code>). Prevents duplicate alerts from subshells spawned by coding tools, IDEs, etc. Top-level shells, tmux panes, and new terminal tabs are unaffected.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Notification Control Settings</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>SHELLDONE_QUIET_HOURS</code></td>
+            <td><em>(off)</em></td>
+            <td>Daily quiet hours (e.g., <code>22:00-08:00</code>, crosses midnight OK)</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_HISTORY</code></td>
+            <td><code>true</code></td>
+            <td>Log notifications to history file</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>External Notification Settings</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>SHELLDONE_RATE_LIMIT</code></td>
+            <td><code>10</code></td>
+            <td>Min seconds between notifications per channel</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_WEBHOOK_TIMEOUT</code></td>
+            <td><code>5</code></td>
+            <td>HTTP timeout in seconds</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_EXTERNAL_DEBUG</code></td>
+            <td><code>false</code></td>
+            <td>Log external notification attempts to stderr</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>For channel-specific variables (Slack webhook URLs, Telegram tokens, etc.), see <a href="external-channels.html">External Channels</a>.</p>
+
+      <h2>Config File</h2>
+
+      <p>Location: <code>${SHELLDONE_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/shelldone/config}</code></p>
+
+      <p>The config file is sourced as bash. Use <code>export</code> or <code>: "${VAR:=value}"</code> syntax:</p>
+
+      <div class="code-block"><pre><code># ~/.config/shelldone/config
+export SHELLDONE_THRESHOLD=30
+export SHELLDONE_SOUND_SUCCESS=Ping
+export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"</code></pre></div>
+
+      <h2>Configuration Hierarchy</h2>
+
+      <div class="code-block"><pre><code>Priority (highest to lowest):
+
+  1. Environment variables (set before eval in shell RC)
+  2. Config file (~/.config/shelldone/config)
+  3. Hardcoded defaults (in shelldone.sh)</code></pre></div>
+
+      <p>Environment variables always win. The config file is sourced before defaults are applied, so any value set there takes effect unless overridden by an explicit <code>export</code> in the shell.</p>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__copy">Back to <a href="./">shelldone</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>

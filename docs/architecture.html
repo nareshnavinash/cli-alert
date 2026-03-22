@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture - shelldone</title>
+  <meta name="description" content="Internal architecture of shelldone: module structure, notification flow, auto-notify hooks, AI hook integration, state management, and platform support matrix.">
+  <link rel="canonical" href="https://nareshnavinash.github.io/shelldone/architecture.html">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+
+  <nav class="doc-nav">
+    <a href="./" class="doc-nav__back">shelldone</a>
+    <span class="doc-nav__title">Architecture</span>
+  </nav>
+
+  <main class="doc-content">
+    <div class="container">
+
+      <h1>Architecture</h1>
+
+      <p>This document describes shelldone's internal architecture, module structure, and data flows.</p>
+
+      <h2>Project Structure</h2>
+
+      <div class="code-block"><pre><code>shelldone/
+├── bin/shelldone              # Main CLI executable (dispatch + commands)
+├── lib/
+│   ├── shelldone.sh           # Core notification engine + alert() wrapper
+│   ├── auto-notify.zsh        # Zsh preexec/precmd auto-notify hooks
+│   ├── auto-notify.bash       # Bash DEBUG trap auto-notify hooks
+│   ├── external-notify.sh     # External channels (Slack, Discord, etc.)
+│   ├── state.sh               # Mute, toggle, and schedule state management
+│   ├── ai-hook-common.sh      # Shared library for AI CLI hooks
+│   └── tui.sh                 # Reusable TUI library for interactive menus
+├── hooks/
+│   ├── claude-done.sh         # Claude Code Stop hook
+│   ├── codex-done.sh          # Codex CLI Stop hook
+│   ├── gemini-done.sh         # Gemini CLI command hook
+│   ├── copilot-done.sh        # Copilot CLI sessionEnd hook
+│   └── cursor-done.sh         # Cursor stop hook
+├── completions/
+│   ├── shelldone.bash         # Bash completion
+│   └── shelldone.zsh          # Zsh completion
+├── Formula/shelldone.rb       # Homebrew formula
+├── debian/                    # Debian packaging
+├── packaging/
+│   ├── chocolatey.nuspec      # Chocolatey manifest
+│   └── scoop.json             # Scoop manifest
+├── install.sh                 # Interactive installer
+├── uninstall.sh               # Uninstaller
+├── test.sh                    # Test suite (452 tests)
+├── Makefile                   # make install/uninstall/test
+└── VERSION                    # Current version</code></pre></div>
+
+      <h2>Design Principles</h2>
+
+      <ul>
+        <li><strong>Multi-path resolution</strong> - Works from source (<code>./lib/</code>) and installed (<code>/usr/lib/shelldone/</code>, <code>/usr/local/lib/shelldone/</code>)</li>
+        <li><strong>Lazy loading</strong> - External notification module loaded at init if a channel env var is set, or on-demand at notification time if configured later</li>
+        <li><strong>Double-source guards</strong> - All lib files check guard variables to prevent re-initialization</li>
+        <li><strong>Marker-based uninstall</strong> - RC file cleanup uses <code># &gt;&gt;&gt; shelldone &gt;&gt;&gt;</code> / <code># &lt;&lt;&lt; shelldone &lt;&lt;&lt;</code> markers</li>
+        <li><strong>Timeout safety</strong> - Background sound/TTS processes have watchdog timers to prevent hangs</li>
+        <li><strong>Pure-bash JSON</strong> - JSON escaping without <code>jq</code> dependency</li>
+        <li><strong>Rate limiting</strong> - Per-channel rate limits via shared stamp files in <code>/tmp/</code></li>
+        <li><strong>Fallback chain</strong> - Platform notifier &gt; warning &gt; terminal bell + stderr message</li>
+      </ul>
+
+      <h2>Notification Flow</h2>
+
+      <p>End-to-end path from command completion to notification delivery:</p>
+
+      <div class="code-block"><pre><code>Command completes (exit code captured)
+         |
+         v
++--[Entry Point]------------------------------------------+
+|                                                          |
+|  alert()            auto-notify hook       AI CLI hook   |
+|  (manual wrap)      (preexec/precmd)       (JSON stdin)  |
+|                                                          |
++-------------------+--------------------------------------+
+                    |
+                    v
+          _shelldone_notify(title, message, exit_code)
+                    |
+                    v
+          [SHELLDONE_ENABLED != true?]---yes---&gt; return
+                    |no
+                    v
+          [Load state.sh if needed]
+                    |
+                    v
+          [_shelldone_is_muted?]---yes---&gt; log to history, return
+                    |no
+                    v
+          [_shelldone_is_quiet_hours?]---yes---&gt; log to history, return
+                    |no
+                    v
+          [Log to history file]
+                    |
+          +---------+---------+
+          |                   |
+          v                   v
+  [External dispatch]   [Focus detection]
+  (background, async)         |
+          |             [terminal focused?]
+          |                   |
+          |             yes---+---no
+          |              |        |
+          |           return      v
+          |                 [Platform notifier]
+          |                       |
+          |           +-----------+-----------+-----------+
+          |           |           |           |           |
+          |        darwin       linux        wsl       fallback
+          |           |           |           |           |
+          |      osascript   notify-send  BurntToast  bell+stderr
+          |      + afplay    + paplay     + PS toast
+          |      + say       + espeak     + PS speak
+          |
+          v
+  [Load external-notify.sh if needed]
+          |
+  +-------+-------+-------+-------+-------+-------+
+  |       |       |       |       |       |       |
+ Slack  Discord Telegram Email WhatsApp Webhook  (skip)
+  |       |       |       |       |       |
+  +-------+-------+-------+-------+-------+
+          |
+          v
+  [Per-channel flow]
+          |
+    [channel enabled?]---no---&gt; skip
+          |yes
+    [rate limit check]---blocked---&gt; skip
+          |clear
+    [build JSON payload]
+          |
+    [HTTP transport: curl &gt; wget &gt; /dev/tcp]
+          |
+    [POST to endpoint]
+          |
+    [update rate stamp file]</code></pre></div>
+
+      <h2>Auto-Notify Hook Cycle</h2>
+
+      <h3>Zsh (preexec / precmd)</h3>
+
+      <div class="code-block"><pre><code>User types command and presses Enter
+         |
+         v
+  [preexec hook fires]
+         |
+         +---&gt; SHELLDONE_AUTO != true? ---&gt; return
+         |
+         +---&gt; Store command name: first word of $1
+         +---&gt; Store full command: $1 (truncate to 50 chars)
+         +---&gt; Record start time: $EPOCHSECONDS
+         |
+         v
+  [Command executes...]
+         |
+         v
+  [precmd hook fires]
+         |
+         +---&gt; Capture $? as last_exit
+         +---&gt; SHELLDONE_AUTO != true? ---&gt; return
+         +---&gt; No command recorded? ---&gt; return
+         |
+         v
+  [Calculate elapsed = EPOCHSECONDS - start]
+         |
+         v
+  [elapsed &lt; SHELLDONE_THRESHOLD?]---yes---&gt; return
+         |no
+         v
+  [Command in SHELLDONE_EXCLUDE?]---yes---&gt; return
+  (glob matching with $~excluded)
+         |no
+         v
+  [Check SHELLDONE_NOTIFY_ON filter]
+  (all / failure / success)
+         |pass
+         v
+  [Format duration + status icon]
+         |
+         v
+  [Set _SHELLDONE_META_* env vars]
+         |
+         v
+  [_shelldone_notify]</code></pre></div>
+
+      <h3>Bash (DEBUG trap / PROMPT_COMMAND)</h3>
+
+      <div class="code-block"><pre><code>Shell initializes
+         |
+         v
+  [PROMPT_COMMAND set to _shelldone_prompt_command]
+         |
+         v
+  [One-shot trap installer runs at first prompt]
+         |
+         +---&gt; Detect existing DEBUG trap
+         +---&gt; Chain: existing_trap + _shelldone_debug_trap
+         |
+         v
+  [User types command]
+         |
+         v
+  [DEBUG trap fires (_shelldone_debug_trap)]
+         |
+         +---&gt; In PROMPT_COMMAND? ---&gt; return (skip)
+         +---&gt; Already recording? ---&gt; return (first cmd only)
+         |
+         +---&gt; Store BASH_COMMAND name (first word)
+         +---&gt; Store full command (truncate to 50 chars)
+         +---&gt; Record start: $SECONDS
+         |
+         v
+  [Command executes...]
+         |
+         v
+  [PROMPT_COMMAND fires (_shelldone_prompt_command)]
+         |
+         +---&gt; Capture $? as last_exit
+         +---&gt; Set _shelldone_in_prompt_command=1 (guard)
+         +---&gt; No command recorded? ---&gt; reset, return
+         |
+         v
+  [Same threshold/exclusion/filter/notify flow as zsh]
+         |
+         v
+  [Reset _shelldone_in_prompt_command=0]</code></pre></div>
+
+      <h2>AI Hook Integration</h2>
+
+      <div class="code-block"><pre><code>AI CLI completes a task (e.g., Claude Code stops)
+         |
+         v
+  [AI CLI invokes hook script via its config]
+  (stdin receives JSON event)
+         |
+         v
+  [Hook script (e.g., claude-done.sh)]
+         |
+         +---&gt; Read JSON from stdin
+         +---&gt; Source ai-hook-common.sh
+         |       |
+         |       +---&gt; Resolve lib path (source vs installed)
+         |       +---&gt; Source shelldone.sh + state.sh
+         |
+         +---&gt; Extract fields via python3:
+         |       stop_reason, title, message
+         |
+         +---&gt; Map stop_reason to exit code:
+         |       error/max_turns_reached/timeout -&gt; 1
+         |       end_turn/stop_sequence/""       -&gt; 0
+         |
+         +---&gt; Build notification message:
+         |       "Task complete (end_turn)"
+         |
+         v
+  [_shelldone_hook_notify(ai_name, message, exit_code)]
+         |
+         +---&gt; Normalize AI name to key: "Claude Code" -&gt; "claude-code"
+         +---&gt; Check per-AI toggle state ---off---&gt; return silently
+         |on
+         +---&gt; Set metadata:
+         |       _SHELLDONE_META_SOURCE="ai-hook"
+         |       _SHELLDONE_META_AI_NAME="Claude Code"
+         |       _SHELLDONE_HOOK_CONTEXT=true (sync external)
+         |
+         v
+  [_shelldone_notify] (normal flow, but external runs synchronously
+                       because parent AI CLI may kill process tree)</code></pre></div>
+
+      <h2>State Management</h2>
+
+      <div class="code-block"><pre><code>State file: ${XDG_STATE_HOME:-~/.local/state}/shelldone/state
+
+Format (key=value, one per line):
++-----------------------------------+
+| mute_until=1711036800             |
+| quiet_start=22:00                 |
+| quiet_end=08:00                   |
+| sound=off                         |
+| slack=off                         |
+| claude-code=off                   |
++-----------------------------------+
+
+Operations:
+  _shelldone_state_read KEY        Read one key from state file
+  _shelldone_state_write KEY VAL   Write key (atomic: tmp + mv)
+  _shelldone_state_delete KEY      Remove key (atomic: tmp + mv)
+  _shelldone_state_dump            Print entire state file
+
+Checks:
+  _shelldone_is_muted
+       |
+       +---&gt; Read mute_until
+       +---&gt; "0" = indefinite mute ---&gt; muted
+       +---&gt; mute_until &gt; now ---&gt; muted
+       +---&gt; mute_until &lt;= now ---&gt; expired, delete key, not muted
+
+  _shelldone_channel_enabled CHANNEL
+       |
+       +---&gt; Read channel key
+       +---&gt; Missing = on (default)
+       +---&gt; "off" = disabled
+
+  _shelldone_is_quiet_hours
+       |
+       +---&gt; Read quiet_start + quiet_end from state
+       +---&gt; Fallback: parse SHELLDONE_QUIET_HOURS env var
+       +---&gt; Convert HH:MM to minutes since midnight
+       +---&gt; Same-day range: start &lt;= now &lt; end
+       +---&gt; Cross-midnight: now &gt;= start OR now &lt; end</code></pre></div>
+
+      <h2>Configuration Hierarchy</h2>
+
+      <div class="code-block"><pre><code>Priority (highest to lowest):
+
+  1. Environment variables
+     |  export SHELLDONE_THRESHOLD=60
+     |  (set before eval "$(shelldone init)")
+     |
+     v
+  2. Config file
+     |  ~/.config/shelldone/config
+     |  (sourced at load time, uses : "${VAR:=value}" defaults)
+     |
+     v
+  3. Hardcoded defaults
+        SHELLDONE_ENABLED=true
+        SHELLDONE_THRESHOLD=10
+        SHELLDONE_FOCUS_DETECT=true
+        SHELLDONE_NOTIFY_ON=all
+        SHELLDONE_HISTORY=true
+        SHELLDONE_SOUND_SUCCESS=Glass (macOS) / complete (Linux) / Asterisk (Windows)
+        SHELLDONE_SOUND_FAILURE=Sosumi (macOS) / dialog-error (Linux) / Hand (Windows)</code></pre></div>
+
+      <h2>Module Loading</h2>
+
+      <div class="code-block"><pre><code>Shell startup (eval "$(shelldone init zsh)")
+         |
+         v
+  [Source shelldone.sh]
+         |
+         +---&gt; Guard: _SHELLDONE_LOADED
+         +---&gt; Migrate CLI_ALERT_* env vars
+         +---&gt; Load config file
+         +---&gt; Set defaults
+         +---&gt; Detect platform (darwin/linux/wsl/windows)
+         +---&gt; Set platform-specific sound defaults
+         +---&gt; Define core functions:
+         |       _shelldone_notify, alert, alert-bg
+         |       _shelldone_format_duration, _shelldone_status_icon
+         |       Platform notifiers (darwin/linux/wsl/windows)
+         |       Focus detection, history logging
+         |
+         +---&gt; Lazy-load external-notify.sh if channel vars set
+         |
+         v
+  [Source auto-notify.zsh (or .bash)]
+         |
+         +---&gt; Guard: _SHELLDONE_AUTO_ZSH_LOADED
+         +---&gt; Check nested shell suppression
+         +---&gt; Register preexec/precmd hooks (zsh)
+              or DEBUG trap + PROMPT_COMMAND (bash)</code></pre></div>
+
+      <h2>Platform Support Matrix</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>macOS</th>
+            <th>Linux</th>
+            <th>WSL</th>
+            <th>Windows (Git Bash)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Desktop notifications</td>
+            <td>osascript</td>
+            <td>notify-send</td>
+            <td>BurntToast / WinRT</td>
+            <td>BurntToast / WinRT</td>
+          </tr>
+          <tr>
+            <td>Sound</td>
+            <td>afplay</td>
+            <td>paplay / aplay / mpv</td>
+            <td>powershell.exe</td>
+            <td>powershell.exe</td>
+          </tr>
+          <tr>
+            <td>TTS</td>
+            <td>say</td>
+            <td>espeak / spd-say</td>
+            <td>powershell.exe</td>
+            <td>powershell.exe</td>
+          </tr>
+          <tr>
+            <td>Focus detection</td>
+            <td>AppleScript</td>
+            <td>xdotool</td>
+            <td>--</td>
+            <td>--</td>
+          </tr>
+          <tr>
+            <td>Auto-notify</td>
+            <td>zsh + bash</td>
+            <td>zsh + bash</td>
+            <td>zsh + bash</td>
+            <td>bash</td>
+          </tr>
+          <tr>
+            <td>External notifications</td>
+            <td>All channels</td>
+            <td>All channels</td>
+            <td>All channels</td>
+            <td>All channels</td>
+          </tr>
+          <tr>
+            <td>Fallback</td>
+            <td>terminal bell</td>
+            <td>terminal bell</td>
+            <td>terminal bell</td>
+            <td>terminal bell</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <blockquote>
+        <p>shelldone is extensively tested on macOS. Other platforms are supported through consistent bash/zsh behavior and platform-specific notification code paths. <a href="https://github.com/nareshnavinash/shelldone/blob/main/LICENSE">MIT licensed</a> - contributions from Linux, WSL, and Windows users are especially welcome.</p>
+      </blockquote>
+
+      <h2>Testing</h2>
+
+      <p>shelldone includes 452 tests covering unit, integration, and end-to-end scenarios.</p>
+
+      <div class="code-block"><pre><code>bash test.sh       # from project root
+shelldone test     # via the CLI</code></pre></div>
+
+      <p>CI runs via GitHub Actions (<code>.github/workflows/ci.yml</code>):</p>
+
+      <ol>
+        <li><strong>ShellCheck</strong> - lints all shell scripts</li>
+        <li><strong>Test macOS</strong> - runs test suite under both <code>bash</code> and <code>zsh</code></li>
+        <li><strong>Test Linux</strong> - installs dependencies, runs test suite</li>
+        <li><strong>Test Install</strong> - full install/verify/uninstall roundtrip</li>
+      </ol>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__copy">Back to <a href="./">shelldone</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>

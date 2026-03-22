@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Troubleshooting - shelldone</title>
+  <meta name="description" content="Troubleshooting guide for shelldone: debug mode, common issues with notifications, sound, auto-notify, external channels, AI CLI hooks, and focus detection.">
+  <link rel="canonical" href="https://nareshnavinash.github.io/shelldone/troubleshooting.html">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+
+  <nav class="doc-nav">
+    <a href="./" class="doc-nav__back">shelldone</a>
+    <span class="doc-nav__title">Troubleshooting</span>
+  </nav>
+
+  <main class="doc-content">
+    <div class="container">
+
+      <h1>Troubleshooting</h1>
+
+      <h2>Platform Notes</h2>
+
+      <p>shelldone has been extensively tested on macOS (bash + zsh) with Claude Code, Gemini CLI, and Codex CLI. Slack is the only external channel validated end-to-end; other channels follow the same HTTP dispatch pattern. Linux, WSL, and Windows support is based on consistent bash/zsh behavior across operating systems and platform-specific code paths for notification delivery.</p>
+
+      <p>If you encounter a platform-specific or channel-specific issue, the project is <a href="https://github.com/nareshnavinash/shelldone/blob/main/LICENSE">MIT licensed</a> - contributions and bug reports are welcome.</p>
+
+      <h2>Quick Diagnosis</h2>
+
+      <div class="code-block"><pre><code>shelldone status</code></pre></div>
+
+      <p>This shows your platform, available notification tools, current config, shell integration status, AI CLI hook status, and external channel configuration.</p>
+
+      <h2>Debug Mode</h2>
+
+      <p><strong>Desktop notifications:</strong></p>
+
+      <div class="code-block"><pre><code>export SHELLDONE_DEBUG=true
+alert echo hello</code></pre></div>
+
+      <p>Prints detailed debug output to stderr showing platform detection, notification routing, and sound playback.</p>
+
+      <p><strong>External notifications:</strong></p>
+
+      <div class="code-block"><pre><code>export SHELLDONE_EXTERNAL_DEBUG=true
+alert echo hello</code></pre></div>
+
+      <p>Prints HTTP transport selection, POST targets (URLs redacted), and per-channel success/failure with HTTP status codes.</p>
+
+      <h2>Common Issues</h2>
+
+      <h3>No notification appears</h3>
+
+      <ul>
+        <li>Run <code>shelldone status</code> to check notification tools are available</li>
+        <li>Run <code>shelldone test-notify</code> to send a test notification</li>
+        <li>On macOS: check System Settings &gt; Notifications for terminal app permissions</li>
+        <li>On Linux: install <code>libnotify-bin</code> (<code>apt install libnotify-bin</code>)</li>
+      </ul>
+
+      <h3>No sound plays</h3>
+
+      <ul>
+        <li>Run <code>shelldone sounds</code> to see available sounds</li>
+        <li>Check that the sound file exists: <code>ls /System/Library/Sounds/</code> (macOS)</li>
+        <li>Try a custom path: <code>export SHELLDONE_SOUND_SUCCESS=/path/to/sound.aiff</code></li>
+      </ul>
+
+      <h3>Auto-notify not working</h3>
+
+      <ul>
+        <li>Ensure <code>SHELLDONE_AUTO=true</code> (default)</li>
+        <li>Check threshold: <code>SHELLDONE_THRESHOLD=10</code> means commands must run 10+ seconds</li>
+        <li>Check exclusions: <code>shelldone exclude list</code></li>
+        <li>Ensure shell integration is loaded: <code>shelldone status</code> shows rc file status</li>
+      </ul>
+
+      <h3>External notifications not arriving</h3>
+
+      <ul>
+        <li>Run <code>shelldone webhook status</code> to verify channel config</li>
+        <li>Test a specific channel: <code>shelldone webhook test slack</code></li>
+        <li>Enable debug output: <code>export SHELLDONE_EXTERNAL_DEBUG=true</code></li>
+        <li>Ensure <code>curl</code> or <code>wget</code> is installed (required for HTTPS channels)</li>
+        <li>Check for HTTP errors: test output shows the HTTP status code on failure</li>
+        <li>Verify rate limiting isn't blocking: default is 10 seconds between notifications per channel</li>
+      </ul>
+
+      <h3>External notifications work from shell but not from AI CLI hooks</h3>
+
+      <ul>
+        <li>AI hooks run as separate processes that don't inherit your shell's <code>export</code> variables</li>
+        <li>Persist your webhook URL in the config file: <code>shelldone config edit</code> (uncomment the relevant line)</li>
+        <li>Or add the <code>export</code> to <code>.zshrc</code>/<code>.bashrc</code> and <strong>restart the AI CLI</strong> so it inherits the variable</li>
+        <li>See <a href="external-channels.html#persisting-channel-configuration">Persisting Channel Configuration</a> for details</li>
+      </ul>
+
+      <h3>AI CLI hooks not firing</h3>
+
+      <ul>
+        <li>Run <code>shelldone status</code> to check hook installation for all AI CLIs</li>
+        <li>Re-install a specific hook: <code>shelldone setup claude-hook</code> (or <code>codex-hook</code>, <code>gemini-hook</code>, etc.)</li>
+        <li>Re-install all: <code>shelldone setup ai-hooks</code></li>
+        <li>Verify the AI CLI's settings file contains the hook entry</li>
+        <li>Requires <code>python3</code> for installation (hooks use it for JSON parsing)</li>
+        <li>Check per-AI toggle: <code>shelldone toggle</code> shows if a hook is toggled off</li>
+      </ul>
+
+      <h3>Focus detection suppressing notifications</h3>
+
+      <ul>
+        <li>Disable: <code>export SHELLDONE_FOCUS_DETECT=false</code></li>
+        <li>Or add your terminal to the detection list: <code>export SHELLDONE_TERMINALS="Terminal iTerm2 Alacritty MyTerminal"</code></li>
+        <li>Note: focus detection only works on macOS (AppleScript) and Linux (xdotool)</li>
+      </ul>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__copy">Back to <a href="./">shelldone</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>

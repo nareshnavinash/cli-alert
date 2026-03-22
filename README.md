@@ -55,6 +55,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 - **Notification control** - mute, toggle layers (sound/desktop/voice/channels), schedule quiet hours
 - **Shell completions** for bash and zsh
 - **Zero dependencies** - uses only built-in system tools (`curl`/`wget` optional for external channels)
+- **Fast** - adds less than 50ms to shell startup time
 
 ## Quick Start
 

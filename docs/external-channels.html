@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>External Channels - shelldone</title>
+  <meta name="description" content="Set up external notification channels for shelldone: Slack, Discord, Telegram, Email, WhatsApp, and generic webhooks. Includes dispatch flow and testing instructions.">
+  <link rel="canonical" href="https://nareshnavinash.github.io/shelldone/external-channels.html">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+
+  <nav class="doc-nav">
+    <a href="./" class="doc-nav__back">shelldone</a>
+    <span class="doc-nav__title">External Channels</span>
+  </nav>
+
+  <main class="doc-content">
+    <div class="container">
+
+      <h1>External Channels</h1>
+
+      <p>Get notified on Slack, Discord, Telegram, email, WhatsApp, or any webhook endpoint. External notifications fire even when the terminal is focused - ideal for monitoring from your phone or another device.</p>
+
+      <blockquote>
+        <p><strong>Slack</strong> is the only external channel tested end-to-end with real webhook delivery. Discord, Telegram, Email, WhatsApp, and generic webhooks all follow the same HTTP dispatch pattern and should work correctly. If you encounter an issue with a specific channel, the project is <a href="https://github.com/nareshnavinash/shelldone/blob/main/LICENSE">MIT licensed</a> - bug reports and fixes are welcome.</p>
+      </blockquote>
+
+      <h2>Channel Setup</h2>
+
+      <h3>Slack</h3>
+
+      <ol>
+        <li>Go to <a href="https://api.slack.com/apps">api.slack.com/apps</a> &gt; Create New App &gt; From scratch</li>
+        <li>Enable <strong>Incoming Webhooks</strong> &gt; Activate &gt; <strong>Add New Webhook to Workspace</strong></li>
+        <li>Select a channel and copy the webhook URL</li>
+      </ol>
+
+      <div class="code-block"><pre><code>export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"</code></pre></div>
+
+      <p>Optional:</p>
+
+      <div class="code-block"><pre><code>export SHELLDONE_SLACK_USERNAME="my-bot"     # default: shelldone
+export SHELLDONE_SLACK_CHANNEL="#alerts"      # override channel</code></pre></div>
+
+      <h3>Discord</h3>
+
+      <ol>
+        <li>Open Server Settings &gt; Integrations &gt; Webhooks &gt; <strong>New Webhook</strong></li>
+        <li>Select a channel, copy the webhook URL</li>
+      </ol>
+
+      <div class="code-block"><pre><code>export SHELLDONE_DISCORD_WEBHOOK="https://discord.com/api/webhooks/..."</code></pre></div>
+
+      <p>Optional:</p>
+
+      <div class="code-block"><pre><code>export SHELLDONE_DISCORD_USERNAME="my-bot"   # default: shelldone</code></pre></div>
+
+      <h3>Telegram</h3>
+
+      <ol>
+        <li>Message <a href="https://t.me/BotFather">@BotFather</a> &gt; <code>/newbot</code> &gt; copy the bot token</li>
+        <li>Send a message to your bot, then get your chat ID:
+          <div class="code-block"><pre><code>curl -s "https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates" | grep -o '"id":[0-9]*' | head -1</code></pre></div>
+        </li>
+      </ol>
+
+      <div class="code-block"><pre><code>export SHELLDONE_TELEGRAM_TOKEN="123456:ABC-DEF..."
+export SHELLDONE_TELEGRAM_CHAT_ID="your-chat-id"</code></pre></div>
+
+      <h3>Email</h3>
+
+      <p>Requires <code>sendmail</code> or <code>mail</code> command on the system.</p>
+
+      <div class="code-block"><pre><code>export SHELLDONE_EMAIL_TO="you@example.com"</code></pre></div>
+
+      <p>Optional:</p>
+
+      <div class="code-block"><pre><code>export SHELLDONE_EMAIL_FROM="alerts@myhost.com"        # default: shelldone@&lt;hostname&gt;
+export SHELLDONE_EMAIL_SUBJECT="[deploy] finished"     # default: [shelldone] &lt;title&gt;</code></pre></div>
+
+      <h3>WhatsApp (via Twilio)</h3>
+
+      <div class="code-block"><pre><code>export SHELLDONE_WHATSAPP_API_URL="https://api.twilio.com/2010-04-01/Accounts/.../Messages.json"
+export SHELLDONE_WHATSAPP_TOKEN="base64-encoded-sid:token"
+export SHELLDONE_WHATSAPP_FROM="+14155238886"
+export SHELLDONE_WHATSAPP_TO="+1234567890"</code></pre></div>
+
+      <p>All four variables are required.</p>
+
+      <h3>Generic Webhook</h3>
+
+      <div class="code-block"><pre><code>export SHELLDONE_WEBHOOK_URL="https://your-endpoint.com/hook"
+export SHELLDONE_WEBHOOK_HEADERS="Authorization: Bearer token123|X-Custom: value"  # optional, pipe-separated</code></pre></div>
+
+      <p>The webhook receives a JSON payload:</p>
+
+      <div class="code-block"><pre><code>{
+  "title": "make Complete",
+  "message": "\u2713 make build (2m 15s, exit 0)",
+  "exit_code": 0
+}</code></pre></div>
+
+      <h2>Persisting Channel Configuration</h2>
+
+      <p>AI CLI hooks (Claude Code, Codex, Gemini, Copilot, Cursor) run as <strong>separate processes</strong> spawned by the AI tool - they do <strong>not</strong> inherit your shell's environment variables. If you only set a webhook via <code>export</code> in your terminal, <code>shelldone webhook test slack</code> will work from that shell, but hooks triggered by AI CLIs will not have the variable.</p>
+
+      <p>There are two ways to ensure hooks can access your channel configuration:</p>
+
+      <p><strong>Option 1: Config file (recommended)</strong></p>
+
+      <p>Add your webhook URLs to <code>~/.config/shelldone/config</code>. Hooks read this file on every invocation, regardless of environment:</p>
+
+      <div class="code-block"><pre><code>shelldone config edit
+# Uncomment and fill in the relevant lines:
+# export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"</code></pre></div>
+
+      <p><strong>Option 2: Shell profile</strong></p>
+
+      <p>Add the <code>export</code> to your <code>.zshrc</code> or <code>.bashrc</code> <strong>before</strong> starting the AI CLI. The AI tool inherits the variable at launch and passes it to hooks:</p>
+
+      <div class="code-block"><pre><code># In .zshrc or .bashrc (BEFORE eval "$(shelldone init zsh)")
+export SHELLDONE_SLACK_WEBHOOK="https://hooks.slack.com/services/T.../B.../xxx"</code></pre></div>
+
+      <blockquote>
+        <p><strong>Why <code>export</code> alone doesn't work:</strong> <code>export</code> sets a variable in the current shell and its future children. It cannot update already-running processes. If you export a webhook URL after starting Claude Code, Claude Code's process (and its hooks) won't see it. You'd need to restart the AI CLI for it to pick up the new variable.</p>
+      </blockquote>
+
+      <h2>Dispatch Flow</h2>
+
+      <div class="code-block"><pre><code>_shelldone_notify_external(title, message, exit_code)
+         |
+         v
+  [Collect metadata: hostname, pwd, project, git branch]
+         |
+         v
+  [For each configured channel:]
+         |
+    +----+----+----+----+----+----+
+    |    |    |    |    |    |    |
+  Slack Disc Tele Email WApp Hook (skip if var unset)
+    |
+    v
+  [_shelldone_channel_enabled?]---no---&gt; skip
+    |yes
+    v
+  [Rate limit check]
+    |
+    +---&gt; Read /tmp/.shelldone_rate_&lt;channel&gt;
+    +---&gt; If elapsed &lt; SHELLDONE_RATE_LIMIT ---&gt; skip
+    |clear
+    v
+  [Build channel-specific JSON payload]
+    |
+    +---&gt; Slack: Block Kit with header, fields, context
+    +---&gt; Discord: embed with color sidebar
+    +---&gt; Telegram: HTML formatted via Bot API
+    +---&gt; Email: sendmail/mail with key=value body
+    +---&gt; WhatsApp: Twilio API
+    +---&gt; Webhook: generic JSON POST
+    |
+    v
+  [HTTP transport: curl &gt; wget &gt; /dev/tcp]
+    |
+    v
+  [POST with timeout (SHELLDONE_WEBHOOK_TIMEOUT)]
+    |
+    v
+  [Update rate stamp file]
+    |
+    v
+  [Clean up metadata vars]</code></pre></div>
+
+      <h2>Settings</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Default</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>SHELLDONE_RATE_LIMIT</code></td>
+            <td><code>10</code></td>
+            <td>Min seconds between notifications per channel</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_WEBHOOK_TIMEOUT</code></td>
+            <td><code>5</code></td>
+            <td>HTTP timeout in seconds</td>
+          </tr>
+          <tr>
+            <td><code>SHELLDONE_EXTERNAL_DEBUG</code></td>
+            <td><code>false</code></td>
+            <td>Log external notification attempts to stderr</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Testing &amp; Verifying Channels</h2>
+
+      <div class="code-block"><pre><code>shelldone webhook status              # show transport, channels, rate limit
+shelldone webhook test slack           # send a test message to Slack
+shelldone webhook test discord         # test Discord
+shelldone webhook test telegram        # test Telegram
+shelldone webhook test email           # test Email
+shelldone webhook test whatsapp        # test WhatsApp
+shelldone webhook test webhook         # test generic webhook</code></pre></div>
+
+      <p>The test command validates all required variables upfront, shows success/failure with the HTTP status code, and is not subject to rate limiting:</p>
+
+      <div class="code-block"><pre><code>$ shelldone webhook test slack
+Sending test to slack...
+[shelldone] Test sent successfully! (HTTP 200)
+
+$ shelldone webhook test slack   # with a bad URL
+Sending test to slack...
+[shelldone] Test FAILED. (HTTP 403)
+[shelldone] Run with SHELLDONE_EXTERNAL_DEBUG=true for details.</code></pre></div>
+
+      <blockquote>
+        <p><strong>Note:</strong> Slack, Discord, Telegram, and WhatsApp require <code>curl</code> or <code>wget</code> (HTTPS). The generic webhook can use <code>/dev/tcp</code> for plain HTTP endpoints if neither is available.</p>
+      </blockquote>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p class="footer__copy">Back to <a href="./">shelldone</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>
