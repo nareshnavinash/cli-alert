@@ -126,7 +126,7 @@
           <span class="stats__label">AI CLI Integrations</span>
         </div>
         <div class="stats__item">
-          <span class="stats__number" data-target="438">0</span>
+          <span class="stats__number" data-target="452">0</span>
           <span class="stats__label">Tests Passing</span>
         </div>
         <div class="stats__item">
@@ -383,6 +383,66 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Transparency ===== -->
+  <section class="section" id="tested">
+    <div class="container">
+      <div class="section__header fade-in">
+        <span class="section__label">Transparency</span>
+        <h2 class="section__title">Tested on macOS. Built for everywhere.</h2>
+        <p class="section__subtitle">Honest status report on where shelldone has been validated.</p>
+      </div>
+
+      <div class="transparency fade-in">
+        <div class="transparency__terminal">
+          <div class="terminal__header">
+            <span class="terminal__dot terminal__dot--red" aria-hidden="true"></span>
+            <span class="terminal__dot terminal__dot--yellow" aria-hidden="true"></span>
+            <span class="terminal__dot terminal__dot--green" aria-hidden="true"></span>
+            <span class="terminal__title">shelldone status --tested</span>
+          </div>
+          <div class="transparency__body">
+            <div class="transparency__row transparency__row--pass">
+              <span class="transparency__icon">PASS</span>
+              <span class="transparency__platform">macOS (bash + zsh)</span>
+              <span class="transparency__detail">Extensively tested with Claude Code, Gemini CLI, and Codex CLI</span>
+            </div>
+            <div class="transparency__row transparency__row--pass">
+              <span class="transparency__icon">PASS</span>
+              <span class="transparency__platform">Slack webhook</span>
+              <span class="transparency__detail">End-to-end tested with real webhook delivery</span>
+            </div>
+            <div class="transparency__row transparency__row--expected">
+              <span class="transparency__icon">EXPECTED</span>
+              <span class="transparency__platform">Discord, Telegram, Email, WhatsApp, Webhook</span>
+              <span class="transparency__detail">Same HTTP dispatch pattern, not yet validated end-to-end</span>
+            </div>
+            <div class="transparency__row transparency__row--expected">
+              <span class="transparency__icon">EXPECTED</span>
+              <span class="transparency__platform">Linux</span>
+              <span class="transparency__detail">bash/zsh behave identically - should work out of the box</span>
+            </div>
+            <div class="transparency__row transparency__row--expected">
+              <span class="transparency__icon">EXPECTED</span>
+              <span class="transparency__platform">WSL</span>
+              <span class="transparency__detail">Same shell layer, Windows notification path untested</span>
+            </div>
+            <div class="transparency__row transparency__row--expected">
+              <span class="transparency__icon">EXPECTED</span>
+              <span class="transparency__platform">Windows (Git Bash)</span>
+              <span class="transparency__detail">PowerShell notification path untested</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="transparency__message">
+          shelldone is <a href="https://github.com/nareshnavinash/shelldone/blob/main/LICENSE">MIT licensed</a>.
+          If something doesn't work on your platform - fork it, fix it, send a PR.
+          The codebase is pure bash with zero dependencies. Contributions welcome.
+        </p>
       </div>
     </div>
   </section>

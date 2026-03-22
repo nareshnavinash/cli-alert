@@ -16,8 +16,9 @@ jobs:
         run: sudo apt-get install -y shellcheck
       - name: Lint all scripts
         run: |
-          shellcheck bin/shelldone lib/shelldone.sh lib/auto-notify.bash \
-            lib/external-notify.sh lib/state.sh lib/ai-hook-common.sh \
+          shellcheck --severity=error bin/shelldone lib/shelldone.sh \
+            lib/auto-notify.bash lib/external-notify.sh lib/state.sh \
+            lib/ai-hook-common.sh lib/tui.sh \
             hooks/claude-done.sh hooks/claude-notify.sh \
             hooks/codex-done.sh hooks/codex-notify.sh \
             hooks/gemini-done.sh hooks/gemini-notify.sh \
@@ -25,7 +26,7 @@ jobs:
             hooks/cursor-done.sh hooks/cursor-notify.sh \
             install.sh uninstall.sh test.sh \
             completions/shelldone.bash
-          shellcheck -s bash completions/shelldone.zsh
+          shellcheck --severity=error -s bash completions/shelldone.zsh
 
   test-macos:
     name: Test macOS (${{ matrix.shell }})

@@ -139,6 +139,34 @@ shelldone setup
 
 ## Usage
 
+### Setup
+
+Run the interactive setup wizard to configure everything at once:
+
+```bash
+shelldone setup              # interactive wizard (auto-detects shell, configures RC files, installs AI hooks)
+shelldone setup --full       # advanced mode (also configures notification preferences and external channels)
+shelldone setup --quick      # non-interactive (shell init + AI hooks, sensible defaults)
+```
+
+The wizard walks through:
+1. **Shell integration** - detects `.zshrc`/`.bashrc` and adds the `eval` block
+2. **Notification preferences** (advanced) - threshold, filter, voice, focus detection
+3. **External channels** (advanced) - add/test Slack, Discord, Telegram, etc.
+4. **AI CLI hooks** - detects installed AI CLIs and installs hooks
+5. **Health check** - verifies everything is working
+
+You can also set up individual components:
+
+```bash
+shelldone setup ai-hooks      # install hooks for all detected AI CLIs
+shelldone setup claude-hook   # Claude Code only
+shelldone setup codex-hook    # Codex CLI only
+shelldone setup gemini-hook   # Gemini CLI only
+shelldone setup copilot-hook  # Copilot CLI only
+shelldone setup cursor-hook   # Cursor only
+```
+
 ### `alert <command>` - Explicit Notifications
 
 Wrap any command to get notified when it completes:
@@ -258,6 +286,8 @@ Detailed flowcharts for every command: **[docs/commands.md](docs/commands.md)**
 **Linux:** `libnotify-bin` for desktop, `pulseaudio-utils`/`alsa-utils` for sound, `espeak` for TTS, `xdotool` for focus.
 **WSL/Windows:** [BurntToast](https://github.com/Windos/BurntToast) PowerShell module (recommended) or `wsl-notify-send`.
 **External channels:** `curl` or `wget` for HTTPS channels.
+
+> **Tested on macOS** with bash and zsh, extensively validated with Claude Code, Gemini CLI, and Codex CLI. Slack is the only external channel tested end-to-end; other channels (Discord, Telegram, Email, WhatsApp, webhook) follow the same HTTP dispatch pattern and should work correctly. Since bash and zsh behave consistently across operating systems, shelldone should work identically on Linux, WSL, and Windows. It's [MIT licensed](LICENSE) - fork it, fix it, and send a PR.
 
 ## Uninstalling
 

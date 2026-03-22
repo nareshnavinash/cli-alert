@@ -2,6 +2,8 @@
 
 Get notified on Slack, Discord, Telegram, email, WhatsApp, or any webhook endpoint. External notifications fire even when the terminal is focused - ideal for monitoring from your phone or another device.
 
+> **Slack** is the only external channel tested end-to-end with real webhook delivery. Discord, Telegram, Email, WhatsApp, and generic webhooks all follow the same HTTP dispatch pattern and should work correctly. If you encounter an issue with a specific channel, the project is [MIT licensed](https://github.com/nareshnavinash/shelldone/blob/main/LICENSE) - bug reports and fixes are welcome.
+
 ## Channel Setup
 
 ### Slack

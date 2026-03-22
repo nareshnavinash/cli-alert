@@ -1,5 +1,11 @@
 # Troubleshooting
 
+## Platform Notes
+
+shelldone has been extensively tested on macOS (bash + zsh) with Claude Code, Gemini CLI, and Codex CLI. Slack is the only external channel validated end-to-end; other channels follow the same HTTP dispatch pattern. Linux, WSL, and Windows support is based on consistent bash/zsh behavior across operating systems and platform-specific code paths for notification delivery.
+
+If you encounter a platform-specific or channel-specific issue, the project is [MIT licensed](https://github.com/nareshnavinash/shelldone/blob/main/LICENSE) - contributions and bug reports are welcome.
+
 ## Quick Diagnosis
 
 ```bash
