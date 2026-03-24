@@ -9,13 +9,10 @@ lib/tui.sh usr/lib/shelldone
 hooks/claude-done.sh usr/share/shelldone/hooks
 hooks/claude-notify.sh usr/share/shelldone/hooks
 hooks/codex-done.sh usr/share/shelldone/hooks
-hooks/codex-notify.sh usr/share/shelldone/hooks
 hooks/gemini-done.sh usr/share/shelldone/hooks
 hooks/gemini-notify.sh usr/share/shelldone/hooks
 hooks/copilot-done.sh usr/share/shelldone/hooks
-hooks/copilot-notify.sh usr/share/shelldone/hooks
 hooks/cursor-done.sh usr/share/shelldone/hooks
-hooks/cursor-notify.sh usr/share/shelldone/hooks
 completions/shelldone.bash usr/share/bash-completion/completions
 completions/shelldone.zsh usr/share/zsh/site-functions
 VERSION usr/share/shelldone

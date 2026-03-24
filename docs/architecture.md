@@ -263,6 +263,21 @@ AI CLI completes a task (e.g., Claude Code stops)
                        because parent AI CLI may kill process tree)
 ```
 
+### Hook Compatibility
+
+| AI CLI | Config Format | Task Complete Hook | Waiting-for-Input Hook |
+|--------|--------------|-------------------|----------------------|
+| Claude Code | JSON (`~/.claude/settings.json`) | `Stop` | `Notification` |
+| Gemini CLI | JSON (`~/.gemini/settings.json`) | `turn_end` | `notification` (timing may vary) |
+| Codex CLI | TOML (`~/.codex/config.toml`) | `notify` (agent-turn-complete) | Not supported by CLI |
+| Copilot CLI | JSON files (`~/.github/hooks/`) | `sessionEnd` | Not supported by CLI |
+| Cursor | JSON (`~/.cursor/hooks.json`) | `stop` | Not supported by CLI |
+
+**Notes:**
+- Codex CLI uses TOML config (`notify = ["/path/to/script"]`), not JSON.
+- Copilot CLI, Codex CLI, and Cursor do not support notification/waiting-for-input hook events.
+- Gemini CLI supports the `notification` event, but the `ask_user` tool may render its prompt before the hook fires.
+
 ## State Management
 
 ```

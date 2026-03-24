@@ -26,13 +26,10 @@ install:
 	install -m 755 hooks/claude-done.sh $(HOOKDIR)/claude-done.sh
 	install -m 755 hooks/claude-notify.sh $(HOOKDIR)/claude-notify.sh
 	install -m 755 hooks/codex-done.sh $(HOOKDIR)/codex-done.sh
-	install -m 755 hooks/codex-notify.sh $(HOOKDIR)/codex-notify.sh
 	install -m 755 hooks/gemini-done.sh $(HOOKDIR)/gemini-done.sh
 	install -m 755 hooks/gemini-notify.sh $(HOOKDIR)/gemini-notify.sh
 	install -m 755 hooks/copilot-done.sh $(HOOKDIR)/copilot-done.sh
-	install -m 755 hooks/copilot-notify.sh $(HOOKDIR)/copilot-notify.sh
 	install -m 755 hooks/cursor-done.sh $(HOOKDIR)/cursor-done.sh
-	install -m 755 hooks/cursor-notify.sh $(HOOKDIR)/cursor-notify.sh
 	install -m 644 VERSION $(PREFIX)/share/shelldone/VERSION
 	install -m 644 completions/shelldone.bash $(BASH_COMPDIR)/shelldone
 	install -m 644 completions/shelldone.zsh $(ZSH_COMPDIR)/_shelldone

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# codex-done.sh - Codex CLI (OpenAI) Stop hook
-# Sends a notification when Codex CLI finishes its turn.
-# Configured in ~/.codex/config.json as an experimental hook.
+# codex-done.sh - Codex CLI (OpenAI) notify hook
+# Sends a notification when Codex CLI finishes its turn (agent-turn-complete).
+# Configured in ~/.codex/config.toml as: notify = ["/path/to/codex-done.sh"]
 
 set -euo pipefail
 

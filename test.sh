@@ -407,20 +407,8 @@ run_test "claude-notify.sh processes JSON event" test_claude_notify_runs
 
 # ── Codex CLI Notification Hook ──────────────────────────────────────────────
 
-header "Codex CLI Notification Hook"
-
-test_codex_notify_executable() {
-  [[ -x "${SCRIPT_DIR}/hooks/codex-notify.sh" ]]
-}
-test_codex_notify_runs() {
-  echo '{"title":"test","message":"hello"}' | "${SCRIPT_DIR}/hooks/codex-notify.sh" 2>/dev/null
-}
-
-run_test "codex-notify.sh is executable" test_codex_notify_executable
-info "Sending test notification event..."
-run_test "codex-notify.sh processes JSON event" test_codex_notify_runs
-
-# ── Gemini CLI Notification Hook ─────────────────────────────────────────────
+# NOTE: Codex CLI, Copilot CLI, and Cursor do not support notification/waiting-for-input
+# hook events. Only Claude Code and Gemini CLI have notification hooks.
 
 header "Gemini CLI Notification Hook"
 
@@ -434,36 +422,6 @@ test_gemini_notify_runs() {
 run_test "gemini-notify.sh is executable" test_gemini_notify_executable
 info "Sending test notification event..."
 run_test "gemini-notify.sh processes JSON event" test_gemini_notify_runs
-
-# ── Copilot CLI Notification Hook ────────────────────────────────────────────
-
-header "Copilot CLI Notification Hook"
-
-test_copilot_notify_executable() {
-  [[ -x "${SCRIPT_DIR}/hooks/copilot-notify.sh" ]]
-}
-test_copilot_notify_runs() {
-  echo '{"title":"test","message":"hello"}' | "${SCRIPT_DIR}/hooks/copilot-notify.sh" 2>/dev/null
-}
-
-run_test "copilot-notify.sh is executable" test_copilot_notify_executable
-info "Sending test notification event..."
-run_test "copilot-notify.sh processes JSON event" test_copilot_notify_runs
-
-# ── Cursor Notification Hook ─────────────────────────────────────────────────
-
-header "Cursor Notification Hook"
-
-test_cursor_notify_executable() {
-  [[ -x "${SCRIPT_DIR}/hooks/cursor-notify.sh" ]]
-}
-test_cursor_notify_runs() {
-  echo '{"title":"test","message":"hello"}' | "${SCRIPT_DIR}/hooks/cursor-notify.sh" 2>/dev/null
-}
-
-run_test "cursor-notify.sh is executable" test_cursor_notify_executable
-info "Sending test notification event..."
-run_test "cursor-notify.sh processes JSON event" test_cursor_notify_runs
 
 # ── Available Tools ──────────────────────────────────────────────────────────
 
@@ -3561,23 +3519,19 @@ test_claude_notify_setup_idempotent() {
 }
 run_test "Claude Notification hook setup is idempotent" test_claude_notify_setup_idempotent
 
-# Codex: setup registers both Stop and Notification hooks
-test_codex_setup_registers_both_hooks() {
+# Codex: setup registers notify hook in config.toml
+test_codex_setup_registers_notify_hook() {
   local tmpdir
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.codex"
-  echo '{}' > "$tmpdir/.codex/config.json"
+  touch "$tmpdir/.codex/config.toml"
   HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup codex-hook &>/dev/null
-  local content
-  content=$(cat "$tmpdir/.codex/config.json")
-  echo "$content" | grep -q "codex-done.sh" && \
-  echo "$content" | grep -q "codex-notify.sh" && \
-  echo "$content" | grep -q '"Notification"'
+  grep -q "codex-done.sh" "$tmpdir/.codex/config.toml"
   local rc=$?
   rm -rf "$tmpdir"
   return $rc
 }
-run_test "Codex setup registers both Stop and Notification hooks" test_codex_setup_registers_both_hooks
+run_test "Codex setup registers notify hook in config.toml" test_codex_setup_registers_notify_hook
 
 # Gemini: setup registers both turn_end and notification hooks
 test_gemini_setup_registers_both_hooks() {
@@ -3597,23 +3551,22 @@ test_gemini_setup_registers_both_hooks() {
 }
 run_test "Gemini setup registers both turn_end and notification hooks" test_gemini_setup_registers_both_hooks
 
-# Copilot: setup creates both hook files
-test_copilot_setup_creates_both_hook_files() {
+# Copilot: setup creates sessionEnd hook file only
+test_copilot_setup_creates_session_end_hook() {
   local tmpdir
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.github/hooks"
   HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup copilot-hook &>/dev/null
   [[ -f "$tmpdir/.github/hooks/shelldone-session-end.json" ]] && \
-  [[ -f "$tmpdir/.github/hooks/shelldone-notification.json" ]] && \
-  grep -q "copilot-notify.sh" "$tmpdir/.github/hooks/shelldone-notification.json"
+  ! [[ -f "$tmpdir/.github/hooks/shelldone-notification.json" ]]
   local rc=$?
   rm -rf "$tmpdir"
   return $rc
 }
-run_test "Copilot setup creates both sessionEnd and notification hook files" test_copilot_setup_creates_both_hook_files
+run_test "Copilot setup creates sessionEnd hook file only" test_copilot_setup_creates_session_end_hook
 
-# Cursor: setup registers both stop and notification hooks
-test_cursor_setup_registers_both_hooks() {
+# Cursor: setup registers stop hook only (no notification support)
+test_cursor_setup_registers_stop_hook() {
   local tmpdir
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.cursor"
@@ -3622,13 +3575,12 @@ test_cursor_setup_registers_both_hooks() {
   local content
   content=$(cat "$tmpdir/.cursor/hooks.json")
   echo "$content" | grep -q "cursor-done.sh" && \
-  echo "$content" | grep -q "cursor-notify.sh" && \
-  echo "$content" | grep -q '"notification"'
+  ! echo "$content" | grep -q '"notification"'
   local rc=$?
   rm -rf "$tmpdir"
   return $rc
 }
-run_test "Cursor setup registers both stop and notification hooks" test_cursor_setup_registers_both_hooks
+run_test "Cursor setup registers stop hook only" test_cursor_setup_registers_stop_hook
 
 # Claude: uninstall removes both hooks
 test_claude_uninstall_removes_both_hooks() {
@@ -3652,22 +3604,20 @@ test_claude_uninstall_removes_both_hooks() {
 }
 run_test "Claude uninstall removes both Stop and Notification hooks" test_claude_uninstall_removes_both_hooks
 
-# Copilot: uninstall removes both hook files
-test_copilot_uninstall_removes_both_hook_files() {
+# Copilot: uninstall removes sessionEnd hook file
+test_copilot_uninstall_removes_hook_file() {
   local tmpdir
   tmpdir=$(mktemp -d)
   mkdir -p "$tmpdir/.github/hooks"
   HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" setup copilot-hook &>/dev/null
-  [[ -f "$tmpdir/.github/hooks/shelldone-session-end.json" ]] && \
-  [[ -f "$tmpdir/.github/hooks/shelldone-notification.json" ]] || { rm -rf "$tmpdir"; return 1; }
+  [[ -f "$tmpdir/.github/hooks/shelldone-session-end.json" ]] || { rm -rf "$tmpdir"; return 1; }
   HOME="$tmpdir" "${SCRIPT_DIR}/bin/shelldone" uninstall &>/dev/null
-  ! [[ -f "$tmpdir/.github/hooks/shelldone-session-end.json" ]] && \
-  ! [[ -f "$tmpdir/.github/hooks/shelldone-notification.json" ]]
+  ! [[ -f "$tmpdir/.github/hooks/shelldone-session-end.json" ]]
   local rc=$?
   rm -rf "$tmpdir"
   return $rc
 }
-run_test "Copilot uninstall removes both hook files" test_copilot_uninstall_removes_both_hook_files
+run_test "Copilot uninstall removes sessionEnd hook file" test_copilot_uninstall_removes_hook_file
 
 # ── AI Hook Toggle ────────────────────────────────────────────────────────────
 

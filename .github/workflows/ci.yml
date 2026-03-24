@@ -20,10 +20,10 @@ jobs:
             lib/auto-notify.bash lib/external-notify.sh lib/state.sh \
             lib/ai-hook-common.sh lib/tui.sh \
             hooks/claude-done.sh hooks/claude-notify.sh \
-            hooks/codex-done.sh hooks/codex-notify.sh \
+            hooks/codex-done.sh \
             hooks/gemini-done.sh hooks/gemini-notify.sh \
-            hooks/copilot-done.sh hooks/copilot-notify.sh \
-            hooks/cursor-done.sh hooks/cursor-notify.sh \
+            hooks/copilot-done.sh \
+            hooks/cursor-done.sh \
             install.sh uninstall.sh test.sh \
             completions/shelldone.bash
           shellcheck --severity=error -s bash completions/shelldone.zsh
