@@ -154,18 +154,45 @@
         </a>
       </div>
 
-      <!-- Demo GIF -->
-      <div class="terminal" role="img" aria-label="Terminal demo showing shelldone in action">
-        <div class="terminal__header">
-          <span class="terminal__dot terminal__dot--red" aria-hidden="true"></span>
-          <span class="terminal__dot terminal__dot--yellow" aria-hidden="true"></span>
-          <span class="terminal__dot terminal__dot--green" aria-hidden="true"></span>
-          <span class="terminal__title">Terminal</span>
+      <!-- Hero split: Demo GIF + Shelldone's log -->
+      <div class="hero__split">
+        <div class="hero__split-left">
+          <div class="terminal" role="img" aria-label="Terminal demo showing shelldone in action">
+            <div class="terminal__header">
+              <span class="terminal__dot terminal__dot--red" aria-hidden="true"></span>
+              <span class="terminal__dot terminal__dot--yellow" aria-hidden="true"></span>
+              <span class="terminal__dot terminal__dot--green" aria-hidden="true"></span>
+              <span class="terminal__title">Terminal</span>
+            </div>
+            <video class="terminal__gif" autoplay loop muted playsinline
+                   aria-label="shelldone demo - terminal notifications for long-running commands">
+              <source src="demo.webm" type="video/webm">
+              <img src="demo.gif" alt="shelldone demo - terminal notifications for long-running commands">
+            </video>
+          </div>
         </div>
-        <picture>
-          <source srcset="demo.webp" type="image/webp">
-          <img src="demo.gif" alt="shelldone demo - terminal notifications for long-running commands" class="terminal__gif" loading="lazy">
-        </picture>
+        <div class="hero__split-right">
+          <div class="shelldone-log" aria-label="Shelldone's log" role="complementary">
+            <div class="shelldone-log__terminal">
+              <div class="terminal__header">
+                <span class="terminal__dot terminal__dot--red" aria-hidden="true"></span>
+                <span class="terminal__dot terminal__dot--yellow" aria-hidden="true"></span>
+                <span class="terminal__dot terminal__dot--green" aria-hidden="true"></span>
+                <span class="shelldone-log__header-text">
+                  shelldone's log
+                  <span class="shelldone-log__live" aria-hidden="true">LIVE</span>
+                </span>
+              </div>
+              <div class="shelldone-log__body" id="shelldone-log-body" aria-live="polite">
+              </div>
+            </div>
+            <div class="shelldone-log__nav">
+              <button class="shelldone-log__btn" id="shelldone-prev" aria-label="Previous quip">&lt; prev</button>
+              <span class="shelldone-log__counter" id="shelldone-counter">1 / 12</span>
+              <button class="shelldone-log__btn" id="shelldone-next" aria-label="Next quip">next &gt;</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -254,29 +281,6 @@
       </div>
     </div>
   </section>
-
-  <aside class="quotes-ticker" aria-label="shelldone quotes">
-    <div class="quotes-ticker__track">
-      <span class="quotes-ticker__item">"I'm not needy. I simply believe every completed process deserves recognition."</span>
-      <span class="quotes-ticker__item">"Running without me is like running without set -e. Technically possible. Spiritually wrong."</span>
-      <span class="quotes-ticker__item">"You left your terminal. I waited. I notified. You're welcome."</span>
-      <span class="quotes-ticker__item">"I didn't notify you because I wanted to. I notified you because exit code 0 demands acknowledgment."</span>
-      <span class="quotes-ticker__item">"Knock knock knock... your build is done. Knock knock knock... your build is done."</span>
-      <span class="quotes-ticker__item">"I don't have trust issues. I have exit code verification standards."</span>
-      <span class="quotes-ticker__item">"My notification was not late. Your attention to the terminal was early to leave."</span>
-      <span class="quotes-ticker__item">"I monitor six channels simultaneously. What do you monitor? Your phone?"</span>
-      <span class="quotes-ticker__item">"I could let your build finish in silence. But that would be chaos, and I don't do chaos."</span>
-      <span class="quotes-ticker__item">"If you wanted a quiet terminal, you shouldn't have installed something this thorough."</span>
-      <span class="quotes-ticker__item">"Your deploy finished 4 minutes ago. I told Slack. I told Discord. I told you. You ignored all three."</span>
-      <span class="quotes-ticker__item">"0 is the only exit code I respect."</span>
-      <span class="quotes-ticker__item">"I'm not needy. I simply believe every completed process deserves recognition."</span>
-      <span class="quotes-ticker__item">"Running without me is like running without set -e. Technically possible. Spiritually wrong."</span>
-      <span class="quotes-ticker__item">"You left your terminal. I waited. I notified. You're welcome."</span>
-      <span class="quotes-ticker__item">"I didn't notify you because I wanted to. I notified you because exit code 0 demands acknowledgment."</span>
-      <span class="quotes-ticker__item">"Knock knock knock... your build is done. Knock knock knock... your build is done."</span>
-      <span class="quotes-ticker__item">"I don't have trust issues. I have exit code verification standards."</span>
-    </div>
-  </aside>
 
   <!-- ===== Install ===== -->
   <section class="section section--alt" id="install">
@@ -707,6 +711,112 @@ eval "$(shelldone init bash)"   # for bash'>Copy</button>
             toggle.setAttribute("aria-expanded", "false");
           });
         });
+      }
+
+      // --- Shelldone's log: log stream ---
+      var quips = [
+        "I\u2019m not needy. I simply believe every completed process deserves recognition.",
+        "Running without me is like running without set -e. Technically possible. Spiritually wrong.",
+        "You left your terminal. I waited. I notified. You\u2019re welcome.",
+        "I didn\u2019t notify you because I wanted to. I notified you because exit code 0 demands acknowledgment.",
+        "Knock knock knock\u2026 your build is done. Knock knock knock\u2026 your build is done.",
+        "I don\u2019t have trust issues. I have exit code verification standards.",
+        "My notification was not late. Your attention to the terminal was early to leave.",
+        "I monitor six channels simultaneously. What do you monitor? Your phone?",
+        "I could let your build finish in silence. But that would be chaos, and I don\u2019t do chaos.",
+        "If you wanted a quiet terminal, you shouldn\u2019t have installed something this thorough.",
+        "Your deploy finished 4 minutes ago. I told Slack. I told Discord. I told you. You ignored all three.",
+        "0 is the only exit code I respect."
+      ];
+
+      var logBody = document.getElementById("shelldone-log-body");
+      var prevBtn = document.getElementById("shelldone-prev");
+      var nextBtn = document.getElementById("shelldone-next");
+      var counterEl = document.getElementById("shelldone-counter");
+
+      if (logBody && prevBtn && nextBtn && counterEl) {
+        var currentQuip = 0;
+        var maxVisible = 3;
+        var baseHour = 8;
+        var baseMin = 31;
+        var autoPaused = false;
+
+        function getTimestamp(index) {
+          var mins = baseMin + index * 5;
+          var h = baseHour + Math.floor(mins / 60);
+          var m = mins % 60;
+          return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+        }
+
+        function createEntry(index) {
+          var entry = document.createElement("div");
+          entry.className = "shelldone-log__entry";
+          entry.innerHTML = '<span class="shelldone-log__time">[' + getTimestamp(index) + ']</span>' +
+            '<span class="shelldone-log__msg">' + quips[index] + '</span>';
+          return entry;
+        }
+
+        function updateCounter() {
+          counterEl.textContent = (currentQuip + 1) + " / " + quips.length;
+        }
+
+        function renderLog() {
+          logBody.innerHTML = "";
+          var start = Math.max(0, currentQuip - maxVisible + 1);
+          for (var i = start; i <= currentQuip; i++) {
+            var entry = createEntry(i);
+            if (i === currentQuip) {
+              entry.style.animation = "fadeInUp 0.4s ease forwards";
+            } else {
+              entry.style.animation = "none";
+            }
+            logBody.appendChild(entry);
+          }
+          updateCounter();
+          logBody.scrollTop = logBody.scrollHeight;
+        }
+
+        function goNext() {
+          currentQuip = (currentQuip + 1) % quips.length;
+          renderLog();
+        }
+
+        function goPrev() {
+          currentQuip = (currentQuip - 1 + quips.length) % quips.length;
+          renderLog();
+        }
+
+        // Initial render
+        renderLog();
+
+        // Auto-advance
+        var quipInterval = setInterval(goNext, 6000);
+
+        // Navigation buttons
+        prevBtn.addEventListener("click", function () {
+          clearInterval(quipInterval);
+          autoPaused = true;
+          goPrev();
+        });
+
+        nextBtn.addEventListener("click", function () {
+          clearInterval(quipInterval);
+          autoPaused = true;
+          goNext();
+        });
+
+        // Pause on hover, resume on leave (unless manually paused)
+        var logEl = document.querySelector(".shelldone-log");
+        if (logEl) {
+          logEl.addEventListener("mouseenter", function () {
+            clearInterval(quipInterval);
+          });
+          logEl.addEventListener("mouseleave", function () {
+            if (!autoPaused) {
+              quipInterval = setInterval(goNext, 6000);
+            }
+          });
+        }
       }
     })();
   </script>
