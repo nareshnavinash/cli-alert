@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/banner.svg" alt="shelldone banner" width="100%">
+</p>
+
 # shelldone
 
 Cross-platform terminal notification system for long-running commands. Get desktop notifications, sounds, and external alerts (Slack, Discord, Telegram, and more) when your builds, deploys, and tests finish.
