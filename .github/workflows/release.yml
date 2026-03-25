@@ -13,7 +13,7 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -101,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.ref, '-') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -115,7 +115,7 @@ jobs:
           echo "SHA256=$(sha256sum tarball.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Update Homebrew formula
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: nareshnavinash/homebrew-tap
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -191,7 +191,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.ref, '-') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Extract version from tag
         id: version
@@ -205,7 +205,7 @@ jobs:
           echo "SHA256=$(sha256sum tarball.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
       - name: Checkout Scoop bucket
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: nareshnavinash/scoop-bucket
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -281,7 +281,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout gh-pages
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: gh-pages
           path: gh-pages
@@ -309,7 +309,7 @@ jobs:
     needs: release
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Pack and push
         if: ${{ env.CHOCO_API_KEY != '' }}
