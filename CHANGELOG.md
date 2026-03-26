@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-03-26
+
+### Fixed
+
+- **AI CLI hook latency**: Reduced hook blocking time from ~1s to <50ms, eliminating "7u" garbage characters that appeared when typing quickly after a Claude Code session ended. The race condition was caused by the hook's synchronous operations widening the window between terminal mode restoration and user input.
+  - Hook notifications now run in a double-forked detached process (`setsid` on Linux, `disown` on macOS) so the hook script exits immediately
+  - JSON field extraction uses pure-bash regex first, falling back to python3 only for complex payloads (saves 25–275ms python3 startup)
+  - Focus detection (`osascript`) is skipped in hook context where it is unreliable and adds ~200ms of unnecessary latency
+
 ## [1.4.0] - 2026-03-21
 
 ### Added

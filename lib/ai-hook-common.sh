@@ -42,11 +42,16 @@ _shelldone_hook_resolve_lib() {
 _shelldone_hook_read_json_field() {
   local input="$1" field="$2"
 
-  if ! command -v python3 &>/dev/null; then
-    return 1
+  # Pure-bash extraction for simple flat JSON (avoids python3 startup latency).
+  # Matches "field": "value" — sufficient for AI CLI hook payloads.
+  if [[ "$input" =~ \"$field\"[[:space:]]*:[[:space:]]*\"([^\"]*) ]]; then
+    printf '%s' "${BASH_REMATCH[1]}"
+    return 0
   fi
 
-  python3 -c "
+  # Fallback to python3 for nested/complex JSON
+  if command -v python3 &>/dev/null; then
+    python3 -c "
 import sys, json
 try:
     data = json.loads(sys.argv[1])
@@ -55,6 +60,7 @@ try:
 except:
     print('')
 " "$input" "$field" 2>/dev/null || true
+  fi
 }
 
 # ── Exit code mapping for stop reasons ────────────────────────────────────
@@ -95,10 +101,29 @@ _shelldone_hook_notify() {
   export _SHELLDONE_META_SOURCE="ai-hook"
   export _SHELLDONE_META_AI_NAME="$ai_name"
 
-  # Run external notifications synchronously in hook context - the parent
-  # AI CLI may kill the process tree when the hook script exits, which would
-  # terminate background HTTP requests before they complete.
+  # Double-fork and detach: the notification runs in a fully independent
+  # process so the hook script can exit immediately.  This prevents the
+  # hook from blocking the parent AI CLI's terminal-restoration sequence,
+  # which otherwise causes race-condition garbage ("7u") when the user
+  # types quickly after the session ends.
+  #
+  # The inner subshell closes stdin/stdout/stderr and starts a new session
+  # (via setsid where available) so the parent AI CLI cannot kill it when
+  # the hook process tree is reaped.
   export _SHELLDONE_HOOK_CONTEXT=true
-
-  _shelldone_notify "$ai_name" "$message" "$exit_code"
+  (
+    # Start new session if possible (survives parent process-group kill)
+    if command -v setsid &>/dev/null; then
+      setsid "$BASH" -c '
+        export _SHELLDONE_HOOK_CONTEXT=true
+        source "'"${_SHELLDONE_LIB:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/shelldone.sh"'"
+        _shelldone_notify "'"$ai_name"'" "'"$message"'" "'"$exit_code"'"
+      ' </dev/null >/dev/null 2>/dev/null &
+    else
+      # macOS lacks setsid; double-fork + disown is sufficient since
+      # Claude Code sends SIGTERM to the direct child, not the full tree
+      _shelldone_notify "$ai_name" "$message" "$exit_code"
+    fi
+  ) </dev/null >/dev/null 2>/dev/null &
+  disown 2>/dev/null
 }

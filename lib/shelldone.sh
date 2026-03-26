@@ -438,6 +438,9 @@ _shelldone_terminal_focused_linux() {
 }
 
 _shelldone_terminal_focused() {
+  # Skip in hook context — focus detection is unreliable during AI CLI exit
+  # and the osascript call adds ~200ms of unnecessary latency
+  [[ "${_SHELLDONE_HOOK_CONTEXT:-}" == "true" ]] && return 1
   [[ "$SHELLDONE_FOCUS_DETECT" != "true" ]] && return 1
   case "$_SHELLDONE_PLATFORM" in
     darwin)  _shelldone_terminal_focused_darwin ;;
