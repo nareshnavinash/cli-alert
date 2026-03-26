@@ -1,5 +1,5 @@
 Package: shelldone
-Version: 1.3.1-1
+Version: 1.4.1-1
 Architecture: all
 Maintainer: Naresh Sekar <nareshnavinash@gmail.com>
 Depends: bash (>= 4.0)
@@ -8,11 +8,11 @@ Suggests: espeak
 Homepage: https://github.com/nareshnavinash/shelldone
 Priority: optional
 Section: utils
-Filename: pool/main/s/shelldone/shelldone_1.3.1-1_all.deb
-Size: 39324
-SHA256: b7549b01d3f9a9e03e6699a31c49e2ead1d104074d00eec78852b4ef979daed4
-SHA1: 57179e36dc99f7caa71ebd24d7adfb87fc2a56ff
-MD5sum: bc5f217d0780e7fca8ac155d57c99a3d
+Filename: pool/main/s/shelldone/shelldone_1.4.1-1_all.deb
+Size: 40190
+SHA256: 4cfe49155b0f353f342231a6d7c5b9de1812c42f0d8f9726412b2c06df4080b2
+SHA1: e68068ba6ebb4554562d71fe0cbf51939414c5d0
+MD5sum: b253874ed707c8c7dff740b5b776d6d8
 Description: Terminal process completion notifier
  Sends OS-native desktop notifications and sounds when long-running
  terminal commands complete. Cross-platform: macOS, Linux, WSL.
