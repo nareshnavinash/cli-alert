@@ -56,7 +56,7 @@ Cross-platform terminal notification system for long-running commands. Get deskt
 - **AI CLI integration** - Claude Code, Codex CLI, Gemini CLI, Copilot CLI, Cursor (hook-based), plus Aider (wrapper)
 - **Smart focus detection** - suppresses notifications when you're already looking at the terminal
 - **Glob-based exclusions** - skip commands like `npm*`, `ssh`, `vim`, etc.
-- **Notification control** - mute, toggle layers (sound/desktop/voice/channels), schedule quiet hours
+- **Notification control** - per-channel mute, toggle layers (sound/desktop/voice/channels), schedule quiet hours
 - **Shell completions** for bash and zsh
 - **Zero dependencies** - uses only built-in system tools (`curl`/`wget` optional for external channels)
 - **Fast** - adds less than 50ms to shell startup time
@@ -227,8 +227,11 @@ Supports Claude Code, Codex CLI, Gemini CLI, Copilot CLI, and Cursor. Aider uses
 > *"I could let your build finish in silence. But that would be chaos, and I don't do chaos."* - shelldone
 
 ```bash
-shelldone mute 30m               # mute for 30 minutes
-shelldone unmute                  # resume
+shelldone mute 30m               # mute all channels for 30 minutes
+shelldone mute slack 2h          # mute only Slack for 2 hours
+shelldone mute desktop           # mute desktop notifications indefinitely
+shelldone unmute slack            # unmute just Slack
+shelldone unmute                  # resume all notifications
 shelldone toggle sound off        # disable sound, keep desktop popups
 shelldone toggle external off     # disable all external channels
 shelldone schedule 22:00-08:00    # set quiet hours
@@ -288,8 +291,8 @@ Setup guides for all 6 channels: **[docs/external-channels.md](docs/external-cha
 | `shelldone sounds` | List available system sounds for your platform |
 | `shelldone exclude [list\|add\|remove]` | Manage auto-notify exclusion list |
 | `shelldone webhook [status\|test <channel>]` | Manage and test external notification channels |
-| `shelldone mute [duration]` | Mute all notifications (e.g., `30m`, `2h`, `1h30m`) |
-| `shelldone unmute` | Resume notifications |
+| `shelldone mute [channel] [duration]` | Mute notifications globally or per channel (e.g., `slack 2h`) |
+| `shelldone unmute [channel]` | Resume notifications (all or specific channel) |
 | `shelldone toggle [layer [on\|off]]` | Toggle notification layers (sound, desktop, voice, channels) |
 | `shelldone schedule [HH:MM-HH:MM\|off]` | Set or clear daily quiet hours |
 | `shelldone test` | Run the full verification test suite (452 tests) |

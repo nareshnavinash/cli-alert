@@ -93,7 +93,7 @@
                     |
                     v
           [_shelldone_is_muted?]---yes---&gt; log to history, return
-                    |no
+                    |no                  (global mute check only)
                     v
           [_shelldone_is_quiet_hours?]---yes---&gt; log to history, return
                     |no
@@ -105,12 +105,14 @@
           v                   v
   [External dispatch]   [Focus detection]
   (background, async)         |
-          |             [terminal focused?]
-          |                   |
-          |             yes---+---no
+  per-channel checks:   [terminal focused?]
+  _shelldone_channel_        |
+  active(channel)      yes---+---no
           |              |        |
           |           return      v
           |                 [Platform notifier]
+          |                 per-channel checks:
+          |                 _shelldone_channel_active(channel)
           |                       |
           |           +-----------+-----------+-----------+
           |           |           |           |           |
@@ -282,10 +284,12 @@
 
 Format (key=value, one per line):
 +-----------------------------------+
-| mute_until=1711036800             |
+| mute_until=1711036800             |  &lt;- global mute (all channels)
+| mute_slack_until=1711040400       |  &lt;- per-channel mute (Slack only)
+| mute_desktop_until=0             |  &lt;- per-channel mute (indefinite)
 | quiet_start=22:00                 |
 | quiet_end=08:00                   |
-| sound=off                         |
+| sound=off                         |  &lt;- toggle (permanent on/off)
 | slack=off                         |
 | claude-code=off                   |
 +-----------------------------------+
@@ -297,18 +301,29 @@ Operations:
   _shelldone_state_dump            Print entire state file
 
 Checks:
-  _shelldone_is_muted
+  _shelldone_is_muted [CHANNEL]
        |
-       +---&gt; Read mute_until
+       +---&gt; Read mute_until (global)
        +---&gt; "0" = indefinite mute ---&gt; muted
        +---&gt; mute_until &gt; now ---&gt; muted
-       +---&gt; mute_until &lt;= now ---&gt; expired, delete key, not muted
+       +---&gt; mute_until &lt;= now ---&gt; expired, delete key
+       |
+       +---&gt; If channel given: read mute_&lt;channel&gt;_until
+       +---&gt; "0" = channel muted indefinitely ---&gt; muted
+       +---&gt; mute_&lt;channel&gt;_until &gt; now ---&gt; muted
+       +---&gt; expired ---&gt; delete key, not muted
 
   _shelldone_channel_enabled CHANNEL
        |
-       +---&gt; Read channel key
+       +---&gt; Read channel key (toggle)
        +---&gt; Missing = on (default)
        +---&gt; "off" = disabled
+
+  _shelldone_channel_active CHANNEL
+       |
+       +---&gt; _shelldone_channel_enabled? ---&gt; no ---&gt; not active
+       +---&gt; _shelldone_is_muted(channel)? ---&gt; yes ---&gt; not active
+       +---&gt; active
 
   _shelldone_is_quiet_hours
        |

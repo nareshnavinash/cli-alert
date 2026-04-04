@@ -129,7 +129,11 @@ shelldone status [--full]
          |
          v
   [Show mute/schedule state]
-         +---> Read state file for mute_until, quiet hours
+         +---> Read state file for mute_until, mute_<channel>_until, quiet hours
+         |
+         v
+  [Show channel dashboard]
+         +---> Per-channel status: on / muted (countdown) / toggled off / not configured
          |
          v
   [Show external channels]
@@ -233,37 +237,50 @@ shelldone webhook [action] [channel]
 
 ## mute / unmute
 
-Temporarily suppress all notifications.
+Temporarily suppress notifications — globally or per channel.
 
 ```bash
-shelldone mute           # indefinitely
-shelldone mute 30m       # for 30 minutes
-shelldone mute 2h        # for 2 hours
-shelldone unmute          # resume
+shelldone mute                # interactive menu (TTY) or mute all indefinitely
+shelldone mute 30m            # mute all for 30 minutes
+shelldone mute 2h             # mute all for 2 hours
+shelldone mute slack 2h       # mute only Slack for 2 hours
+shelldone mute desktop        # mute desktop notifications indefinitely
+shelldone unmute              # resume all (clears global + per-channel mutes)
+shelldone unmute slack        # resume only Slack
 ```
 
+Valid channels: `desktop`, `sound`, `voice`, `slack`, `discord`, `telegram`, `email`, `whatsapp`, `webhook`.
+
 ```
-shelldone mute [duration]
+shelldone mute [channel] [duration]
          |
          v
-  [Duration given?]---no---> [state_write mute_until=0]
-         |yes                  (indefinite mute)
+  [Channel given?]---no---> [Duration given?]---no---> [TTY?]---yes---> [Interactive menu]
+         |yes                    |yes                     |no
+         v                       v                        v
+  [Validate channel]     [Global timed mute]       [state_write mute_until=0]
+         |                state_write mute_until     (global indefinite mute)
+         v                =(now + seconds)
+  [Duration given?]---no---> [state_write mute_<channel>_until=0]
+         |yes                  (per-channel indefinite mute)
          v
   [_shelldone_parse_duration]
          |  "30m" -> 1800
          |  "2h"  -> 7200
-         |  "1h30m" -> 5400
          v
-  [state_write mute_until=(now + seconds)]
+  [state_write mute_<channel>_until=(now + seconds)]
          |
          v
   State file: ~/.local/state/shelldone/state
 
 
-shelldone unmute
+shelldone unmute [channel]
          |
          v
-  [state_delete mute_until]
+  [Channel given?]---no---> [_shelldone_unmute_all]
+         |yes                 (deletes mute_until + all mute_*_until keys)
+         v
+  [state_delete mute_<channel>_until]
 ```
 
 ## toggle

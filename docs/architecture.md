@@ -73,7 +73,7 @@ Command completes (exit code captured)
                     |
                     v
           [_shelldone_is_muted?]---yes---> log to history, return
-                    |no
+                    |no                  (global mute check only)
                     v
           [_shelldone_is_quiet_hours?]---yes---> log to history, return
                     |no
@@ -85,12 +85,14 @@ Command completes (exit code captured)
           v                   v
   [External dispatch]   [Focus detection]
   (background, async)         |
-          |             [terminal focused?]
-          |                   |
-          |             yes---+---no
+  per-channel checks:   [terminal focused?]
+  _shelldone_channel_        |
+  active(channel)      yes---+---no
           |              |        |
           |           return      v
           |                 [Platform notifier]
+          |                 per-channel checks:
+          |                 _shelldone_channel_active(channel)
           |                       |
           |           +-----------+-----------+-----------+
           |           |           |           |           |
@@ -285,10 +287,12 @@ State file: ${XDG_STATE_HOME:-~/.local/state}/shelldone/state
 
 Format (key=value, one per line):
 +-----------------------------------+
-| mute_until=1711036800             |
+| mute_until=1711036800             |  <- global mute (all channels)
+| mute_slack_until=1711040400       |  <- per-channel mute (Slack only)
+| mute_desktop_until=0             |  <- per-channel mute (indefinite)
 | quiet_start=22:00                 |
 | quiet_end=08:00                   |
-| sound=off                         |
+| sound=off                         |  <- toggle (permanent on/off)
 | slack=off                         |
 | claude-code=off                   |
 +-----------------------------------+
@@ -300,18 +304,29 @@ Operations:
   _shelldone_state_dump            Print entire state file
 
 Checks:
-  _shelldone_is_muted
+  _shelldone_is_muted [CHANNEL]
        |
-       +---> Read mute_until
+       +---> Read mute_until (global)
        +---> "0" = indefinite mute ---> muted
        +---> mute_until > now ---> muted
-       +---> mute_until <= now ---> expired, delete key, not muted
+       +---> mute_until <= now ---> expired, delete key
+       |
+       +---> If channel given: read mute_<channel>_until
+       +---> "0" = channel muted indefinitely ---> muted
+       +---> mute_<channel>_until > now ---> muted
+       +---> expired ---> delete key, not muted
 
   _shelldone_channel_enabled CHANNEL
        |
-       +---> Read channel key
+       +---> Read channel key (toggle)
        +---> Missing = on (default)
        +---> "off" = disabled
+
+  _shelldone_channel_active CHANNEL
+       |
+       +---> _shelldone_channel_enabled? ---> no ---> not active
+       +---> _shelldone_is_muted(channel)? ---> yes ---> not active
+       +---> active
 
   _shelldone_is_quiet_hours
        |
