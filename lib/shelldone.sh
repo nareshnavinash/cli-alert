@@ -212,13 +212,22 @@ _shelldone_resolve_workspace() {
   printf '%s' "$PWD"
 }
 
+# ── Channel active check (toggle + per-channel mute) ───────────────────────
+
+_shelldone_channel_active() {
+  local channel="$1"
+  _shelldone_channel_enabled "$channel" 2>/dev/null || return 1
+  ! _shelldone_is_muted "$channel" 2>/dev/null || return 1
+  return 0
+}
+
 # ── Platform notification functions ──────────────────────────────────────────
 
 _shelldone_notify_darwin() {
   local title="$1" message="$2" exit_code="$3"
   _shelldone_debug "darwin notifier: title='$title' exit=$exit_code"
 
-  if ! _shelldone_channel_enabled "desktop" 2>/dev/null; then
+  if ! _shelldone_channel_active "desktop" 2>/dev/null; then
     _shelldone_debug "desktop channel toggled off"
   elif command -v terminal-notifier &>/dev/null; then
     local tn_args=(-title "$title" -message "$message")
@@ -251,7 +260,7 @@ _shelldone_notify_darwin() {
   fi
 
   # Sound (background with timeout)
-  if _shelldone_channel_enabled "sound" 2>/dev/null; then
+  if _shelldone_channel_active "sound" 2>/dev/null; then
     local sound
     if [[ "$exit_code" -eq 0 ]]; then
       sound="$SHELLDONE_SOUND_SUCCESS"
@@ -273,7 +282,7 @@ _shelldone_notify_darwin() {
   fi
 
   # TTS (optional, with timeout)
-  if [[ "$SHELLDONE_VOICE" == "true" ]] && _shelldone_channel_enabled "voice" 2>/dev/null; then
+  if [[ "$SHELLDONE_VOICE" == "true" ]] && _shelldone_channel_active "voice" 2>/dev/null; then
     _shelldone_bg_timeout say "$message"
   fi
 }
@@ -283,7 +292,7 @@ _shelldone_notify_linux() {
   _shelldone_debug "linux notifier: title='$title' exit=$exit_code"
 
   # Notification
-  if ! _shelldone_channel_enabled "desktop" 2>/dev/null; then
+  if ! _shelldone_channel_active "desktop" 2>/dev/null; then
     _shelldone_debug "desktop channel toggled off"
   elif command -v notify-send &>/dev/null; then
     # Try custom shelldone icon, fall back to system theme icons
@@ -305,7 +314,7 @@ _shelldone_notify_linux() {
   fi
 
   # Sound (background with timeout, try paplay → aplay → mpv)
-  if _shelldone_channel_enabled "sound" 2>/dev/null; then
+  if _shelldone_channel_active "sound" 2>/dev/null; then
     local sound
     if [[ "$exit_code" -eq 0 ]]; then
       sound="$SHELLDONE_SOUND_SUCCESS"
@@ -332,7 +341,7 @@ _shelldone_notify_linux() {
   fi
 
   # TTS (optional, with timeout)
-  if [[ "$SHELLDONE_VOICE" == "true" ]] && _shelldone_channel_enabled "voice" 2>/dev/null; then
+  if [[ "$SHELLDONE_VOICE" == "true" ]] && _shelldone_channel_active "voice" 2>/dev/null; then
     if command -v espeak &>/dev/null; then
       _shelldone_bg_timeout espeak "$message"
     elif command -v spd-say &>/dev/null; then
@@ -347,7 +356,7 @@ _shelldone_notify_wsl() {
 
   # Notification: try BurntToast → wsl-notify-send → WinRT toast
   # Pass values via environment variables to avoid PowerShell injection
-  if ! _shelldone_channel_enabled "desktop" 2>/dev/null; then
+  if ! _shelldone_channel_active "desktop" 2>/dev/null; then
     _shelldone_debug "desktop channel toggled off"
   elif powershell.exe -Command "Get-Module -ListAvailable -Name BurntToast" &>/dev/null 2>&1; then
     SHELLDONE_PS_TITLE="$title" SHELLDONE_PS_MSG="$message" \
@@ -372,7 +381,7 @@ _shelldone_notify_wsl() {
   fi
 
   # Sound (background with timeout, via env var)
-  if _shelldone_channel_enabled "sound" 2>/dev/null && command -v powershell.exe &>/dev/null; then
+  if _shelldone_channel_active "sound" 2>/dev/null && command -v powershell.exe &>/dev/null; then
     local sound
     if [[ "$exit_code" -eq 0 ]]; then
       sound="$SHELLDONE_SOUND_SUCCESS"
@@ -390,7 +399,7 @@ _shelldone_notify_wsl() {
   fi
 
   # TTS (optional, via env var, with timeout)
-  if [[ "$SHELLDONE_VOICE" == "true" ]] && _shelldone_channel_enabled "voice" 2>/dev/null && command -v powershell.exe &>/dev/null; then
+  if [[ "$SHELLDONE_VOICE" == "true" ]] && _shelldone_channel_active "voice" 2>/dev/null && command -v powershell.exe &>/dev/null; then
     SHELLDONE_PS_MSG="$message" \
       _shelldone_bg_timeout powershell.exe -Command 'Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak($env:SHELLDONE_PS_MSG)'
   fi

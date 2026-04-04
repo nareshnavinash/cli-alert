@@ -74,6 +74,14 @@ _shelldone_completions() {
         return 0
       fi
       ;;
+    mute)
+      COMPREPLY=( $(compgen -W "desktop sound voice slack discord telegram email whatsapp webhook" -- "$cur") )
+      return 0
+      ;;
+    unmute)
+      COMPREPLY=( $(compgen -W "desktop sound voice slack discord telegram email whatsapp webhook" -- "$cur") )
+      return 0
+      ;;
     toggle)
       COMPREPLY=( $(compgen -W "sound desktop voice slack discord telegram email whatsapp webhook external claude codex gemini copilot cursor on off" -- "$cur") )
       return 0

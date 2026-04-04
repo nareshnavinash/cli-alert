@@ -2616,6 +2616,115 @@ test_is_muted_expired_cleanup() {
 }
 run_test "is_muted: expired mute auto-cleans state" test_is_muted_expired_cleanup
 
+# -- Per-channel mute --
+
+test_is_muted_channel_not_muted() {
+  rm -f "$(_shelldone_state_file)"
+  ! _shelldone_is_muted "slack"
+}
+run_test "is_muted: channel not muted when no state" test_is_muted_channel_not_muted
+
+test_is_muted_channel_indefinite() {
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "mute_slack_until" "0"
+  _shelldone_is_muted "slack"
+}
+run_test "is_muted: channel muted indefinitely" test_is_muted_channel_indefinite
+
+test_is_muted_channel_future() {
+  rm -f "$(_shelldone_state_file)"
+  local future=$(( $(date +%s) + 3600 ))
+  _shelldone_state_write "mute_slack_until" "$future"
+  _shelldone_is_muted "slack"
+}
+run_test "is_muted: channel muted with future timestamp" test_is_muted_channel_future
+
+test_is_muted_channel_expired() {
+  rm -f "$(_shelldone_state_file)"
+  local past=$(( $(date +%s) - 100 ))
+  _shelldone_state_write "mute_slack_until" "$past"
+  ! _shelldone_is_muted "slack"
+}
+run_test "is_muted: channel expired = not muted" test_is_muted_channel_expired
+
+test_is_muted_channel_expired_cleanup() {
+  rm -f "$(_shelldone_state_file)"
+  local past=$(( $(date +%s) - 100 ))
+  _shelldone_state_write "mute_slack_until" "$past"
+  _shelldone_is_muted "slack" 2>/dev/null || true
+  ! _shelldone_state_read "mute_slack_until" 2>/dev/null
+}
+run_test "is_muted: expired channel mute auto-cleans" test_is_muted_channel_expired_cleanup
+
+test_is_muted_global_overrides_channel() {
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "mute_until" "0"
+  # Global mute active, channel not specifically muted
+  _shelldone_is_muted "slack"
+}
+run_test "is_muted: global mute overrides channel check" test_is_muted_global_overrides_channel
+
+test_is_muted_channel_independent() {
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "mute_slack_until" "0"
+  # Slack is muted but discord is not
+  _shelldone_is_muted "slack" && ! _shelldone_is_muted "discord"
+}
+run_test "is_muted: muting slack does not affect discord" test_is_muted_channel_independent
+
+test_unmute_channel() {
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "mute_slack_until" "0"
+  _shelldone_unmute_channel "slack"
+  ! _shelldone_is_muted "slack"
+}
+run_test "unmute_channel: clears channel mute" test_unmute_channel
+
+test_unmute_all_clears_channel_mutes() {
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "mute_until" "0"
+  _shelldone_state_write "mute_slack_until" "0"
+  _shelldone_state_write "mute_desktop_until" "0"
+  _shelldone_unmute_all
+  ! _shelldone_is_muted && ! _shelldone_is_muted "slack" && ! _shelldone_is_muted "desktop"
+}
+run_test "unmute_all: clears global + all channel mutes" test_unmute_all_clears_channel_mutes
+
+test_channel_active_toggle_off_mute_expired() {
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "slack" "off"
+  local past=$(( $(date +%s) - 100 ))
+  _shelldone_state_write "mute_slack_until" "$past"
+  # Toggle is off, mute expired — channel should NOT be active
+  ! _shelldone_channel_active "slack"
+}
+run_test "channel_active: toggle off + expired mute = not active" test_channel_active_toggle_off_mute_expired
+
+test_channel_active_muted() {
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "mute_desktop_until" "0"
+  # Not toggled off, but muted — channel should NOT be active
+  ! _shelldone_channel_active "desktop"
+}
+run_test "channel_active: muted channel = not active" test_channel_active_muted
+
+test_channel_active_normal() {
+  rm -f "$(_shelldone_state_file)"
+  # Not toggled off, not muted — channel should be active
+  _shelldone_channel_active "desktop"
+}
+run_test "channel_active: normal channel = active" test_channel_active_normal
+
+test_list_channel_mutes() {
+  rm -f "$(_shelldone_state_file)"
+  _shelldone_state_write "mute_slack_until" "0"
+  _shelldone_state_write "mute_desktop_until" "12345"
+  local output
+  output="$(_shelldone_list_channel_mutes)"
+  [[ "$output" == *"slack=0"* ]] && [[ "$output" == *"desktop=12345"* ]]
+}
+run_test "list_channel_mutes: lists active per-channel mutes" test_list_channel_mutes
+
 # -- Channel toggle --
 
 test_channel_enabled_default() {
@@ -2713,13 +2822,13 @@ header "Mute / Toggle / Schedule CLI"
 
 test_cli_mute_indefinite() {
   local out
-  out=$("${SCRIPT_DIR}/bin/shelldone" mute 2>&1)
+  out=$(SHELLDONE_NONINTERACTIVE=true "${SCRIPT_DIR}/bin/shelldone" mute 2>&1)
   [[ "$out" == *"Muted indefinitely"* ]]
 }
 run_test "shelldone mute: mutes indefinitely" test_cli_mute_indefinite
 
 test_cli_unmute() {
-  "${SCRIPT_DIR}/bin/shelldone" mute 2>/dev/null
+  SHELLDONE_NONINTERACTIVE=true "${SCRIPT_DIR}/bin/shelldone" mute 2>/dev/null
   local out
   out=$("${SCRIPT_DIR}/bin/shelldone" unmute 2>&1)
   [[ "$out" == *"Unmuted"* ]]
@@ -2733,10 +2842,41 @@ test_cli_mute_duration() {
 }
 run_test "shelldone mute 30m: mutes with duration" test_cli_mute_duration
 
-test_cli_mute_invalid_duration() {
+test_cli_mute_invalid_channel() {
   ! "${SCRIPT_DIR}/bin/shelldone" mute "abc" 2>/dev/null
 }
-run_test "shelldone mute abc: rejects invalid duration" test_cli_mute_invalid_duration
+run_test "shelldone mute abc: rejects invalid channel" test_cli_mute_invalid_channel
+
+test_cli_mute_channel_indefinite() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" mute slack 2>&1)
+  [[ "$out" == *"slack muted indefinitely"* ]]
+}
+run_test "shelldone mute slack: mutes channel indefinitely" test_cli_mute_channel_indefinite
+
+test_cli_mute_channel_duration() {
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" mute desktop 30m 2>&1)
+  [[ "$out" == *"desktop muted for 30m"* ]]
+}
+run_test "shelldone mute desktop 30m: mutes channel with duration" test_cli_mute_channel_duration
+
+test_cli_unmute_channel() {
+  "${SCRIPT_DIR}/bin/shelldone" mute slack 2>/dev/null
+  local out
+  out=$("${SCRIPT_DIR}/bin/shelldone" unmute slack 2>&1)
+  [[ "$out" == *"slack unmuted"* ]]
+}
+run_test "shelldone unmute slack: unmutes specific channel" test_cli_unmute_channel
+
+test_cli_unmute_all_clears_channels() {
+  "${SCRIPT_DIR}/bin/shelldone" mute slack 2>/dev/null
+  "${SCRIPT_DIR}/bin/shelldone" mute desktop 2>/dev/null
+  "${SCRIPT_DIR}/bin/shelldone" unmute 2>/dev/null
+  # All channel mutes should be cleared
+  ! _shelldone_state_read "mute_slack_until" 2>/dev/null && ! _shelldone_state_read "mute_desktop_until" 2>/dev/null
+}
+run_test "shelldone unmute: clears all channel mutes" test_cli_unmute_all_clears_channels
 
 test_cli_toggle_show() {
   local out
@@ -4453,9 +4593,9 @@ run_test "compact status shows Shell line" test_compact_status_shows_shell
 test_compact_status_shows_channels() {
   local out
   out=$("${SCRIPT_DIR}/bin/shelldone" status 2>&1) || true
-  [[ "$out" == *"Channels:"* ]]
+  [[ "$out" == *"Local"* ]] && [[ "$out" == *"External"* ]]
 }
-run_test "compact status shows Channels line" test_compact_status_shows_channels
+run_test "compact status shows channel dashboard" test_compact_status_shows_channels
 
 test_compact_status_shows_ai_hooks() {
   local out

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-04-04
+
+### Added
+
+- **Per-channel mute**: Mute individual notification channels with optional duration instead of muting everything at once.
+  - `shelldone mute slack 2h` — mute Slack for 2 hours while desktop notifications continue
+  - `shelldone mute desktop` — mute desktop notifications indefinitely
+  - `shelldone unmute slack` — unmute a specific channel
+  - `shelldone unmute` — clear all mutes (global + per-channel)
+  - State stored as `mute_<channel>_until` keys in the state file, with auto-expiry cleanup
+- **Interactive mute menu**: Running `shelldone mute` with no arguments in a TTY now opens an interactive menu to select channels and duration. Non-TTY falls back to global indefinite mute for backward compatibility.
+- **Rich status dashboard**: `shelldone status` now shows a channel-by-channel breakdown with visual indicators for muted (with countdown), toggled off, configured, and not configured states.
+- **Shell completions**: Tab completion for `mute` and `unmute` now suggests channel names (desktop, sound, voice, slack, discord, telegram, email, whatsapp, webhook) in both bash and zsh.
+- **18 new tests**: Comprehensive test coverage for per-channel mute, `_shelldone_channel_active`, `_shelldone_unmute_all`, and CLI mute/unmute commands.
+
 ## [1.4.1] - 2026-03-26
 
 ### Fixed

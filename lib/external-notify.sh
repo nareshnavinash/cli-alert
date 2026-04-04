@@ -862,12 +862,12 @@ _shelldone_notify_external() {
 
   _shelldone_dispatch_external_channels() {
     set +e  # Don't let failures propagate
-    [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}" ]]   && _shelldone_channel_enabled "slack" 2>/dev/null    && _shelldone_external_slack    "$title" "$message" "$exit_code"
-    [[ -n "${SHELLDONE_DISCORD_WEBHOOK:-}" ]] && _shelldone_channel_enabled "discord" 2>/dev/null  && _shelldone_external_discord  "$title" "$message" "$exit_code"
-    [[ -n "${SHELLDONE_TELEGRAM_TOKEN:-}" ]]  && _shelldone_channel_enabled "telegram" 2>/dev/null && _shelldone_external_telegram "$title" "$message" "$exit_code"
-    [[ -n "${SHELLDONE_EMAIL_TO:-}" ]]        && _shelldone_channel_enabled "email" 2>/dev/null    && _shelldone_external_email    "$title" "$message" "$exit_code"
-    [[ -n "${SHELLDONE_WHATSAPP_TOKEN:-}" ]]  && _shelldone_channel_enabled "whatsapp" 2>/dev/null && _shelldone_external_whatsapp "$title" "$message" "$exit_code"
-    [[ -n "${SHELLDONE_WEBHOOK_URL:-}" ]]     && _shelldone_channel_enabled "webhook" 2>/dev/null  && _shelldone_external_webhook  "$title" "$message" "$exit_code"
+    [[ -n "${SHELLDONE_SLACK_WEBHOOK:-}" ]]   && _shelldone_channel_active "slack" 2>/dev/null    && _shelldone_external_slack    "$title" "$message" "$exit_code"
+    [[ -n "${SHELLDONE_DISCORD_WEBHOOK:-}" ]] && _shelldone_channel_active "discord" 2>/dev/null  && _shelldone_external_discord  "$title" "$message" "$exit_code"
+    [[ -n "${SHELLDONE_TELEGRAM_TOKEN:-}" ]]  && _shelldone_channel_active "telegram" 2>/dev/null && _shelldone_external_telegram "$title" "$message" "$exit_code"
+    [[ -n "${SHELLDONE_EMAIL_TO:-}" ]]        && _shelldone_channel_active "email" 2>/dev/null    && _shelldone_external_email    "$title" "$message" "$exit_code"
+    [[ -n "${SHELLDONE_WHATSAPP_TOKEN:-}" ]]  && _shelldone_channel_active "whatsapp" 2>/dev/null && _shelldone_external_whatsapp "$title" "$message" "$exit_code"
+    [[ -n "${SHELLDONE_WEBHOOK_URL:-}" ]]     && _shelldone_channel_active "webhook" 2>/dev/null  && _shelldone_external_webhook  "$title" "$message" "$exit_code"
     true  # Ensure success return
   }
 

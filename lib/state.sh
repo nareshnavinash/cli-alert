@@ -131,25 +131,79 @@ _shelldone_parse_duration() {
 
 # ── Mute check ────────────────────────────────────────────────────────────
 
+# _shelldone_is_muted [channel]
+# No args: check global mute only.  With channel: check global + per-channel.
 _shelldone_is_muted() {
+  local channel="${1:-}"
+  local now=""
+
+  # --- Global mute check (always runs) ---
   local mute_until
-  mute_until="$(_shelldone_state_read "mute_until")" || return 1
-
-  # 0 = muted indefinitely
-  if [[ "$mute_until" == "0" ]]; then
-    return 0
+  if mute_until="$(_shelldone_state_read "mute_until")"; then
+    if [[ "$mute_until" == "0" ]]; then
+      return 0  # muted indefinitely
+    fi
+    now=$(date +%s)
+    if (( mute_until > now )); then
+      return 0  # still muted
+    fi
+    # Expired - clean up
+    _shelldone_state_delete "mute_until"
   fi
 
-  # Check if mute has expired
-  local now
-  now=$(date +%s)
-  if (( mute_until > now )); then
-    return 0
+  # --- Per-channel mute check (only if channel specified) ---
+  if [[ -n "$channel" ]]; then
+    local ch_mute_until
+    if ch_mute_until="$(_shelldone_state_read "mute_${channel}_until")"; then
+      if [[ "$ch_mute_until" == "0" ]]; then
+        return 0  # channel muted indefinitely
+      fi
+      [[ -z "$now" ]] && now=$(date +%s)
+      if (( ch_mute_until > now )); then
+        return 0  # channel still muted
+      fi
+      # Expired - clean up
+      _shelldone_state_delete "mute_${channel}_until"
+    fi
   fi
 
-  # Expired - clean up
-  _shelldone_state_delete "mute_until"
   return 1
+}
+
+_shelldone_unmute_channel() {
+  local channel="$1"
+  _shelldone_state_delete "mute_${channel}_until"
+}
+
+_shelldone_unmute_all() {
+  _shelldone_state_delete "mute_until"
+  # Clean up all per-channel mutes
+  local state_file
+  state_file="$(_shelldone_state_file)"
+  [[ -f "$state_file" ]] || return 0
+  local tmp_file="${state_file}.tmp.$$"
+  grep -v "^mute_.*_until=" "$state_file" > "$tmp_file" 2>/dev/null || true
+  mv "$tmp_file" "$state_file"
+  if [[ ! -s "$state_file" ]]; then
+    rm -f "$state_file" 2>/dev/null
+  fi
+}
+
+_shelldone_list_channel_mutes() {
+  local state_file
+  state_file="$(_shelldone_state_file)"
+  [[ -f "$state_file" ]] || return 0
+  local k v
+  while IFS='=' read -r k v; do
+    [[ -z "$k" || "$k" == \#* ]] && continue
+    case "$k" in
+      mute_*_until)
+        local ch="${k#mute_}"
+        ch="${ch%_until}"
+        printf '%s=%s\n' "$ch" "$v"
+        ;;
+    esac
+  done < "$state_file"
 }
 
 # ── Per-channel toggle ────────────────────────────────────────────────────

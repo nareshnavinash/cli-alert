@@ -1310,6 +1310,84 @@ cmd_version() {
   fi
 }
 
+_status_mute_countdown() {
+  local ts="$1" now="$2"
+  if [[ "$ts" == "0" ]]; then
+    printf 'indefinite'
+    return
+  fi
+  local remaining=$(( ts - now ))
+  if (( remaining <= 0 )); then
+    return 1
+  elif (( remaining >= 3600 )); then
+    printf '%dh %dm left' $(( remaining / 3600 )) $(( (remaining % 3600) / 60 ))
+  elif (( remaining >= 60 )); then
+    printf '%dm left' $(( remaining / 60 ))
+  else
+    printf '%ds left' "$remaining"
+  fi
+}
+
+_status_channel_state() {
+  local channel="$1" is_configured="$2" now="$3"
+
+  # Not configured?
+  if [[ "$is_configured" != "true" ]]; then
+    printf '%s-%s not configured\n' "${_TUI_DIM:-}" "${_TUI_RESET:-}"
+    return
+  fi
+
+  # Toggled off?
+  local toggle_val
+  toggle_val="$(_shelldone_state_read "$channel" 2>/dev/null)" || toggle_val=""
+  if [[ "$toggle_val" == "off" ]]; then
+    printf '%s✗%s toggled off\n' "${_TUI_RED:-}" "${_TUI_RESET:-}"
+    return
+  fi
+
+  # Per-channel muted?
+  local ch_mute_until
+  if ch_mute_until="$(_shelldone_state_read "mute_${channel}_until" 2>/dev/null)"; then
+    local countdown
+    if countdown="$(_status_mute_countdown "$ch_mute_until" "$now")"; then
+      printf '%s!%s muted (%s)\n' "${_TUI_YELLOW:-}" "${_TUI_RESET:-}" "$countdown"
+      return
+    fi
+  fi
+
+  # Active
+  printf '%s✓%s on\n' "${_TUI_GREEN:-}" "${_TUI_RESET:-}"
+}
+
+_status_channel_dashboard() {
+  # Load TUI colors if available
+  if ! declare -f _tui_init_colors &>/dev/null; then
+    local _tui_lib="${SHELLDONE_LIB}/tui.sh"
+    [[ -f "$_tui_lib" ]] && source "$_tui_lib"
+  fi
+
+  local now; now=$(date +%s)
+
+  printf '  %s── Local ─────────────────────%s\n' "${_TUI_DIM:-}" "${_TUI_RESET:-}"
+  local local_ch
+  for local_ch in desktop sound voice; do
+    printf '    %-14s ' "$local_ch"
+    _status_channel_state "$local_ch" "true" "$now"
+  done
+
+  printf '  %s── External ──────────────────%s\n' "${_TUI_DIM:-}" "${_TUI_RESET:-}"
+  local -a ext_names=("slack" "discord" "telegram" "email" "whatsapp" "webhook")
+  local -a ext_envs=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
+  local ei
+  for ei in "${!ext_names[@]}"; do
+    local ename="${ext_names[$ei]}" eenv="${ext_envs[$ei]}"
+    local configured="false"
+    [[ -n "${!eenv:-}" ]] && configured="true"
+    printf '    %-14s ' "$ename"
+    _status_channel_state "$ename" "$configured" "$now"
+  done
+}
+
 cmd_status() {
   local mode="compact"
   case "${1:-}" in
@@ -1410,19 +1488,9 @@ _status_compact() {
     fi
     echo ""
 
-    # Channels compact line
-    local -a ch_names=("slack" "discord" "telegram" "email" "whatsapp" "webhook")
-    local -a ch_envs=("SHELLDONE_SLACK_WEBHOOK" "SHELLDONE_DISCORD_WEBHOOK" "SHELLDONE_TELEGRAM_TOKEN" "SHELLDONE_EMAIL_TO" "SHELLDONE_WHATSAPP_TOKEN" "SHELLDONE_WEBHOOK_URL")
-    printf '  Channels:   '
-    local ci
-    for ci in "${!ch_names[@]}"; do
-      local cname="${ch_names[$ci]}" cenv="${ch_envs[$ci]}"
-      if [[ -n "${!cenv:-}" ]]; then
-        printf ' %s %b' "$cname" "$check_mark"
-      else
-        printf ' %s %b' "$cname" "$dash"
-      fi
-    done
+    # Channel status dashboard
+    _status_channel_dashboard
+
     echo ""
 
     # AI hooks compact line
@@ -2177,41 +2245,120 @@ _load_state_module() {
   fi
 }
 
-cmd_mute() {
-  _load_state_module
-  local duration_str="${1:-}"
+_mute_valid_channels="desktop sound voice slack discord telegram email whatsapp webhook"
 
-  if [[ -z "$duration_str" ]]; then
-    # Mute indefinitely
-    _shelldone_state_write "mute_until" "0"
-    printf '\033[1;32m[shelldone]\033[0m Muted indefinitely. Run "shelldone unmute" to resume.\n'
+_mute_format_expiry() {
+  local ts="$1"
+  local expiry_str
+  if expiry_str=$(date -d "@${ts}" '+%H:%M:%S' 2>/dev/null); then
+    true
+  elif expiry_str=$(date -r "${ts}" '+%H:%M:%S' 2>/dev/null); then
+    true
   else
+    expiry_str="epoch ${ts}"
+  fi
+  printf '%s' "$expiry_str"
+}
+
+_mute_apply() {
+  local target="$1" duration_str="$2"
+  local mute_val="0"
+
+  if [[ -n "$duration_str" ]]; then
     local seconds
     if ! seconds="$(_shelldone_parse_duration "$duration_str")"; then
-      echo >&2 "Usage: shelldone mute [duration]  (e.g., 30m, 2h, 1h30m)"
+      echo >&2 "Usage: shelldone mute [channel] [duration]  (e.g., slack 2h)"
       exit 1
     fi
-    local until_ts
-    until_ts=$(( $(date +%s) + seconds ))
-    _shelldone_state_write "mute_until" "$until_ts"
-
-    # Format expiry for display (portable: try GNU date -d, then BSD date -r)
-    local expiry_str
-    if expiry_str=$(date -d "@${until_ts}" '+%H:%M:%S' 2>/dev/null); then
-      true
-    elif expiry_str=$(date -r "${until_ts}" '+%H:%M:%S' 2>/dev/null); then
-      true
-    else
-      expiry_str="epoch ${until_ts}"
-    fi
-    printf '\033[1;32m[shelldone]\033[0m Muted for %s (until %s)\n' "$duration_str" "$expiry_str"
+    mute_val=$(( $(date +%s) + seconds ))
   fi
+
+  if [[ -z "$target" ]]; then
+    # Global mute
+    _shelldone_state_write "mute_until" "$mute_val"
+    if [[ "$mute_val" == "0" ]]; then
+      printf '\033[1;32m[shelldone]\033[0m Muted indefinitely. Run "shelldone unmute" to resume.\n'
+    else
+      printf '\033[1;32m[shelldone]\033[0m Muted for %s (until %s)\n' "$duration_str" "$(_mute_format_expiry "$mute_val")"
+    fi
+  else
+    # Per-channel mute
+    _shelldone_state_write "mute_${target}_until" "$mute_val"
+    if [[ "$mute_val" == "0" ]]; then
+      printf '\033[1;32m[shelldone]\033[0m %s muted indefinitely.\n' "$target"
+    else
+      printf '\033[1;32m[shelldone]\033[0m %s muted for %s (until %s)\n' "$target" "$duration_str" "$(_mute_format_expiry "$mute_val")"
+    fi
+  fi
+}
+
+_mute_validate_channel() {
+  local channel="$1" ch
+  for ch in $_mute_valid_channels; do
+    [[ "$ch" == "$channel" ]] && return 0
+  done
+  echo >&2 "shelldone: unknown channel '$channel'"
+  echo >&2 "Valid channels: $_mute_valid_channels"
+  exit 1
+}
+
+_mute_interactive() {
+  _tui_select "What would you like to mute?" "All channels" "Specific channel"
+  if [[ "$_TUI_SELECTED" == "All channels" ]]; then
+    local dur
+    dur="$(_tui_prompt "Duration? (e.g., 30m, 2h, or leave empty for indefinite)")"
+    _mute_apply "" "$dur"
+  else
+    _tui_select "Select channel to mute:" $_mute_valid_channels
+    local selected_channel="$_TUI_SELECTED"
+    local dur
+    dur="$(_tui_prompt "Duration? (e.g., 30m, 2h, or leave empty for indefinite)")"
+    _mute_apply "$selected_channel" "$dur"
+  fi
+}
+
+cmd_mute() {
+  _load_state_module
+  local arg1="${1:-}" arg2="${2:-}"
+
+  if [[ -z "$arg1" ]]; then
+    # No args: interactive if TTY, global indefinite if not
+    if _tui_is_interactive; then
+      _mute_interactive
+    else
+      _mute_apply "" ""
+    fi
+    return 0
+  fi
+
+  # One arg: duration (global) or channel name (per-channel indefinite)?
+  if [[ -z "$arg2" ]]; then
+    if _shelldone_parse_duration "$arg1" >/dev/null 2>&1; then
+      _mute_apply "" "$arg1"
+    else
+      _mute_validate_channel "$arg1"
+      _mute_apply "$arg1" ""
+    fi
+    return 0
+  fi
+
+  # Two args: channel + duration
+  _mute_validate_channel "$arg1"
+  _mute_apply "$arg1" "$arg2"
 }
 
 cmd_unmute() {
   _load_state_module
-  _shelldone_state_delete "mute_until"
-  printf '\033[1;32m[shelldone]\033[0m Unmuted. Notifications resumed.\n'
+  local channel="${1:-}"
+
+  if [[ -z "$channel" ]]; then
+    _shelldone_unmute_all
+    printf '\033[1;32m[shelldone]\033[0m Unmuted. All notifications resumed.\n'
+  else
+    _mute_validate_channel "$channel"
+    _shelldone_unmute_channel "$channel"
+    printf '\033[1;32m[shelldone]\033[0m %s unmuted.\n' "$channel"
+  fi
 }
 
 cmd_toggle() {
@@ -2422,8 +2569,8 @@ Daily Use:
   (auto-notify)                  Commands >10s auto-notify on completion
 
 Notification Control:
-  shelldone mute [duration]      Mute all notifications (e.g., 30m, 2h)
-  shelldone unmute               Resume notifications
+  shelldone mute [channel] [duration]  Mute notifications (e.g., slack 2h)
+  shelldone unmute [channel]           Resume notifications (or unmute all)
   shelldone toggle [layer [on|off]]  Toggle notification layers
   shelldone schedule [HH:MM-HH:MM|off]  Set daily quiet hours
 

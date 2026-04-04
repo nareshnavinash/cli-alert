@@ -16,8 +16,8 @@ _shelldone() {
     'history:View notification history'
     'config:Manage config file and settings'
     'doctor:Check configuration for issues'
-    'mute:Mute all notifications'
-    'unmute:Resume notifications'
+    'mute:Mute notifications (optionally per channel)'
+    'unmute:Resume notifications (optionally per channel)'
     'toggle:Toggle notification layers'
     'schedule:Set daily quiet hours'
     'test:Run verification tests'
@@ -73,6 +73,16 @@ _shelldone() {
           ;;
         uninstall)
           _describe -t flags 'flag' '(--yes -y)'
+          ;;
+        mute)
+          if (( CURRENT == 2 )); then
+            _describe -t channels 'channel' '(desktop sound voice slack discord telegram email whatsapp webhook)'
+          fi
+          ;;
+        unmute)
+          if (( CURRENT == 2 )); then
+            _describe -t channels 'channel' '(desktop sound voice slack discord telegram email whatsapp webhook)'
+          fi
           ;;
         toggle)
           if (( CURRENT == 2 )); then
